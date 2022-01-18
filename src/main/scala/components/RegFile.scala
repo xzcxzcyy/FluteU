@@ -2,7 +2,7 @@ package components
 
 import chisel3._
 
-class Regfile extends Module {
+class RegFile extends Module {
   val io = IO(new RegFileIO)
   val regfile = RegInit(VecInit(Seq.fill(config.numOfReg)(0.U(config.regDataWidth))))
   io.r1Data := regfile(io.r1Addr)
