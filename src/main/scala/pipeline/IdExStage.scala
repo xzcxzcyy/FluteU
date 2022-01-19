@@ -20,5 +20,5 @@ class IdExBundle extends Bundle {
   val rt = UInt(dataWidth.W)
   val writeRegAddr = UInt(regAddrWidth.W)
   val immediate = UInt(dataWidth.W)
-  val pcplusfour = UInt(dataWidth.W)
+  val pcplusfour = UInt(addrWidth.W)
 }
