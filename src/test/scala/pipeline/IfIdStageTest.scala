@@ -25,6 +25,14 @@ class IfIdStageTest extends AnyFreeSpec with ChiselScalatestTester with Matchers
       s.clock.step()
       s.io.data.instruction.expect(0.U(32.W))
       s.io.data.pcplusfour.expect(0.U(32.W))
+      ////
+      s.io.flush.poke(1.B)
+      s.io.valid.poke(1.B)
+      s.io.in.instruction.poke(555.U(32.W))
+      s.io.in.pcplusfour.poke(555.U(32.W))
+      s.clock.step()
+      s.io.data.instruction.expect(0.U(32.W))
+      s.io.data.pcplusfour.expect(0.U(32.W))
     }
   }
 }

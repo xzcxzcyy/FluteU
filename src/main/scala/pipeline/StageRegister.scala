@@ -28,11 +28,9 @@ class StageReg[+T <: Data](val gen: T) extends Module {
 
   io.data := reg
 
-  when(io.valid) {
-    reg := io.in
-  }
-
-  when(io.flush) {
+  when (io.flush) {
     reg := 0.U.asTypeOf(gen)
+  } .elsewhen (io.valid) {
+    reg := io.in
   }
 }
