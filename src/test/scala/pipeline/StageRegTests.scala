@@ -82,4 +82,45 @@ class StageRegTests
     }
   }
 
+  "MEM/WB Stage Test" in {
+    test(new MemWbStage()) { s =>
+      val valid = s.io.valid
+      val flush = s.io.flush
+      val clock = s.clock
+      val in = s.io.in
+      val out = s.io.data
+
+      // load
+      valid.poke(1.B)
+      flush.poke(0.B)
+      in.control.memToReg.poke(1.B)
+      in.aluResult.poke(233.U)
+      in.dataFromMem.poke(234.U)
+      clock.step()
+      out.control.memToReg.expect(1.B)
+      out.aluResult.expect(233.U)
+      out.dataFromMem.expect(234.U)
+      // flush
+      flush.poke(1.B)
+      clock.step()
+      out.control.memToReg.expect(0.B)
+      out.aluResult.expect(0.U)
+      out.dataFromMem.expect(0.U)
+      // load
+      flush.poke(0.B)
+      valid.poke(1.B)
+      in.writeRegAddr.poke(31.U)
+      clock.step()
+      out.writeRegAddr.expect(31.U)
+      // stall
+      valid.poke(0.B)
+      in.writeRegAddr.poke(30.U)
+      clock.step()
+      out.writeRegAddr.expect(31.U)
+      // stall & flush
+      flush.poke(1.B)
+      clock.step()
+      out.writeRegAddr.expect(0.U)
+    }
+  }
 }
