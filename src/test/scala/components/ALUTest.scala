@@ -1,5 +1,6 @@
 package components
 
+import fluteutil.BitMode.fromIntToBitModeLong
 import chisel3._
 import chiseltest._
 import org.scalatest.freespec.AnyFreeSpec
@@ -10,7 +11,7 @@ import config.CpuConfig._
 import scala.util.Random
 
 class ALUTest extends AnyFreeSpec with ChiselScalatestTester with Matchers {
-  "ALU: add" in {
+  "ALU: add/addu overflow tests" in {
     test(new ALU) { alu =>
       val io     = alu.io
       val rander = new Random()
@@ -38,6 +39,19 @@ class ALUTest extends AnyFreeSpec with ChiselScalatestTester with Matchers {
       overflowTest(false)
       io.aluOp.poke(ALUOp.addu)
       overflowTest(true)
+    }
+  }
+
+  "ALU: add/addu overflow-less test" in {
+    test(new ALU) { alu =>
+      val x = -12432
+      val y = 123
+      alu.io.aluOp.poke(ALUOp.add)
+      alu.io.x.poke(x.BM.U)
+      alu.io.y.poke(y.BM.U)
+      alu.io.flag.equal.expect(0.B)
+      alu.io.flag.trap.expect(0.B)
+      alu.io.result.expect((x + y).BM.U)
     }
   }
 }
