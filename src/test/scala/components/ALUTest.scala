@@ -113,12 +113,12 @@ class ALUTest extends AnyFreeSpec with ChiselScalatestTester with Matchers {
 
   "bitwise and conditional set instructions" in {
     test(new ALU) { c =>
-      val io = c.io
+      val io   = c.io
       val rand = new Random()
-      def doTest(aluop: UInt, ansFn: (Long, Long) => Long, epoches: Int = 10) = {
+      def doTest(aluop: UInt, ansFn: (Long, Long) => Long, epoches: Int = 10): Unit = {
         for (i <- 0 to epoches) {
-          val x = rand.nextLong(1L << 32)
-          val y = rand.nextLong(1L << 32)
+          val x   = rand.nextLong(1L << 32)
+          val y   = rand.nextLong(1L << 32)
           val res = ansFn(x, y)
           io.aluOp.poke(aluop)
           io.x.poke(x.U)
@@ -137,7 +137,7 @@ class ALUTest extends AnyFreeSpec with ChiselScalatestTester with Matchers {
       // SLTU
       doTest(ALUOp.sltu, (op1, op2) => if (op1 < op2) 1L else 0L)
       // SLT
-      def testSLT(x: Int, y: Int) {
+      def testSLT(x: Int, y: Int): Unit = {
         io.aluOp.poke(ALUOp.slt)
         io.x.poke(x.BM.U)
         io.y.poke(y.BM.U)
@@ -153,6 +153,41 @@ class ALUTest extends AnyFreeSpec with ChiselScalatestTester with Matchers {
         (-2147483648, 2147483647),
       )
       sltCases.foreach(c => testSLT(c._1, c._2))
+    }
+  }
+
+  "instruction specified shamt shift operations" in {
+    test(new ALU) { alu =>
+      val io = alu.io
+      def doTest(x: Int, y: Int, aluop: UInt, ansFn: (Long, Long) => Long): Unit = {
+        io.aluOp.poke(aluop)
+        io.x.poke(x.BM.U)
+        io.y.poke(y.BM.U)
+        io.result.expect(ansFn(x.BM, y.BM).U)
+      }
+      def shamt(num: Long) = num & 0x1fL
+      def sllAnsFn(x: Long, y: Long): Long = {
+        (y << shamt(x)) & 0xffffffffL
+      }
+      def srlAnsFn(x: Long, y: Long): Long = {
+        (y >> shamt(x)) & 0xffffffffL
+      }
+      def sraAnsFn(x: Long, y: Long): Long = {
+        ((y.toInt) >> shamt(x).toInt).BM
+      }
+      val cases = Seq(
+        (5, 101),
+        (0, 23),
+        (30, -1),
+        (30, -2),
+        (123, 102),
+        (123, 24),
+        (1111111, -2),
+        (2222222, -3),
+      )
+      cases.foreach(t => doTest(t._1, t._2, ALUOp.sll, sllAnsFn))
+      cases.foreach(t => doTest(t._1, t._2, ALUOp.srl, srlAnsFn))
+      cases.foreach(t => doTest(t._1, t._2, ALUOp.sra, sraAnsFn))
     }
   }
 }
