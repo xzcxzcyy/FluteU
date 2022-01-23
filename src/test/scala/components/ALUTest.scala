@@ -11,7 +11,7 @@ import config.CpuConfig._
 import scala.util.Random
 
 class ALUTest extends AnyFreeSpec with ChiselScalatestTester with Matchers {
-  "ALU: add/addu overflow tests" in {
+  "add/addu overflow tests" in {
     test(new ALU) { alu =>
       val io     = alu.io
       val rander = new Random()
@@ -42,7 +42,7 @@ class ALUTest extends AnyFreeSpec with ChiselScalatestTester with Matchers {
     }
   }
 
-  "ALU: add/addu overflow-less test" in {
+  "add/addu overflow-less test" in {
     test(new ALU) { alu =>
       val testFn = (x: Int, y: Int) => {
         alu.io.aluOp.poke(ALUOp.add)
