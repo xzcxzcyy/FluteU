@@ -71,4 +71,30 @@ class ALUTest extends AnyFreeSpec with ChiselScalatestTester with Matchers {
       cases.foreach((c) => testFn(c._1, c._2))
     }
   }
+
+  "sub/subu overflow tests" in {
+    test(new ALU) { alu =>
+      val testFn = (x: Int, y: Int) => {
+        val io = alu.io
+        io.aluOp.poke(ALUOp.sub)
+        io.x.poke(x.BM.U)
+        io.y.poke(y.BM.U)
+        io.flag.equal.expect((x == y).B)
+        io.result.expect((x - y).BM.U)
+        io.flag.trap.expect(1.B)
+        ///
+        io.aluOp.poke(ALUOp.subu)
+        io.flag.equal.expect((x == y).B)
+        io.result.expect((x - y).BM.U)
+        io.flag.trap.expect(0.B)
+      }
+      val testCases = Seq(
+        (-2147483647, 200),
+        (-2147483648, 1),
+        (1, -2147483648),
+        (100000, -2147383748),
+      )
+      testCases.foreach((c) => testFn(c._1, c._2))
+    }
+  }
 }
