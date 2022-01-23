@@ -110,4 +110,49 @@ class ALUTest extends AnyFreeSpec with ChiselScalatestTester with Matchers {
       nonOverflowTestCases.foreach((c) => testFn(c._1, c._2, false))
     }
   }
+
+  "bitwise and conditional set instructions" in {
+    test(new ALU) { c =>
+      val io = c.io
+      val rand = new Random()
+      def doTest(aluop: UInt, ansFn: (Long, Long) => Long, epoches: Int = 10) = {
+        for (i <- 0 to epoches) {
+          val x = rand.nextLong(1L << 32)
+          val y = rand.nextLong(1L << 32)
+          val res = ansFn(x, y)
+          io.aluOp.poke(aluop)
+          io.x.poke(x.U)
+          io.y.poke(y.U)
+          io.result.expect(res.U)
+        }
+      }
+      // AND
+      doTest(ALUOp.and, (op1, op2) => (op1 & op2))
+      // OR
+      doTest(ALUOp.or, (op1, op2) => (op1 | op2))
+      // NOR
+      doTest(ALUOp.nor, (op1, op2) => ((op1 | op2) ^ (-1).BM))
+      // XOR
+      doTest(ALUOp.xor, (op1, op2) => (op1 ^ op2))
+      // SLTU
+      doTest(ALUOp.sltu, (op1, op2) => if (op1 < op2) 1L else 0L)
+      // SLT
+      def testSLT(x: Int, y: Int) {
+        io.aluOp.poke(ALUOp.slt)
+        io.x.poke(x.BM.U)
+        io.y.poke(y.BM.U)
+        val answer = if (x < y) 1.U(dataWidth.W) else 0.U(dataWidth.W)
+        io.result.expect(answer)
+      }
+      val sltCases = Seq(
+        (1, 2),
+        (2, 1),
+        (1, 1),
+        (2147483647, -2147483648),
+        (2147483647, -1),
+        (-2147483648, 2147483647),
+      )
+      sltCases.foreach(c => testSLT(c._1, c._2))
+    }
+  }
 }
