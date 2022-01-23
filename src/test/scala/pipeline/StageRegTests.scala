@@ -7,10 +7,7 @@ import org.scalatest.matchers.should.Matchers
 
 import config.CpuConfig._
 
-class StageRegTests
-    extends AnyFreeSpec
-    with ChiselScalatestTester
-    with Matchers {
+class StageRegTests extends AnyFreeSpec with ChiselScalatestTester with Matchers {
   "IF/ID Stage Test" in {
     test(new IfIdStage()) { s =>
       s.io.flush.poke(0.B)
@@ -44,7 +41,7 @@ class StageRegTests
   "ID/EX Stage Test" in {
     test(new IdExStage()) { s =>
       val data = s.io.data
-      val io = s.io
+      val io   = s.io
       io.flush.poke(1.B)
       s.clock.step()
       data.control.aluOp.expect(0.U(aluOpWidth.W))
@@ -63,7 +60,7 @@ class StageRegTests
   "EX/MEM Stage Test" in {
     test(new ExMemStage()) { s =>
       val data = s.io.data
-      val io = s.io
+      val io   = s.io
       io.flush.poke(1.B)
       io.in.control.memToReg.poke(0.B)
       s.clock.step()
@@ -87,8 +84,8 @@ class StageRegTests
       val valid = s.io.valid
       val flush = s.io.flush
       val clock = s.clock
-      val in = s.io.in
-      val out = s.io.data
+      val in    = s.io.in
+      val out   = s.io.data
 
       // load
       valid.poke(1.B)
