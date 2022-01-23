@@ -59,7 +59,7 @@ class ALU extends Module {
     default = 0.B,
     mapping = Seq(
       ALUOp.add -> ((x(31) & y(31) & ~addRes(31)) | (~x(31) & ~y(31) & addRes(31))),
-      ALUOp.sub -> ((x(31) & ~y(31) & ~addRes(31)) | (~x(31) & y(31) & addRes(31))),
+      ALUOp.sub -> ((x(31) & ~y(31) & ~subRes(31)) | (~x(31) & y(31) & subRes(31))),
     )
   )
 
