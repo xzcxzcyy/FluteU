@@ -190,4 +190,30 @@ class ALUTest extends AnyFreeSpec with ChiselScalatestTester with Matchers {
       cases.foreach(t => doTest(t._1, t._2, ALUOp.sra, sraAnsFn))
     }
   }
+
+  "flag test" in {
+    test(new ALU) { alu =>
+      val io = alu.io
+      val testFlagFn = (x: Int, y: Int) => {
+        io.x.poke(x.BM.U)
+        io.y.poke(y.BM.U)
+        io.flag.equal.expect((x == y).asBool)
+        io.flag.lessS.expect((x < y).asBool)
+        io.flag.lessU.expect((x.BM < y.BM).asBool)
+      }
+      val cases = Seq(
+        (1, 2),
+        (2, 1),
+        (-2, -3),
+        (-3, -2),
+        (2147483647, -1),
+        (-1, 2147483647),
+        (0, -2147483648),
+        (-2147483648, 0),
+        (1, 1),
+        (-2147483648, -2147483648),
+      )
+      cases.foreach(c => testFlagFn(c._1, c._2))
+    }
+  }
 }
