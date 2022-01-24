@@ -7,12 +7,13 @@ class IdExStage extends StageReg(new IdExBundle) {}
 
 class IdExBundle extends Bundle {
   class ControlBundle extends Bundle {
-    val regWriteEn = Bool()
-    val memToReg   = Bool()
-    val memWrite   = Bool()
-    val aluOp      = UInt(aluOpWidth.W)
-    val branchCond = UInt(branchCondWidth.W)
-    val aluSrc     = Bool()
+    val regWriteEn    = Bool()
+    val memToReg      = Bool()
+    val memWrite      = Bool()
+    val aluOp         = UInt(aluOpWidth.W)
+    val branchCond    = UInt(branchCondWidth.W)
+    val aluYFromImm   = Bool()
+    val aluXFromShamt = Bool()
   }
 
   val control      = new ControlBundle()
