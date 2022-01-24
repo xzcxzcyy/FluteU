@@ -1,5 +1,3 @@
 package config
 
-object CpuConfig extends WidthConfig with AmountConfig {
-  
-}
+object CpuConfig extends WidthConfig with AmountConfig {}
