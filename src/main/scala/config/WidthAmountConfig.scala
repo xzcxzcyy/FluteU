@@ -8,6 +8,7 @@ trait WidthConfig {
   val regAddrWidth    = 5
   val aluOpWidth      = 4
   val branchCondWidth = Math.log2Up((new AmountConfig {}).branchCondAmount)
+  val shamtWidth      = 5
 }
 
 trait AmountConfig {

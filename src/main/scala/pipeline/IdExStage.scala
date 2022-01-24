@@ -22,6 +22,7 @@ class IdExBundle extends Bundle {
   val writeRegAddr = UInt(regAddrWidth.W)
   val immediate    = UInt(dataWidth.W)
   val pcplusfour   = UInt(addrWidth.W)
+  val shamt        = UInt(shamtWidth.W)
 }
 
 object BranchCond {
