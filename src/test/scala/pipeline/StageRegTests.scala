@@ -47,15 +47,12 @@ class StageRegTests extends AnyFreeSpec with ChiselScalatestTester with Matchers
       data.control.aluOp.expect(0.U(aluOpWidth.W))
       data.control.aluYFromImm.expect(0.B)
       data.immediate.expect(0.U)
-      data.control.branchCond.expect(0.U)
       io.in.control.aluOp.poke(1.U)
-      io.in.control.branchCond.poke(BranchCond.eq)
       io.flush.poke(0.B)
       io.valid.poke(1.B)
       io.in.rs.poke(28.U)
       s.clock.step()
       data.control.aluOp.expect(1.U)
-      data.control.branchCond.expect(BranchCond.eq)
       data.rs.expect(28.U)
     }
   }
@@ -69,7 +66,7 @@ class StageRegTests extends AnyFreeSpec with ChiselScalatestTester with Matchers
       s.clock.step()
       ///
       data.control.memToReg.expect(0.B)
-      data.writeData.expect(0.U)
+      data.memWriteData.expect(0.U)
       ///
       io.in.aluResult.poke(28.U)
       io.in.control.memWrite.poke(1.B)

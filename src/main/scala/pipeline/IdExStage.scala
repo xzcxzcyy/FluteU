@@ -11,7 +11,6 @@ class IdExBundle extends Bundle {
     val memToReg      = Bool()
     val memWrite      = Bool()
     val aluOp         = UInt(aluOpWidth.W)
-    val branchCond    = UInt(branchCondWidth.W)
     val aluYFromImm   = Bool()
     val aluXFromShamt = Bool()
   }
@@ -21,10 +20,10 @@ class IdExBundle extends Bundle {
   val rt           = UInt(dataWidth.W)
   val writeRegAddr = UInt(regAddrWidth.W)
   val immediate    = UInt(dataWidth.W)
-  val pcplusfour   = UInt(addrWidth.W)
   val shamt        = UInt(shamtWidth.W)
 }
 
+/*
 object BranchCond {
   val none = 0.U(branchCondWidth.W)
   val eq   = 1.U(branchCondWidth.W)
@@ -38,3 +37,4 @@ object BranchCond {
   val ltu  = 9.U(branchCondWidth.W)
   val ne   = 10.U(branchCondWidth.W)
 }
+*/

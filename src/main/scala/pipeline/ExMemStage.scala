@@ -13,7 +13,7 @@ class ExMemBundle extends Bundle {
 
   val control = new ControlBundle
   val aluResult = UInt(dataWidth.W)
-  val writeData = UInt(dataWidth.W)
+  val memWriteData = UInt(dataWidth.W)
   val writeRegAddr = UInt(regAddrWidth.W)
 }
 
