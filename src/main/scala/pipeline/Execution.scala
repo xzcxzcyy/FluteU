@@ -15,7 +15,7 @@ class Execution extends Module {
   io.toMem.control.memWrite   := io.fromId.control.memWrite
   io.toMem.control.regWriteEn := io.fromId.control.regWriteEn
 
-  val alu = new ALU()
+  val alu = Module(new ALU())
   alu.io.aluOp          := io.fromId.control.aluOp
   alu.io.x              := Mux(io.fromId.control.aluXFromShamt, io.fromId.shamt, io.fromId.rs)
   alu.io.y              := Mux(io.fromId.control.aluYFromImm, io.fromId.immediate, io.fromId.rt)
