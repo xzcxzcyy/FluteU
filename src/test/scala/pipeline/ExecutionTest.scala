@@ -15,6 +15,21 @@ class ExecutionTest extends AnyFreeSpec with ChiselScalatestTester with Matchers
       // addu
       c.poke(true, false, false, ALUOp.addu, false, false, 101.U, 202.U, 1.U, 20.U, 0.U)
       c.expect(true, false, false, 303.U, 202.U, 1.U)
+
+      // subu
+      c.poke(
+        regWriteEn = true,
+        aluOp = ALUOp.subu,
+        rs = 333.U,
+        rt = 222.U,
+        writeRegAddr = 2.U,
+      )
+      c.expect(
+        regWriteEn = true,
+        aluResult = 111.U,
+        memWriteData = 222.U,
+        writeRegAddr = 2.U,
+      )
     }
   }
 }
