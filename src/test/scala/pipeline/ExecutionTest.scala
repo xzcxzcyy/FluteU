@@ -6,14 +6,19 @@ import org.scalatest.freespec.AnyFreeSpec
 import org.scalatest.matchers.should.Matchers
 import PokeExpect.{Poke, Expect}
 import components.ALUOp
+import fluteutil.BitMode.fromIntToBitModeLong
 
 class ExecutionTest extends AnyFreeSpec with ChiselScalatestTester with Matchers {
-  "Execution combination logic test" in {
+  "Arithmetic test" in {
     test(new Execution()) { c =>
       val from = c.io.fromId
       val to   = c.io.toMem
       // addu
       c.poke(true, false, false, ALUOp.addu, false, false, 101.U, 202.U, 1.U, 20.U, 0.U)
+      c.expect(true, false, false, 303.U, 202.U, 1.U)
+
+      // add
+      c.poke(true, false, false, ALUOp.add, false, false, 101.U, 202.U, 1.U, 20.U, 0.U)
       c.expect(true, false, false, 303.U, 202.U, 1.U)
 
       // subu
@@ -30,6 +35,118 @@ class ExecutionTest extends AnyFreeSpec with ChiselScalatestTester with Matchers
         memWriteData = 222.U,
         writeRegAddr = 2.U,
       )
+
+      // sub
+      c.poke(
+        regWriteEn = true,
+        aluOp = ALUOp.sub,
+        rs = 333.U,
+        rt = 222.U,
+        writeRegAddr = 2.U,
+      )
+      c.expect(
+        regWriteEn = true,
+        aluResult = 111.U,
+        memWriteData = 222.U,
+        writeRegAddr = 2.U,
+      )
+
+      // and
+      c.poke(
+        regWriteEn = true,
+        aluOp = ALUOp.and,
+        rs = -2.BM.U,
+        rt = 3.U,
+        writeRegAddr = 10.U,
+      )
+      c.expect(
+        regWriteEn = true,
+        aluResult = (-2.BM & 3L).U,
+        memWriteData = 3.U,
+        writeRegAddr = 10.U,
+      )
+
+      // or
+      c.poke(
+        regWriteEn = true,
+        aluOp = ALUOp.or,
+        rs = -2.BM.U,
+        rt = 3.U,
+        writeRegAddr = 10.U,
+      )
+      c.expect(
+        regWriteEn = true,
+        aluResult = (-2.BM | 3L).U,
+        memWriteData = 3.U,
+        writeRegAddr = 10.U,
+      )
+
+      // xor
+      c.poke(
+        regWriteEn = true,
+        aluOp = ALUOp.xor,
+        rs = -2.BM.U,
+        rt = 3.U,
+        writeRegAddr = 10.U,
+      )
+      c.expect(
+        regWriteEn = true,
+        aluResult = (-2.BM ^ 3L).U,
+        memWriteData = 3.U,
+        writeRegAddr = 10.U,
+      )
+
+      // nor
+      c.poke(
+        regWriteEn = true,
+        aluOp = ALUOp.nor,
+        rs = -2.BM.U,
+        rt = 3.U,
+        writeRegAddr = 10.U,
+      )
+      c.expect(
+        regWriteEn = true,
+        aluResult = ((-2.BM | 3L) ^ -1.BM).U,
+        memWriteData = 3.U,
+        writeRegAddr = 10.U,
+      )
+
+      // addiu
+      c.poke(
+        regWriteEn = true,
+        aluOp = ALUOp.addu,
+        aluYFromImm = true,
+        rs = 9999.U,
+        rt = 0.U,
+        writeRegAddr = 5.U,
+        immediate = -1.BM.U,
+      )
+      c.expect(
+        regWriteEn = true,
+        aluResult = 9998.U,
+        memWriteData = 0.U,
+        writeRegAddr = 5.U,
+      )
+
+      // sra
+      c.poke(
+        regWriteEn = true,
+        aluOp = ALUOp.sra,
+        aluXFromShamt = true,
+        rt = -5.BM.U,
+        writeRegAddr = 1.U,
+        shamt = 2.U,
+      )
+      c.expect(
+        regWriteEn = true,
+        aluResult = -2.BM.U,
+        memWriteData = -5.BM.U,
+        writeRegAddr = 1.U,
+      )
+
+      // empty
+      c.poke()
+      c.expect()
     }
   }
 }

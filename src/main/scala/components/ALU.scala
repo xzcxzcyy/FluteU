@@ -5,6 +5,8 @@ import config.CpuConfig._
 import chisel3.util.MuxLookup
 
 object ALUOp {
+  // Empty Op
+  val none = 0.U(aluOpWidth.W)
   // Bitwise Ops
   val and = 1.U(aluOpWidth.W)
   val or  = 2.U(aluOpWidth.W)
