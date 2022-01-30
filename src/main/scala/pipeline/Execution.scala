@@ -12,7 +12,7 @@ class Execution extends Module {
   })
 
   io.toMem.control.memToReg   := io.fromId.control.memToReg
-  io.toMem.control.memWrite   := io.fromId.control.memWrite
+  io.toMem.control.storeMode   := io.fromId.control.storeMode
   io.toMem.control.regWriteEn := io.fromId.control.regWriteEn
 
   val alu = Module(new ALU())

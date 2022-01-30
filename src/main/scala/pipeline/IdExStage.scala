@@ -9,7 +9,7 @@ class IdExBundle extends Bundle {
   class ControlBundle extends Bundle {
     val regWriteEn    = Bool()
     val memToReg      = Bool()
-    val memWrite      = Bool()
+    val storeMode     = UInt(storeModeWidth.W)
     val aluOp         = UInt(aluOpWidth.W)
     val aluYFromImm   = Bool()
     val aluXFromShamt = Bool()
@@ -22,19 +22,3 @@ class IdExBundle extends Bundle {
   val immediate    = UInt(dataWidth.W)
   val shamt        = UInt(shamtWidth.W)
 }
-
-/*
-object BranchCond {
-  val none = 0.U(branchCondWidth.W)
-  val eq   = 1.U(branchCondWidth.W)
-  val ge   = 2.U(branchCondWidth.W)
-  val geu  = 3.U(branchCondWidth.W)
-  val gt   = 4.U(branchCondWidth.W)
-  val gtu  = 5.U(branchCondWidth.W)
-  val le   = 6.U(branchCondWidth.W)
-  val leu  = 7.U(branchCondWidth.W)
-  val lt   = 8.U(branchCondWidth.W)
-  val ltu  = 9.U(branchCondWidth.W)
-  val ne   = 10.U(branchCondWidth.W)
-}
-*/

@@ -8,7 +8,7 @@ class ExMemBundle extends Bundle {
   class ControlBundle extends Bundle {
     val regWriteEn = Bool()
     val memToReg = Bool()
-    val memWrite = Bool()
+    val storeMode = UInt(storeModeWidth.W)
   }
 
   val control = new ControlBundle

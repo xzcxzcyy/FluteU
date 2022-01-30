@@ -4,33 +4,6 @@ import chisel3._
 import config.CpuConfig._
 import chisel3.util.MuxLookup
 
-object ALUOp {
-  // Empty Op
-  val none = 0.U(aluOpWidth.W)
-  // Bitwise Ops
-  val and = 1.U(aluOpWidth.W)
-  val or  = 2.U(aluOpWidth.W)
-  val xor = 3.U(aluOpWidth.W)
-  val nor = 4.U(aluOpWidth.W)
-  // Shift Ops
-  /** Logical shift left: rd ← rt << shamt. Fills bits from right with zeros. Logical shift right:
-    * rd ← rt >> shamt. Fills bits from left with zeros. Arithmetic shift right: If rt is negative,
-    * the leading bits are filled in with ones instead of zeros: rd ← rt >> shamt.
-    *
-    * Mind the order of shift oprands.
-    */
-  val sll = 5.U(aluOpWidth.W) // shift left  logically
-  val srl = 6.U(aluOpWidth.W) // shift right logically
-  val sra = 7.U(aluOpWidth.W) // shift right arithmetically
-  // Set Ops
-  val slt  = 8.U(aluOpWidth.W) // set less than (signed)
-  val sltu = 9.U(aluOpWidth.W) // set less than (unsigned)
-  // Sub and Add Ops
-  val add  = 10.U(aluOpWidth.W)
-  val sub  = 11.U(aluOpWidth.W)
-  val addu = 12.U(aluOpWidth.W)
-  val subu = 13.U(aluOpWidth.W)
-}
 
 class ALU extends Module {
   class Flag extends Bundle {
