@@ -5,7 +5,7 @@ import chiseltest._
 import org.scalatest.freespec.AnyFreeSpec
 import org.scalatest.matchers.should.Matchers
 import PokeExpect.{Poke, Expect}
-import components.ALUOp
+import config.CpuConfig._
 import fluteutil.BitMode.fromIntToBitModeLong
 
 class ExecutionTest extends AnyFreeSpec with ChiselScalatestTester with Matchers {
@@ -169,7 +169,7 @@ private object PokeExpect {
       val b = c.io.fromId
       b.control.regWriteEn.poke(regWriteEn.B)
       b.control.memToReg.poke(memToReg.B)
-      b.control.memWrite.poke(memWrite.B)
+      b.control.storeMode.poke(memWrite.B)
       b.control.aluOp.poke(aluOp)
       b.control.aluXFromShamt.poke(aluXFromShamt.B)
       b.control.aluYFromImm.poke(aluYFromImm.B)
@@ -193,7 +193,7 @@ private object PokeExpect {
       val m = c.io.toMem
       m.control.regWriteEn.expect(regWriteEn.B)
       m.control.memToReg.expect(memToReg.B)
-      m.control.memWrite.expect(memWrite.B)
+      m.control.storeMode.expect(memWrite.B)
       m.aluResult.expect(aluResult)
       m.memWriteData.expect(memWriteData)
       m.writeRegAddr.expect(writeRegAddr)

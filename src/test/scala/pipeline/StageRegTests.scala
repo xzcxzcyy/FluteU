@@ -69,12 +69,12 @@ class StageRegTests extends AnyFreeSpec with ChiselScalatestTester with Matchers
       data.memWriteData.expect(0.U)
       ///
       io.in.aluResult.poke(28.U)
-      io.in.control.memWrite.poke(1.B)
+      io.in.control.storeMode.poke(1.B)
       io.flush.poke(0.B)
       io.valid.poke(1.B)
       s.clock.step()
       ///
-      data.control.memWrite.expect(1.B)
+      data.control.storeMode.expect(1.B)
       data.aluResult.expect(28.U)
     }
   }
