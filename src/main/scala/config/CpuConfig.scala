@@ -64,4 +64,16 @@ object CpuConfig extends WidthConfig with AmountConfig {
     val rt = 0.B
     val rd = 1.B
   }
+
+  object RsRtRecipe {
+    val normal = 0.U(rsrtRecipeWidth.W)
+    val link   = 1.U(rsrtRecipeWidth.W)
+    val lui    = 2.U(rsrtRecipeWidth.W)
+  }
+
+  object ImmRecipe {
+    val sExt = 0.U(immRecipeWidth.W)
+    val uExt = 1.U(immRecipeWidth.W)
+    val lui  = 2.U(immRecipeWidth.W)
+  }
 }

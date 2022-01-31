@@ -14,6 +14,8 @@ trait WidthConfig {
   val shamtWidth      = 5
   val iTypeImmWidth   = 16
   val jCondWidth      = 2
+  val rsrtRecipeWidth = 2
+  val immRecipeWidth  = 2
 }
 
 trait AmountConfig {
