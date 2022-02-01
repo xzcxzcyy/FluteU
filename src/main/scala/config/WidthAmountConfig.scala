@@ -14,6 +14,7 @@ trait WidthConfig {
   val shamtWidth      = 5
   val iTypeImmWidth   = 16
   val jCondWidth      = 2
+  val regDstWidth     = 2
   val rsrtRecipeWidth = 2
   val immRecipeWidth  = 2
 }
@@ -23,5 +24,5 @@ trait AmountConfig {
 
   /** Supported branch conditions none eq ge geu gt gtu le leu lt ltu ne
     */
-  val branchCondAmount = 11
+  val branchCondAmount = 13
 }

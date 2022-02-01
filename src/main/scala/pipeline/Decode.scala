@@ -20,8 +20,10 @@ class Decode extends Module{
     mapping = Seq(
       BranchCond.eq   -> comparator.io.flag.equal,
       BranchCond.ge   -> !comparator.io.flag.lessS,
+      BranchCond.gez  -> !comparator.io.branchSig.rsSignBit,
       BranchCond.geu  -> !comparator.io.flag.lessU,
       BranchCond.gt   -> !(comparator.io.flag.lessS | comparator.io.flag.equal),
+      BranchCond.gtz  -> !comparator.io.branchSig.rsGtz,
       BranchCond.gtu  -> !(comparator.io.flag.lessU | comparator.io.flag.equal),
       BranchCond.le   -> (comparator.io.flag.lessS | comparator.io.flag.equal),
       BranchCond.leu  -> (comparator.io.flag.lessU | comparator.io.flag.equal),

@@ -27,47 +27,49 @@ class Controller extends Module {
 
   // @formatter:off
   val signals = ListLookup(io.instruction,
-    // regWriteEn, memToReg, storeMode,          aluOp,  aluXFromShamt,aluYFromImm, branchCond,   jCond,     regDst     RsRtRecipe        ImmRecipe
+    // regWriteEn, memToReg, storeMode,          aluOp,  aluXFromShamt,aluYFromImm, branchCond,   jCond,    regDst       RsRtRecipe         ImmRecipe
     /* default */
-      List(false.B, false.B, StoreMode.disable,  ALUOp.none, false.B,  false.B, BranchCond.none, JCond.j,   RegDst.rd, RsRtRecipe.normal, ImmRecipe.sExt),
+      List(false.B, false.B, StoreMode.disable,  ALUOp.none, false.B,  false.B, BranchCond.none, JCond.j,  RegDst.rd,    RsRtRecipe.normal, ImmRecipe.sExt),
     Array(
     /** Logical Instructions **/
     /* AND */ BitPat("b000000???????????????00000100100") ->
-      List(true.B,  false.B, StoreMode.disable,  ALUOp.and,  false.B,  false.B, BranchCond.none, JCond.j,   RegDst.rd, RsRtRecipe.normal, ImmRecipe.sExt),
+      List(true.B,  false.B, StoreMode.disable,  ALUOp.and,  false.B,  false.B, BranchCond.none, JCond.j,  RegDst.rd,    RsRtRecipe.normal, ImmRecipe.sExt),
     /* OR */ BitPat("b000000???????????????00000100101") ->
-      List(true.B,  false.B, StoreMode.disable,  ALUOp.or,   false.B,  false.B, BranchCond.none, JCond.j,   RegDst.rd, RsRtRecipe.normal, ImmRecipe.sExt),
+      List(true.B,  false.B, StoreMode.disable,  ALUOp.or,   false.B,  false.B, BranchCond.none, JCond.j,  RegDst.rd,    RsRtRecipe.normal, ImmRecipe.sExt),
     /* XOR */ BitPat("b000000???????????????00000100110") ->
-      List(true.B,  false.B, StoreMode.disable,  ALUOp.xor,  false.B,  false.B, BranchCond.none, JCond.j,   RegDst.rd, RsRtRecipe.normal, ImmRecipe.sExt),
+      List(true.B,  false.B, StoreMode.disable,  ALUOp.xor,  false.B,  false.B, BranchCond.none, JCond.j,  RegDst.rd,    RsRtRecipe.normal, ImmRecipe.sExt),
     /* NOR */ BitPat("b000000???????????????00000100111") ->
-      List(true.B,  false.B, StoreMode.disable,  ALUOp.nor,  false.B,  false.B, BranchCond.none, JCond.j,   RegDst.rd, RsRtRecipe.normal, ImmRecipe.sExt),
+      List(true.B,  false.B, StoreMode.disable,  ALUOp.nor,  false.B,  false.B, BranchCond.none, JCond.j,  RegDst.rd,    RsRtRecipe.normal, ImmRecipe.sExt),
     /* ANDI */ BitPat("b001100??????????????????????????") ->
-      List(true.B,  false.B, StoreMode.disable,  ALUOp.and,  false.B,  true.B,  BranchCond.none, JCond.j,   RegDst.rt, RsRtRecipe.normal, ImmRecipe.sExt),
+      List(true.B,  false.B, StoreMode.disable,  ALUOp.and,  false.B,  true.B,  BranchCond.none, JCond.j,  RegDst.rt,    RsRtRecipe.normal, ImmRecipe.sExt),
     /* ORI */ BitPat("b001101??????????????????????????") ->
-      List(true.B,  false.B, StoreMode.disable,  ALUOp.or,   false.B,  true.B,  BranchCond.none, JCond.j,   RegDst.rt, RsRtRecipe.normal, ImmRecipe.sExt),
+      List(true.B,  false.B, StoreMode.disable,  ALUOp.or,   false.B,  true.B,  BranchCond.none, JCond.j,  RegDst.rt,    RsRtRecipe.normal, ImmRecipe.sExt),
     /* XORI */ BitPat("b001110??????????????????????????") ->
-      List(true.B,  false.B, StoreMode.disable,  ALUOp.xor,  false.B,  true.B,  BranchCond.none, JCond.j,   RegDst.rt, RsRtRecipe.normal, ImmRecipe.sExt),
+      List(true.B,  false.B, StoreMode.disable,  ALUOp.xor,  false.B,  true.B,  BranchCond.none, JCond.j,  RegDst.rt,    RsRtRecipe.normal, ImmRecipe.sExt),
     /* LUI */ BitPat("b00111100000?????????????????????") ->
-      List(true.B,  false.B, StoreMode.disable,  ALUOp.or,   false.B,  true.B,  BranchCond.none, JCond.j,   RegDst.rt, RsRtRecipe.lui,    ImmRecipe.lui),
+      List(true.B,  false.B, StoreMode.disable,  ALUOp.or,   false.B,  true.B,  BranchCond.none, JCond.j,  RegDst.rt,    RsRtRecipe.lui,    ImmRecipe.lui),
     /** Arithmetic Instructions **/
     /* ADD */ BitPat("b000000???????????????00000100000") ->
-      List(true.B,  false.B, StoreMode.disable,  ALUOp.add,  false.B,  false.B, BranchCond.none, JCond.j,   RegDst.rd, RsRtRecipe.normal, ImmRecipe.sExt),
+      List(true.B,  false.B, StoreMode.disable,  ALUOp.add,  false.B,  false.B, BranchCond.none, JCond.j,  RegDst.rd,    RsRtRecipe.normal, ImmRecipe.sExt),
     /* ADDI */ BitPat("b001000??????????????????????????") ->
-      List(true.B,  false.B, StoreMode.disable,  ALUOp.add,  false.B,  true.B,  BranchCond.none, JCond.j,   RegDst.rt, RsRtRecipe.normal, ImmRecipe.sExt),
+      List(true.B,  false.B, StoreMode.disable,  ALUOp.add,  false.B,  true.B,  BranchCond.none, JCond.j,  RegDst.rt,    RsRtRecipe.normal, ImmRecipe.sExt),
     /* ADDU */ BitPat("b000000???????????????00000100001") ->
-      List(true.B,  false.B, StoreMode.disable,  ALUOp.addu, false.B,  false.B, BranchCond.none, JCond.j,   RegDst.rd, RsRtRecipe.normal, ImmRecipe.sExt),
+      List(true.B,  false.B, StoreMode.disable,  ALUOp.addu, false.B,  false.B, BranchCond.none, JCond.j,  RegDst.rd,    RsRtRecipe.normal, ImmRecipe.sExt),
     /* ADDIU */ BitPat("b001001??????????????????????????") ->
-      List(true.B,  false.B, StoreMode.disable,  ALUOp.addu, false.B,  true.B,  BranchCond.none, JCond.j,   RegDst.rt, RsRtRecipe.normal, ImmRecipe.sExt),
+      List(true.B,  false.B, StoreMode.disable,  ALUOp.addu, false.B,  true.B,  BranchCond.none, JCond.j,  RegDst.rt,    RsRtRecipe.normal, ImmRecipe.sExt),
     /* SUB */ BitPat("b000000???????????????00000100010") ->
-      List(true.B,  false.B, StoreMode.disable,  ALUOp.sub,  false.B,  false.B, BranchCond.none, JCond.j,   RegDst.rd, RsRtRecipe.normal, ImmRecipe.sExt),
+      List(true.B,  false.B, StoreMode.disable,  ALUOp.sub,  false.B,  false.B, BranchCond.none, JCond.j,  RegDst.rd,    RsRtRecipe.normal, ImmRecipe.sExt),
     /* SUBU */ BitPat("b000000???????????????00000100011") ->
-      List(true.B,  false.B, StoreMode.disable,  ALUOp.subu, false.B,  false.B, BranchCond.none, JCond.j,   RegDst.rd, RsRtRecipe.normal, ImmRecipe.sExt),
+      List(true.B,  false.B, StoreMode.disable,  ALUOp.subu, false.B,  false.B, BranchCond.none, JCond.j,  RegDst.rd,    RsRtRecipe.normal, ImmRecipe.sExt),
     /** Branch and Jump Instructions **/
-    /* B */
-    /* BAL */
-    /* BEQ */
-    /* BGEZ */
-    /* BGEZAL */
-    /* BGTZ */
+    /* BEQ,B */ BitPat("b000100??????????????????????????") ->
+      List(false.B, false.B, StoreMode.disable,  ALUOp.none, false.B,  false.B, BranchCond.eq,   JCond.b,  RegDst.rd,    RsRtRecipe.normal, ImmRecipe.sExt),
+    /* BGEZ */ BitPat("b000001?????00001????????????????") ->
+      List(false.B, false.B, StoreMode.disable,  ALUOp.none, false.B,  false.B, BranchCond.gez,  JCond.b,  RegDst.rd,    RsRtRecipe.normal, ImmRecipe.sExt),
+    /* BGEZAL,BAL */ BitPat("b000001?????10001????????????????") ->
+      List(true.B,  false.B, StoreMode.disable,  ALUOp.none, false.B,  false.B, BranchCond.gez,  JCond.b,  RegDst.GPR31, RsRtRecipe.link,   ImmRecipe.sExt)
+    /* BGTZ */ //BitPat("b000111?????00000????????????????") ->
+      //List()
     /* BLEZ */
     /* BLTZ */
     /* BLTZAL */

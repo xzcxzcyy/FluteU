@@ -16,14 +16,16 @@ object CpuConfig extends WidthConfig with AmountConfig {
     val none = 0.U(branchCondWidth.W)
     val eq   = 1.U(branchCondWidth.W)
     val ge   = 2.U(branchCondWidth.W)
-    val geu  = 3.U(branchCondWidth.W)
-    val gt   = 4.U(branchCondWidth.W)
-    val gtu  = 5.U(branchCondWidth.W)
-    val le   = 6.U(branchCondWidth.W)
-    val leu  = 7.U(branchCondWidth.W)
-    val lt   = 8.U(branchCondWidth.W)
-    val ltu  = 9.U(branchCondWidth.W)
-    val ne   = 10.U(branchCondWidth.W)
+    val gez  = 3.U(branchCondWidth.W)
+    val geu  = 4.U(branchCondWidth.W)
+    val gt   = 5.U(branchCondWidth.W)
+    val gtz  = 6.U(branchCondWidth.W)
+    val gtu  = 7.U(branchCondWidth.W)
+    val le   = 8.U(branchCondWidth.W)
+    val leu  = 9.U(branchCondWidth.W)
+    val lt   = 10.U(branchCondWidth.W)
+    val ltu  = 11.U(branchCondWidth.W)
+    val ne   = 12.U(branchCondWidth.W)
   }
 
   object ALUOp {
@@ -56,13 +58,14 @@ object CpuConfig extends WidthConfig with AmountConfig {
 
   object JCond {
     val j   = 0.U(jCondWidth.W)
-    val jal = 1.U(jCondWidth.W)
-    val jr  = 2.U(jCondWidth.W)
+    val jr = 1.U(jCondWidth.W)
+    val b  = 2.U(jCondWidth.W)
   }
 
   object RegDst {
-    val rt = 0.B
-    val rd = 1.B
+    val rt = 0.U(regDstWidth.W)
+    val rd = 1.U(regDstWidth.W)
+    val GPR31 = 2.U(regDstWidth.W)
   }
 
   object RsRtRecipe {
