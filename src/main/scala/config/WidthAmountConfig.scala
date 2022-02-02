@@ -8,7 +8,7 @@ trait WidthConfig {
   val addrWidth       = 32
   val regAddrWidth    = 5
   val aluOpWidth      = 4
-  val branchCondWidth = Math.log2Up((new AmountConfig {}).branchCondAmount)
+  val branchCondWidth = Math.log2Up(new AmountConfig {}.branchCondAmount)
   val opcodeWidth     = 6
   val storeModeWidth  = 2
   val shamtWidth      = 5
@@ -24,5 +24,5 @@ trait AmountConfig {
 
   /** Supported branch conditions none eq ge geu gt gtu le leu lt ltu ne
     */
-  val branchCondAmount = 13
+  val branchCondAmount = 16
 }

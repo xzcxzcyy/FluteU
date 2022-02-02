@@ -22,10 +22,13 @@ object CpuConfig extends WidthConfig with AmountConfig {
     val gtz  = 6.U(branchCondWidth.W)
     val gtu  = 7.U(branchCondWidth.W)
     val le   = 8.U(branchCondWidth.W)
-    val leu  = 9.U(branchCondWidth.W)
-    val lt   = 10.U(branchCondWidth.W)
-    val ltu  = 11.U(branchCondWidth.W)
-    val ne   = 12.U(branchCondWidth.W)
+    val lez  = 9.U(branchCondWidth.W)
+    val leu  = 10.U(branchCondWidth.W)
+    val lt   = 11.U(branchCondWidth.W)
+    val ltz  = 12.U(branchCondWidth.W)
+    val ltu  = 13.U(branchCondWidth.W)
+    val ne   = 14.U(branchCondWidth.W)
+    val all  = 15.U(branchCondWidth.W)
   }
 
   object ALUOp {

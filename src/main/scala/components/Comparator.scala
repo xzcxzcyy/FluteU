@@ -28,5 +28,5 @@ class Comparator extends Module{
   io.flag.lessS := io.x.asSInt < io.y.asSInt
   io.flag.lessU := io.x.asUInt < io.y.asUInt
   io.branchSig.rsSignBit := io.x(dataWidth - 1).asBool
-  io.branchSig.rsGtz     := io.x(dataWidth - 1).asBool & (io.x =/= 0.asUInt(dataWidth.W))
+  io.branchSig.rsGtz     := !io.x(dataWidth - 1).asBool & (io.x =/= 0.asUInt(dataWidth.W))
 }

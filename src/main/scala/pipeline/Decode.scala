@@ -23,14 +23,17 @@ class Decode extends Module{
       BranchCond.gez  -> !comparator.io.branchSig.rsSignBit,
       BranchCond.geu  -> !comparator.io.flag.lessU,
       BranchCond.gt   -> !(comparator.io.flag.lessS | comparator.io.flag.equal),
-      BranchCond.gtz  -> !comparator.io.branchSig.rsGtz,
+      BranchCond.gtz  -> comparator.io.branchSig.rsGtz,
       BranchCond.gtu  -> !(comparator.io.flag.lessU | comparator.io.flag.equal),
       BranchCond.le   -> (comparator.io.flag.lessS | comparator.io.flag.equal),
+      BranchCond.lez  -> !comparator.io.branchSig.rsGtz,
       BranchCond.leu  -> (comparator.io.flag.lessU | comparator.io.flag.equal),
       BranchCond.lt   -> comparator.io.flag.lessS,
+      BranchCond.ltz  -> comparator.io.branchSig.rsSignBit,
       BranchCond.ltu  -> comparator.io.flag.lessU,
       BranchCond.ne   -> !comparator.io.flag.equal,
       BranchCond.none -> 0.B,
+      BranchCond.all  -> 1.B
     )
   )
 }
