@@ -2,7 +2,6 @@ package config
 
 import chisel3._
 
-
 object CpuConfig extends WidthConfig with AmountConfig {
 
   object StoreMode {
@@ -41,8 +40,8 @@ object CpuConfig extends WidthConfig with AmountConfig {
     val nor = 4.U(aluOpWidth.W)
     // Shift Ops
     /** Logical shift left: rd ← rt << shamt. Fills bits from right with zeros. Logical shift right:
-      * rd ← rt >> shamt. Fills bits from left with zeros. Arithmetic shift right: If rt is negative,
-      * the leading bits are filled in with ones instead of zeros: rd ← rt >> shamt.
+      * rd ← rt >> shamt. Fills bits from left with zeros. Arithmetic shift right: If rt is
+      * negative, the leading bits are filled in with ones instead of zeros: rd ← rt >> shamt.
       *
       * Mind the order of shift oprands.
       */
@@ -60,14 +59,14 @@ object CpuConfig extends WidthConfig with AmountConfig {
   }
 
   object JCond {
-    val j   = 0.U(jCondWidth.W)
+    val j  = 0.U(jCondWidth.W)
     val jr = 1.U(jCondWidth.W)
     val b  = 2.U(jCondWidth.W)
   }
 
   object RegDst {
-    val rt = 0.U(regDstWidth.W)
-    val rd = 1.U(regDstWidth.W)
+    val rt    = 0.U(regDstWidth.W)
+    val rd    = 1.U(regDstWidth.W)
     val GPR31 = 2.U(regDstWidth.W)
   }
 
@@ -81,5 +80,20 @@ object CpuConfig extends WidthConfig with AmountConfig {
     val sExt = 0.U(immRecipeWidth.W)
     val uExt = 1.U(immRecipeWidth.W)
     val lui  = 2.U(immRecipeWidth.W)
+  }
+
+  object IdRedirectChoice {
+    val none    = 0.U(idRedirectChoiceWidth.W)
+    val fromMem = 2.U(idRedirectChoiceWidth.W)
+    val fromWb  = 3.U(idRedirectChoiceWidth.W)
+  }
+
+  object RedirectExFwd {
+    val none = 0.U(redirectExFwdWidth.W)
+
+    // distance
+    val one   = 1.U(redirectExFwdWidth.W)
+    val two   = 2.U(redirectExFwdWidth.W)
+    val three = 3.U(redirectExFwdWidth.W)
   }
 }
