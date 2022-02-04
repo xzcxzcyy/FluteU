@@ -4,6 +4,11 @@ import chisel3._
 
 import config.CpuConfig._
 
+/**
+  * Addresses MUST be aligned to 4 bytes
+  * 
+  * @param content
+  */
 class MockCache(content: Seq[Long]) extends Module {
 
   val io = IO(new Bundle {
@@ -18,8 +23,8 @@ class MockCache(content: Seq[Long]) extends Module {
   val hardContent = content.map(e => e.U(dataWidth.W))
   val ram         = RegInit(VecInit(hardContent))
 
-  io.readData := ram(io.readAddr)
+  io.readData := ram(io.readAddr(31, 2))
   when (io.storeMode =/= StoreMode.disable) {
-    ram(io.writeAddr) := io.writeData
+    ram(io.writeAddr(31, 2)) := io.writeData
   }
 }
