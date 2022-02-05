@@ -87,7 +87,8 @@ class Controller extends Module {
     /* JR */ BitPat("b000000?????0000000000?????001000") ->
       List(false.B, false.B, StoreMode.disable,  ALUOp.none, false.B,  false.B, BranchCond.all,  JCond.jr, RegDst.rd,    RsRtRecipe.normal, ImmRecipe.sExt),
     /** Load, Store, and Memory Control Instructions **/
-    /* LB */
+    /* LB */ BitPat("b100000??????????????????????????") ->
+      List(true.B,  true.B,  StoreMode.disable,  ALUOp.add,  false.B,  true.B,  BranchCond.none, JCond.j,  RegDst.rt,    RsRtRecipe.normal, ImmRecipe.sExt),
     /* LBU */
     /* LH */
     /* LHU */
