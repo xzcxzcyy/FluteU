@@ -34,7 +34,7 @@ class Decode extends Module{
     mapping = Seq(
       RsRtRecipe.normal -> regFile.io.r1Data,
       RsRtRecipe.link   -> io.fromIf.pcplusfour,
-      RsRtRecipe.lui    ->
+      RsRtRecipe.lui    -> 0.U(dataWidth.W)
     )
   )
 
