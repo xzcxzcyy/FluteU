@@ -28,15 +28,26 @@ class Decode extends Module{
 
   regFile.io.r1Addr := io.fromIf.instruction(25, 21)  // rs
   regFile.io.r2Addr := io.fromIf.instruction(20, 16)  // rt
-  io.toEx.rs := regFile.io.r1Data
+  io.toEx.rs := MuxLookup(
+    key = controller.io.rsrtRecipe,
+    default = 0.B,
+    mapping = Seq(
+      RsRtRecipe.normal -> regFile.io.r1Data,
+      RsRtRecipe.link   -> io.fromIf.pcplusfour,
+      RsRtRecipe.lui    ->
+    )
+  )
+
+
+
   io.toEx.rt := regFile.io.r2Data
 
   io.toEx.writeRegAddr := MuxLookup(
     key = controller.io.regDst,
     default = 0.B,
     mapping = Seq(
-      RegDst.rt -> io.fromIf.instruction(20, 16),
-      RegDst.rd -> io.fromIf.instruction(15, 11),
+      RegDst.rt    -> io.fromIf.instruction(20, 16),
+      RegDst.rd    -> io.fromIf.instruction(15, 11),
       RegDst.GPR31 -> 31.U(regAddrWidth.W)
     )
   )
