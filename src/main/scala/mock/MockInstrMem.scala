@@ -16,6 +16,6 @@ class MockInstrMem(memoryFile: String = "") extends Module {
     loadMemoryFromFileInline(mem, memoryFile)
   }
   io.dataOut := mem(io.addr >> 2)
-  printf("Input is %d\n", io.addr)
+  printf("Input is %d\t", io.addr)
   printf("Output is %x\n", io.dataOut)
 }

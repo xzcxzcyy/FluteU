@@ -18,9 +18,9 @@ class Fetch extends Module{
         val toDecode = Output(new IfIdBundle)
     })
 
-    val pc = RegInit(0.U(instrWidth.W))  // for tmp, pc should be init to a start up
+    val pc = RegInit(0.U(instrWidth.W))  // for tmp, pc should be finally init to a start-up
 
-    val instrMem = new MockInstrMem("./test_data/mem.in")
+    val instrMem = Module(new MockInstrMem("./test_data/mem.in"))
 
     instrMem.io.addr := pc
     io.toDecode.instruction := instrMem.io.dataOut
