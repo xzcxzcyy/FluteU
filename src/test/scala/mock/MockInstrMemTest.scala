@@ -11,11 +11,31 @@ import config.CpuConfig._
 class MockInstrMemTest extends AnyFreeSpec with ChiselScalatestTester with Matchers {
   "Rom test" in {
     test(new MockInstrMem("./test_data/mem.in")) { c =>
-      for (i <- 0 to 32 by 4) {
-        c.io.addr.poke(i.U)
-        c.clock.step()
-      }
-      // c.io.dataOut.expect(0x55.U)
+      val step = () => c.clock.step()
+
+      c.io.addr.poke(0.U)
+      c.io.ready.expect(true.B)
+      c.io.dataOut.expect(0x55.U)
+
+      c.io.addr.poke(4.U)
+      c.io.ready.expect(false.B)
+
+      step()
+      c.io.ready.expect(true.B)
+      c.io.dataOut.expect(0xe5.U)
+
+      step()
+      step()
+
+      c.io.addr.poke(12.U)
+      c.io.ready.expect(false.B)
+
+      step()
+
+      c.io.ready.expect(true.B)
+      c.io.dataOut.expect(0x4.U)
+
+    // c.io.dataOut.expect(0x55.U)
     }
   }
 }
