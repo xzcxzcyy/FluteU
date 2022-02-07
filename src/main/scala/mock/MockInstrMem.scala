@@ -9,7 +9,7 @@ class MockInstrMem(memoryFile: String = "") extends Module {
   val io = IO(new Bundle {
     val addr    = Input(UInt(addrWidth.W))
     val dataOut = Output(UInt(width.W))
-    val ready   = Output(Bool())
+    val valid   = Output(Bool())
   })
 
   val mem  = SyncReadMem(1024, UInt(width.W))
@@ -22,7 +22,7 @@ class MockInstrMem(memoryFile: String = "") extends Module {
 
   val cut_addr = io.addr(31, 2)
 
-  io.ready := (cut_addr === addr)
+  io.valid := (cut_addr === addr)
 
   io.dataOut := mem(cut_addr)
   addr       := cut_addr

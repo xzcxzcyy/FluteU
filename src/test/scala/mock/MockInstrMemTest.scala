@@ -14,25 +14,25 @@ class MockInstrMemTest extends AnyFreeSpec with ChiselScalatestTester with Match
       val step = () => c.clock.step()
 
       c.io.addr.poke(0.U)
-      c.io.ready.expect(true.B)
+      c.io.valid.expect(true.B)
       c.io.dataOut.expect(0x55.U)
 
       c.io.addr.poke(4.U)
-      c.io.ready.expect(false.B)
+      c.io.valid.expect(false.B)
 
       step()
-      c.io.ready.expect(true.B)
+      c.io.valid.expect(true.B)
       c.io.dataOut.expect(0xe5.U)
 
       step()
       step()
 
       c.io.addr.poke(12.U)
-      c.io.ready.expect(false.B)
+      c.io.valid.expect(false.B)
 
       step()
 
-      c.io.ready.expect(true.B)
+      c.io.valid.expect(true.B)
       c.io.dataOut.expect(0x4.U)
 
     // c.io.dataOut.expect(0x55.U)
