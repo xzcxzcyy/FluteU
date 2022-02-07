@@ -12,8 +12,8 @@ class MockInstrMemTest extends AnyFreeSpec with ChiselScalatestTester with Match
   "Rom test" in {
     test(new MockInstrMem("./test_data/mem.in")) { c =>
       val step = () => c.clock.step()
-      var pc = 0.U
-      c.io.addr.poke(pc)
+
+      c.io.addr.poke(0.U)
       c.io.ready.expect(true.B)
       c.io.dataOut.expect(0x55.U)
 
