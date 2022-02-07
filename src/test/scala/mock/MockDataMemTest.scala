@@ -11,7 +11,9 @@ class MockDataMemTest extends AnyFreeSpec with ChiselScalatestTester with Matche
 
   "R-W-R Test" in {
     test(new MockDataMem("./test_data/mem.in")) { c =>
-      val step = () => c.clock.step()
+      def step(n: Int = 1) = {
+        c.clock.step(n)
+      }
 
       c.io.enable.poke(true.B)
 

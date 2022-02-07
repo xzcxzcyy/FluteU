@@ -27,7 +27,7 @@ class MockInstrMem(memoryFile: String = "") extends Module {
   io.dataOut := mem(cut_addr)
   addr       := cut_addr
 
-  printf("Input is %d\t", io.addr)
-  printf("dataOut is %x\t", io.dataOut)
-  printf("ready is %d\n", io.ready)
+  // printf("Input is %d\t", io.addr)
+  // printf("dataOut is %x\t", io.dataOut)
+  // printf("ready is %d\n", io.ready)
 }
