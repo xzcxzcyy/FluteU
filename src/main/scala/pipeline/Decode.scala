@@ -1,16 +1,21 @@
 package pipeline
 
+
+import Chisel.Cat
 import chisel3._
 import chisel3.util.MuxLookup
 import components.Comparator
 import components.Controller
 import components.RegFile
+import config.CpuConfig
 import config.CpuConfig._
 
 class Decode extends Module{
   val io = IO(new Bundle {
-    val fromIf = Input(new IfIdBundle)
-    val toEx = Output(new IdExBundle)
+    val fromIf      = Input(new IfIdBundle)
+    val toEx        = Output(new IdExBundle)
+    val branchTaken = Output(Bool())
+    val branchAddr  = Output(UInt(addrWidth.W))
   })
 
 
@@ -18,6 +23,7 @@ class Decode extends Module{
   val controller = Module(new Controller())
   val regFile    = Module(new RegFile())
 
+  // Controller
   controller.io.instruction := io.fromIf.instruction
   io.toEx.control.regWriteEn := controller.io.regWriteEn
   io.toEx.control.memToReg := controller.io.memToReg
@@ -26,25 +32,34 @@ class Decode extends Module{
   io.toEx.control.aluXFromShamt := controller.io.aluXFromShamt
   io.toEx.control.aluYFromImm := controller.io.aluYFromImm
 
+  // RegFile
+  val rsData = Wire(UInt(dataWidth.W))
+  val rtData = Wire(UInt(dataWidth.W))
   regFile.io.r1Addr := io.fromIf.instruction(25, 21)  // rs
   regFile.io.r2Addr := io.fromIf.instruction(20, 16)  // rt
-  io.toEx.rs := MuxLookup(
+  rsData := MuxLookup(
     key = controller.io.rsrtRecipe,
-    default = 0.B,
+    default = regFile.io.r1Data,
     mapping = Seq(
       RsRtRecipe.normal -> regFile.io.r1Data,
       RsRtRecipe.link   -> io.fromIf.pcplusfour,
       RsRtRecipe.lui    -> 0.U(dataWidth.W)
     )
   )
-
-
-
-  io.toEx.rt := regFile.io.r2Data
-
+  io.toEx.rs := rsData
+  rtData := MuxLookup(
+    key = controller.io.rsrtRecipe,
+    default = regFile.io.r2Data,
+    mapping = Seq(
+      RsRtRecipe.normal -> regFile.io.r2Data,
+      RsRtRecipe.link   -> 4.U(dataWidth.W),
+      RsRtRecipe.lui    -> 0.U(dataWidth.W)
+    )
+  )
+  io.toEx.rt := rtData
   io.toEx.writeRegAddr := MuxLookup(
     key = controller.io.regDst,
-    default = 0.B,
+    default = io.fromIf.instruction(15, 11),
     mapping = Seq(
       RegDst.rt    -> io.fromIf.instruction(20, 16),
       RegDst.rd    -> io.fromIf.instruction(15, 11),
@@ -52,7 +67,31 @@ class Decode extends Module{
     )
   )
 
-  val branchTaken = MuxLookup(
+  val extendedImm = Wire(UInt(dataWidth.W))
+  extendedImm := MuxLookup(
+    key = controller.io.immRecipe,
+    default = 0.U(dataWidth.W),
+    mapping = Seq(
+      ImmRecipe.sExt -> io.fromIf.instruction(15, 0),
+      ImmRecipe.uExt -> Cat(0.U(15.W), io.fromIf.instruction(15, 0)),
+      ImmRecipe.lui  -> Cat(io.fromIf.instruction(15, 0), 0.U(15.W))
+    )
+  )
+  io.toEx.immediate := extendedImm
+  io.branchAddr := MuxLookup(
+    key = controller.io.jCond,
+    default = Cat(extendedImm(29, 0), 0.U(2.W)) + io.fromIf.pcplusfour,
+    mapping = Seq(
+      JCond.j  -> Cat(io.fromIf.pcplusfour(31,28), io.fromIf.instruction(25,0), 0.U(2.W)),
+      JCond.jr -> rsData,
+      JCond.b  -> (Cat(extendedImm(29, 0), 0.U(2.W)) + io.fromIf.pcplusfour)
+    )
+  )
+
+  // Comparator, 分支判断
+  comparator.io.x := rsData
+  comparator.io.y := rtData
+  io.branchTaken := MuxLookup(
     key = controller.io.branchCond,
     default = 0.B,
     mapping = Seq(
