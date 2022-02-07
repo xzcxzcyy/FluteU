@@ -29,6 +29,7 @@ class Cache(
     * | `tagLen`  | `indexLen`  | `log2(bankAmount)`|     2     |
     */
 
+    /*
     val indexLen = log2Ceil(setAmount)
     val blockSize = bankAmount * dataWidth / 8
     val tagLen = addrWidth - indexLen - log2Ceil(blockSize)
@@ -43,4 +44,5 @@ class Cache(
     when (io.storeMode =/= StoreMode.disable) {
         ram(io.writeAddr(31, 2)) := io.writeData
     }
+    */
 }
