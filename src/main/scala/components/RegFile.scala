@@ -11,6 +11,8 @@ class RegFile extends Module {
   when (io.writeEnable & (io.writeAddr =/= 0.U(regAddrWidth.W))) {
     regfile(io.writeAddr) := io.writeData
   }
+
+  io.debug := regfile
 }
 
 class RegFileIO extends Bundle {
@@ -22,4 +24,6 @@ class RegFileIO extends Bundle {
   ///
   val r1Data = Output(UInt(dataWidth.W))
   val r2Data = Output(UInt(dataWidth.W))
+  ///
+  val debug = Output(Vec(regAmount, UInt(dataWidth.W)))
 }

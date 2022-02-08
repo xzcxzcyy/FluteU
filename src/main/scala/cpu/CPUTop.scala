@@ -49,4 +49,9 @@ class CPUTop extends Module {
   exmem.io.valid   := ~memStallReq
   memwb.io.valid   := ~memStallReq
   fetch.io.pcStall := memStallReq
+
+  ifid.io.flush  := 0.B
+  idex.io.flush  := 0.B
+  exmem.io.flush := 0.B
+  memwb.io.flush := 0.B
 }
