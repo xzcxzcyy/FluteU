@@ -12,10 +12,10 @@ class Fetch extends Module{
     val io = IO(new Bundle {
         val branchTaken = Input(Bool())
         val branchAddr = Input(UInt(addrWidth.W))
-
-        val pcEnable = Input(Bool())
+        val pcStall = Input(Bool())
 
         val toDecode = Output(new IfIdBundle)
+        val iMemStallReq = Output(Bool())
     })
 
     val pc = RegInit(0.U(instrWidth.W))  // for tmp, pc should be finally init to a start-up
@@ -23,17 +23,16 @@ class Fetch extends Module{
     val instrMem = Module(new MockInstrMem("./test_data/mem.in"))
 
     instrMem.io.addr := pc
+    io.iMemStallReq := !instrMem.io.valid
+    
+    val pcplusfour = pc + 4.U
+    io.toDecode.pcplusfour := pcplusfour
     io.toDecode.instruction := instrMem.io.dataOut
 
-    val pcplusfour = pc + 4.U
-
-    io.toDecode.pcplusfour := pcplusfour
-
-    when(io.pcEnable) {
+    when(!io.pcStall) {
         pc := Mux(io.branchTaken, io.branchAddr, pcplusfour)
     }.otherwise {
         pc := pc
     }
-
 
 }
