@@ -80,6 +80,12 @@ class Controller extends Module {
     /* SYNC */
     /** Move Instructions **/
     /** Shift Instructions **/
+    /* SLL */
+    /* SLLV */
+    /* SRA */
+    /* SRAV */
+    /* SRL */
+    /* SRLV */
     /** Trap Instructions **/
     /** No Operation **/
     /* NOP */

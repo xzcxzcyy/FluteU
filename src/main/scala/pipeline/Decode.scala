@@ -119,6 +119,7 @@ class Decode extends Module{
       BranchCond.all  -> 1.B
     )
   )
+
+  // Shamt
+  io.toEx.shamt := io.fromIf.instruction(10, 6)
 }
-
-
