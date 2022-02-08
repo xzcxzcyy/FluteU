@@ -85,4 +85,16 @@ class Controller extends Module {
     /* NOP */
     )
   )
+
+  io.regWriteEn := signals(0)
+  io.memToReg   := signals(1)
+  io.storeMode  := signals(2)
+  io.aluOp      := signals(3)
+  io.aluXFromShamt := signals(4)
+  io.aluYFromImm   := signals(5)
+  io.branchCond    := signals(6)
+  io.jCond         := signals(7)
+  io.regDst        := signals(8)
+  io.rsrtRecipe    := signals(9)
+  io.immRecipe     := signals(10)
 }
