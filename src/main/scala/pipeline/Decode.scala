@@ -12,10 +12,13 @@ import config.CpuConfig._
 
 class Decode extends Module{
   val io = IO(new Bundle {
-    val fromIf      = Input(new IfIdBundle)
-    val toEx        = Output(new IdExBundle)
-    val branchTaken = Output(Bool())
-    val branchAddr  = Output(UInt(addrWidth.W))
+    val fromIf        = Input(new IfIdBundle)
+    val writeBackAddr = Input(UInt(regAddrWidth.W))
+    val writeBackData = Input(UInt(dataWidth.W))
+    val writeBackEn   = Input(Bool())
+    val toEx          = Output(new IdExBundle)
+    val branchTaken   = Output(Bool())
+    val branchAddr    = Output(UInt(addrWidth.W))
   })
 
 
@@ -66,6 +69,9 @@ class Decode extends Module{
       RegDst.GPR31 -> 31.U(regAddrWidth.W)
     )
   )
+  regFile.io.writeEnable := io.writeBackEn
+  regFile.io.writeAddr := io.writeBackAddr
+  regFile.io.writeData := io.writeBackData
 
   val extendedImm = Wire(UInt(dataWidth.W))
   extendedImm := MuxLookup(
