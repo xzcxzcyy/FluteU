@@ -13,10 +13,13 @@ class CPUTopTest extends AnyFreeSpec with ChiselScalatestTester with Matchers {
   "alu port test" in {
     test(new CPUTop()) { u =>
       var array = (0 until regAmount).map(i => 0.U(dataWidth.W))
-      println(array)
-      // u.decode.regFile.io.debug.expect(Vec(regAmount, UInt(dataWidth.W)).Lit(array: _*))
-      u.decode.regFile.io.debug.expect(Vec.Lit(array: _*))
-      // array = array.updated(0, (0, 1.U))
+      def expect() = {
+        u.io.regfileDebug.expect(Vec.Lit(array: _*))
+      }
+      def update(i: Int, newValue: Long) = {
+        array = array.updated(i, newValue.U(dataWidth.W))
+      }
+      expect()
     }
   }
 }

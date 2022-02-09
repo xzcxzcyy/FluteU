@@ -19,12 +19,20 @@ class Decode extends Module{
     val toEx          = Output(new IdExBundle)
     val branchTaken   = Output(Bool())
     val branchAddr    = Output(UInt(addrWidth.W))
+
+    // DEBUG
+    val regfileDebug = Output(Vec(regAmount, UInt(dataWidth.W)))
+    // DEBUG
   })
 
 
   val comparator = Module(new Comparator())
   val controller = Module(new Controller())
   val regFile    = Module(new RegFile())
+
+  // DEBUG
+  io.regfileDebug := regFile.io.debug
+  // DEBUG
 
   // Controller
   controller.io.instruction := io.fromIf.instruction

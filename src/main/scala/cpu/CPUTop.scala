@@ -11,8 +11,12 @@ import pipeline.Execution
 import pipeline.MemoryAccess
 import pipeline.WriteBack
 
+import config.CpuConfig._
+
 class CPUTop extends Module {
-  val io = IO(new Bundle {})
+  val io = IO(new Bundle {
+    val regfileDebug = Output(Vec(regAmount, UInt(dataWidth.W)))
+  })
 
   val ifid  = Module(new IfIdStage)
   val idex  = Module(new IdExStage)
@@ -24,6 +28,8 @@ class CPUTop extends Module {
   val execution = Module(new Execution)
   val memAcc    = Module(new MemoryAccess)
   val writeBack = Module(new WriteBack)
+
+  io.regfileDebug := decode.io.regfileDebug
 
   ifid.io.in           := fetch.io.toDecode
   decode.io.fromIf     := ifid.io.data
