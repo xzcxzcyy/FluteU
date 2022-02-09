@@ -20,7 +20,7 @@ class Fetch extends Module{
 
     val pc = RegInit(0.U(instrWidth.W))  // for tmp, pc should be finally init to a start-up
 
-    val instrMem = Module(new MockInstrMem("./test_data/mem.in"))
+    val instrMem = Module(new MockInstrMem("./test_data/imem.in"))
 
     instrMem.io.addr := pc
     io.iMemStallReq := !instrMem.io.valid
