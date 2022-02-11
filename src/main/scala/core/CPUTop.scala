@@ -15,10 +15,10 @@ class CPUTop extends Module {
   val exmem = Module(new ExMemStage)
   val memwb = Module(new MemWbStage)
 
-  val fetch     = Module(new Fetch)
+  val fetch     = Module(new Fetch("test_data/imem.in"))
   val decode    = Module(new Decode)
   val execution = Module(new Execution)
-  val memAcc    = Module(new MemoryAccess)
+  val memAcc    = Module(new MemoryAccess("test_data/dmem.in"))
   val writeBack = Module(new WriteBack)
 
   io.regfileDebug := decode.io.regfileDebug

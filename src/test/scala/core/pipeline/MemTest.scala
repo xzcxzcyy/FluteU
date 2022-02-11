@@ -9,7 +9,7 @@ import core.pipeline.MemoryAccess
 
 class MemTest extends AnyFreeSpec with ChiselScalatestTester with Matchers {
   "Load test" in {
-    test(new MemoryAccess()) { c =>
+    test(new MemoryAccess("test_data/dmem.in")) { c =>
       c.io.fromEx.control.memToReg.poke(1.B)
       c.io.fromEx.control.regWriteEn.poke(1.B)
       c.io.fromEx.control.storeMode.poke(StoreMode.disable)
@@ -24,7 +24,7 @@ class MemTest extends AnyFreeSpec with ChiselScalatestTester with Matchers {
   }
 
   "Save test" in {
-    test(new MemoryAccess()) { c =>
+    test(new MemoryAccess("test_data/dmem.in")) { c =>
       c.io.fromEx.control.memToReg.poke(0.B)
       c.io.fromEx.control.regWriteEn.poke(0.B)
       c.io.fromEx.control.storeMode.poke(StoreMode.word)

@@ -5,7 +5,7 @@ import mock.MockDataMem
 import config.CpuConfig.StoreMode
 import core.pipeline.stagereg.{ExMemBundle, MemWbBundle}
 
-class MemoryAccess extends Module {
+class MemoryAccess(memFilePath: String) extends Module {
   val io = IO(new Bundle {
     val fromEx       = Input(new ExMemBundle())
     val toWb         = Output(new MemWbBundle())
@@ -17,7 +17,7 @@ class MemoryAccess extends Module {
   io.toWb.aluResult          := io.fromEx.aluResult
   io.toWb.writeRegAddr       := io.fromEx.writeRegAddr
 
-  val dMem = Module(new MockDataMem("test_data/dmem.in"))
+  val dMem = Module(new MockDataMem(memFilePath))
   dMem.io.addr        := io.fromEx.aluResult
   dMem.io.dataIn      := io.fromEx.memWriteData
   io.toWb.dataFromMem := dMem.io.dataOut

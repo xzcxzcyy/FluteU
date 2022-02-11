@@ -8,7 +8,7 @@ import org.scalatest.matchers.should.Matchers
 
 class FetchTest extends AnyFreeSpec with ChiselScalatestTester with Matchers {
   "No jump Test" in {
-    test(new Fetch()) { c =>
+    test(new Fetch("test_data/mem.in")) { c =>
       val step = () => c.clock.step()
 
       c.io.branchTaken.poke(false.B)
@@ -35,7 +35,7 @@ class FetchTest extends AnyFreeSpec with ChiselScalatestTester with Matchers {
   }
 
   "Jump Test" in {
-    test(new Fetch()) { c =>
+    test(new Fetch("test_data/mem.in")) { c =>
       val step = () => c.clock.step()
 
       c.io.pcStall.poke(false.B)

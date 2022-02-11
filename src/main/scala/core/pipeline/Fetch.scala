@@ -8,7 +8,7 @@ import core.pipeline.stagereg.IfIdBundle
 import mock.MockInstrMem
 
 
-class Fetch extends Module{
+class Fetch(memFilePath: String) extends Module{
     val io = IO(new Bundle {
         val branchTaken = Input(Bool())
         val branchAddr = Input(UInt(addrWidth.W))
@@ -20,7 +20,7 @@ class Fetch extends Module{
 
     val pc = RegInit(0.U(instrWidth.W))  // for tmp, pc should be finally init to a start-up
 
-    val instrMem = Module(new MockInstrMem("./test_data/imem.in"))
+    val instrMem = Module(new MockInstrMem(memFilePath))
 
     instrMem.io.addr := pc
     io.iMemStallReq := !instrMem.io.valid
