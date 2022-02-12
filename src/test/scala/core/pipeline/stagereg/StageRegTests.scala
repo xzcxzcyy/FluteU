@@ -6,6 +6,8 @@ import config.CpuConfig._
 import org.scalatest.freespec.AnyFreeSpec
 import org.scalatest.matchers.should.Matchers
 
+import core.components.ALUOp
+
 class StageRegTests extends AnyFreeSpec with ChiselScalatestTester with Matchers {
   "IF/ID Stage Test" in {
     test(new IfIdStage()) { s =>
@@ -43,7 +45,7 @@ class StageRegTests extends AnyFreeSpec with ChiselScalatestTester with Matchers
       val io   = s.io
       io.flush.poke(1.B)
       s.clock.step()
-      data.control.aluOp.expect(0.U(aluOpWidth.W))
+      data.control.aluOp.expect(0.U(ALUOp.width.W))
       data.control.aluYFromImm.expect(0.B)
       data.immediate.expect(0.U)
       io.in.control.aluOp.poke(1.U)

@@ -12,7 +12,7 @@ class Controller extends Module {
     val regWriteEn    = Output(Bool())
     val memToReg      = Output(Bool())
     val storeMode     = Output(UInt(storeModeWidth.W))
-    val aluOp         = Output(UInt(aluOpWidth.W))
+    val aluOp         = Output(UInt(ALUOp.width.W))
     val aluXFromShamt = Output(Bool())
     val aluYFromImm   = Output(Bool())
 

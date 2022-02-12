@@ -14,7 +14,7 @@ object CpuConfig {
   val dataWidth       = 32
   val addrWidth       = 32
   val regAddrWidth    = 5
-  val aluOpWidth      = 4
+  // val aluOpWidth      = 4
   val branchCondWidth = log2Up(branchCondAmount)
   val opcodeWidth     = 6
   val storeModeWidth  = 2

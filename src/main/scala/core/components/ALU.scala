@@ -14,7 +14,7 @@ class ALU extends Module {
   }
 
   val io = IO(new Bundle {
-    val aluOp  = Input(UInt(aluOpWidth.W))
+    val aluOp  = Input(UInt(ALUOp.width.W))
     val x      = Input(UInt(dataWidth.W))
     val y      = Input(UInt(dataWidth.W))
     val result = Output(UInt(dataWidth.W))
@@ -62,13 +62,15 @@ class ALU extends Module {
 }
 
 object ALUOp {
+  val width = 4
+
   // Empty Op
-  val none = 0.U(aluOpWidth.W)
+  val none = 0.U(ALUOp.width.W)
   // Bitwise Ops
-  val and = 1.U(aluOpWidth.W)
-  val or  = 2.U(aluOpWidth.W)
-  val xor = 3.U(aluOpWidth.W)
-  val nor = 4.U(aluOpWidth.W)
+  val and = 1.U(ALUOp.width.W)
+  val or  = 2.U(ALUOp.width.W)
+  val xor = 3.U(ALUOp.width.W)
+  val nor = 4.U(ALUOp.width.W)
   // Shift Ops
   /** Logical shift left: rd ← rt << shamt. Fills bits from right with zeros. Logical shift right:
     * rd ← rt >> shamt. Fills bits from left with zeros. Arithmetic shift right: If rt is
@@ -76,15 +78,15 @@ object ALUOp {
     *
     * Mind the order of shift oprands.
     */
-  val sll = 5.U(aluOpWidth.W) // shift left  logically
-  val srl = 6.U(aluOpWidth.W) // shift right logically
-  val sra = 7.U(aluOpWidth.W) // shift right arithmetically
+  val sll = 5.U(ALUOp.width.W) // shift left  logically
+  val srl = 6.U(ALUOp.width.W) // shift right logically
+  val sra = 7.U(ALUOp.width.W) // shift right arithmetically
   // Set Ops
-  val slt  = 8.U(aluOpWidth.W) // set less than (signed)
-  val sltu = 9.U(aluOpWidth.W) // set less than (unsigned)
+  val slt  = 8.U(ALUOp.width.W) // set less than (signed)
+  val sltu = 9.U(ALUOp.width.W) // set less than (unsigned)
   // Sub and Add Ops
-  val add  = 10.U(aluOpWidth.W)
-  val sub  = 11.U(aluOpWidth.W)
-  val addu = 12.U(aluOpWidth.W)
-  val subu = 13.U(aluOpWidth.W)
+  val add  = 10.U(ALUOp.width.W)
+  val sub  = 11.U(ALUOp.width.W)
+  val addu = 12.U(ALUOp.width.W)
+  val subu = 13.U(ALUOp.width.W)
 }
