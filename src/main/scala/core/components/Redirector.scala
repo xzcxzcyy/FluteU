@@ -3,10 +3,44 @@ package core.components
 import chisel3._
 import config.CpuConfig._
 import config.BasicInstructions
+import chisel3.util.BitPat
 
-// private object instr extends BasicInstructions {
-//   private def combine()
-// }
+private object instr extends BasicInstructions {
+  private def combine(s: Seq[BitPat])(instruction: UInt) = {
+    assert(instruction.getWidth == instrWidth)
+    s.foldLeft(0.B)((res, bitpat) => res || (instruction === bitpat))
+  }
+
+  def isBranchTwoOprand = combine(
+    Seq(
+      BEQ,
+      BNE,
+    )
+  ) _
+
+  def isBranchOneOprand = combine(
+    Seq(
+      BGEZ,
+      BGTZ,
+      BLEZ,
+      BLTZ,
+      BGEZAL,
+      BLTZAL,
+      JR,
+      JALR,
+    )
+  ) _
+}
+
+class InstrMatchTester extends Module {
+  val io = IO(new Bundle {
+    val instruction       = Input(UInt(instrWidth.W))
+    val isBranchTwoOprand = Output(Bool())
+    val isBranchOneOprand = Output(Bool())
+  })
+  io.isBranchOneOprand := instr.isBranchOneOprand(io.instruction)
+  io.isBranchTwoOprand := instr.isBranchTwoOprand(io.instruction)
+}
 
 class Redirector extends Module {
   class IdIO extends Bundle {
