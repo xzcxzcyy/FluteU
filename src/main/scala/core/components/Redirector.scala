@@ -42,13 +42,28 @@ class InstrMatchTester extends Module {
   io.isBranchTwoOprand := instr.isBranchTwoOprand(io.instruction)
 }
 
+object IdFwd {
+  val none    = 0.U(idFwdWidth.W)
+  val fromMem = 2.U(idFwdWidth.W)
+  val fromWb  = 3.U(idFwdWidth.W)
+}
+
+object ExFwd {
+  val none = 0.U(exFwdWidth.W)
+
+  // distance
+  val one   = 1.U(exFwdWidth.W)
+  val two   = 2.U(exFwdWidth.W)
+  val three = 3.U(exFwdWidth.W)
+}
+
 class Redirector extends Module {
   class IdIO extends Bundle {
     val instruction = Input(UInt(dataWidth.W))
-    val idRsChoice  = Output(UInt(idRedirectChoiceWidth.W))
-    val idRtChoice  = Output(UInt(idRedirectChoiceWidth.W))
-    val rsFwd       = Output(UInt(redirectExFwdWidth.W))
-    val rtFwd       = Output(UInt(redirectExFwdWidth.W))
+    val idRsChoice  = Output(UInt(idFwdWidth.W))
+    val idRtChoice  = Output(UInt(idFwdWidth.W))
+    val rsFwd       = Output(UInt(exFwdWidth.W))
+    val rtFwd       = Output(UInt(exFwdWidth.W))
   }
 
   class ExIO extends Bundle {

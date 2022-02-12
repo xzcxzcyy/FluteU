@@ -2,20 +2,29 @@ package config
 
 import chisel3._
 
-object CpuConfig extends WidthConfig with AmountConfig {
+import fluteutil.Math
 
-  object IdRedirectChoice {
-    val none    = 0.U(idRedirectChoiceWidth.W)
-    val fromMem = 2.U(idRedirectChoiceWidth.W)
-    val fromWb  = 3.U(idRedirectChoiceWidth.W)
-  }
+object CpuConfig {
+  /// amount ///
+  val regAmount = 32
+  // Supported branch conditions: none eq ge geu gt gtu le leu lt ltu ne
+  val branchCondAmount = 16  
 
-  object RedirectExFwd {
-    val none = 0.U(redirectExFwdWidth.W)
-
-    // distance
-    val one   = 1.U(redirectExFwdWidth.W)
-    val two   = 2.U(redirectExFwdWidth.W)
-    val three = 3.U(redirectExFwdWidth.W)
-  }
+  /// width ///
+  val instrWidth      = 32
+  val dataWidth       = 32
+  val addrWidth       = 32
+  val regAddrWidth    = 5
+  val aluOpWidth      = 4
+  val branchCondWidth = Math.log2Up(branchCondAmount)
+  val opcodeWidth     = 6
+  val storeModeWidth  = 2
+  val shamtWidth      = 5
+  val iTypeImmWidth   = 16
+  val jCondWidth      = 2
+  val regDstWidth     = 2
+  val rsrtRecipeWidth = 2
+  val immRecipeWidth  = 2
+  val idFwdWidth      = 2
+  val exFwdWidth      = 2
 }
