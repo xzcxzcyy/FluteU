@@ -1,12 +1,9 @@
 package core.components
 
 import chisel3._
-import chisel3.util.BitPat
 import chisel3.util.ListLookup
 import config.CpuConfig._
 import config.Instructions._
-
-
 
 class Controller extends Module {
   val io = IO(new Bundle {
@@ -103,4 +100,54 @@ class Controller extends Module {
   io.regDst        := signals(8)
   io.rsrtRecipe    := signals(9)
   io.immRecipe     := signals(10)
+}
+
+object StoreMode {
+  val disable  = 0.U(storeModeWidth.W)
+  val word     = 1.U(storeModeWidth.W)
+  val byte     = 2.U(storeModeWidth.W)
+  val halfword = 3.U(storeModeWidth.W)
+}
+
+object BranchCond {
+  val none = 0.U(branchCondWidth.W)
+  val eq   = 1.U(branchCondWidth.W)
+  val ge   = 2.U(branchCondWidth.W)
+  val gez  = 3.U(branchCondWidth.W)
+  val geu  = 4.U(branchCondWidth.W)
+  val gt   = 5.U(branchCondWidth.W)
+  val gtz  = 6.U(branchCondWidth.W)
+  val gtu  = 7.U(branchCondWidth.W)
+  val le   = 8.U(branchCondWidth.W)
+  val lez  = 9.U(branchCondWidth.W)
+  val leu  = 10.U(branchCondWidth.W)
+  val lt   = 11.U(branchCondWidth.W)
+  val ltz  = 12.U(branchCondWidth.W)
+  val ltu  = 13.U(branchCondWidth.W)
+  val ne   = 14.U(branchCondWidth.W)
+  val all  = 15.U(branchCondWidth.W)
+}
+
+object JCond {
+  val j  = 0.U(jCondWidth.W)
+  val jr = 1.U(jCondWidth.W)
+  val b  = 2.U(jCondWidth.W)
+}
+
+object RegDst {
+  val rt    = 0.U(regDstWidth.W)
+  val rd    = 1.U(regDstWidth.W)
+  val GPR31 = 2.U(regDstWidth.W)
+}
+
+object RsRtRecipe {
+  val normal = 0.U(rsrtRecipeWidth.W)
+  val link   = 1.U(rsrtRecipeWidth.W)
+  val lui    = 2.U(rsrtRecipeWidth.W)
+}
+
+object ImmRecipe {
+  val sExt = 0.U(immRecipeWidth.W)
+  val uExt = 1.U(immRecipeWidth.W)
+  val lui  = 2.U(immRecipeWidth.W)
 }

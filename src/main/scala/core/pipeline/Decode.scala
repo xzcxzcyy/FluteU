@@ -3,7 +3,6 @@ package core.pipeline
 import Chisel.Cat
 import chisel3._
 import chisel3.util.MuxLookup
-import config.CpuConfig
 import config.CpuConfig._
 import core.components.{Comparator, Controller, RegFile}
 import core.pipeline.stagereg.{IdExBundle, IfIdBundle}
