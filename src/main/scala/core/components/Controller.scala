@@ -4,23 +4,24 @@ import chisel3._
 import chisel3.util.ListLookup
 import config.CpuConfig._
 import config.Instructions._
+import chisel3.util.log2Up
 
 class Controller extends Module {
   val io = IO(new Bundle {
-    val instruction   = Input(UInt(instrWidth.W))
+    val instruction = Input(UInt(instrWidth.W))
 
     val regWriteEn    = Output(Bool())
     val memToReg      = Output(Bool())
-    val storeMode     = Output(UInt(storeModeWidth.W))
+    val storeMode     = Output(UInt(StoreMode.width.W))
     val aluOp         = Output(UInt(ALUOp.width.W))
     val aluXFromShamt = Output(Bool())
     val aluYFromImm   = Output(Bool())
 
-    val branchCond    = Output(UInt(branchCondWidth.W))
-    val jCond         = Output(UInt(jCondWidth.W))
-    val regDst        = Output(Bool())
-    val rsrtRecipe    = Output(UInt(rsrtRecipeWidth.W))
-    val immRecipe     = Output(UInt(immRecipeWidth.W))
+    val branchCond = Output(UInt(BranchCond.width.W))
+    val jCond      = Output(UInt(JCond.width.W))
+    val regDst     = Output(Bool())
+    val rsrtRecipe = Output(UInt(rsrtRecipeWidth.W))
+    val immRecipe  = Output(UInt(immRecipeWidth.W))
   })
 
   // @formatter:off
@@ -103,35 +104,41 @@ class Controller extends Module {
 }
 
 object StoreMode {
-  val disable  = 0.U(storeModeWidth.W)
-  val word     = 1.U(storeModeWidth.W)
-  val byte     = 2.U(storeModeWidth.W)
-  val halfword = 3.U(storeModeWidth.W)
+  val width  = 2
+
+  val disable  = 0.U(width.W)
+  val word     = 1.U(width.W)
+  val byte     = 2.U(width.W)
+  val halfword = 3.U(width.W)
 }
 
 object BranchCond {
-  val none = 0.U(branchCondWidth.W)
-  val eq   = 1.U(branchCondWidth.W)
-  val ge   = 2.U(branchCondWidth.W)
-  val gez  = 3.U(branchCondWidth.W)
-  val geu  = 4.U(branchCondWidth.W)
-  val gt   = 5.U(branchCondWidth.W)
-  val gtz  = 6.U(branchCondWidth.W)
-  val gtu  = 7.U(branchCondWidth.W)
-  val le   = 8.U(branchCondWidth.W)
-  val lez  = 9.U(branchCondWidth.W)
-  val leu  = 10.U(branchCondWidth.W)
-  val lt   = 11.U(branchCondWidth.W)
-  val ltz  = 12.U(branchCondWidth.W)
-  val ltu  = 13.U(branchCondWidth.W)
-  val ne   = 14.U(branchCondWidth.W)
-  val all  = 15.U(branchCondWidth.W)
+  val amount = 16
+  val width = log2Up(amount)
+
+  val none = 0.U(width.W)
+  val eq   = 1.U(width.W)
+  val ge   = 2.U(width.W)
+  val gez  = 3.U(width.W)
+  val geu  = 4.U(width.W)
+  val gt   = 5.U(width.W)
+  val gtz  = 6.U(width.W)
+  val gtu  = 7.U(width.W)
+  val le   = 8.U(width.W)
+  val lez  = 9.U(width.W)
+  val leu  = 10.U(width.W)
+  val lt   = 11.U(width.W)
+  val ltz  = 12.U(width.W)
+  val ltu  = 13.U(width.W)
+  val ne   = 14.U(width.W)
+  val all  = 15.U(width.W)
 }
 
 object JCond {
-  val j  = 0.U(jCondWidth.W)
-  val jr = 1.U(jCondWidth.W)
-  val b  = 2.U(jCondWidth.W)
+  val width = 2
+  val j  = 0.U(width.W)
+  val jr = 1.U(width.W)
+  val b  = 2.U(width.W)
 }
 
 object RegDst {

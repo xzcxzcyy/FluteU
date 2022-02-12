@@ -7,7 +7,7 @@ object CpuConfig {
   /// amount ///
   val regAmount = 32
   // Supported branch conditions: none eq ge geu gt gtu le leu lt ltu ne
-  val branchCondAmount = 16  
+  // val branchCondAmount = 16  
 
   /// width ///
   val instrWidth      = 32
@@ -15,12 +15,12 @@ object CpuConfig {
   val addrWidth       = 32
   val regAddrWidth    = 5
   // val aluOpWidth      = 4
-  val branchCondWidth = log2Up(branchCondAmount)
+  // val branchCondWidth = log2Up(branchCondAmount)
   val opcodeWidth     = 6
-  val storeModeWidth  = 2
+  // val storeModeWidth  = 2
   val shamtWidth      = 5
   val iTypeImmWidth   = 16
-  val jCondWidth      = 2
+  // val jCondWidth      = 2
   val regDstWidth     = 2
   val rsrtRecipeWidth = 2
   val immRecipeWidth  = 2

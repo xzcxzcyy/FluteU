@@ -2,7 +2,7 @@ package core.pipeline.stagereg
 
 import chisel3._
 import config.CpuConfig._
-import core.components.ALUOp
+import core.components.{ALUOp, StoreMode}
 
 class IdExStage extends StageReg(new IdExBundle) {}
 
@@ -10,7 +10,7 @@ class IdExBundle extends Bundle {
   class ControlBundle extends Bundle {
     val regWriteEn    = Bool()
     val memToReg      = Bool()
-    val storeMode     = UInt(storeModeWidth.W)
+    val storeMode     = UInt(StoreMode.width.W)
     val aluOp         = UInt(ALUOp.width.W)
     val aluYFromImm   = Bool()
     val aluXFromShamt = Bool()

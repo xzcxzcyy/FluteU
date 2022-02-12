@@ -2,13 +2,14 @@ package core.pipeline.stagereg
 
 import chisel3._
 import config.CpuConfig._
+import core.components.StoreMode
 
 class ExMemBundle extends Bundle {
 
   class ControlBundle extends Bundle {
     val regWriteEn = Bool()
     val memToReg = Bool()
-    val storeMode = UInt(storeModeWidth.W)
+    val storeMode = UInt(StoreMode.width.W)
   }
 
   val control = new ControlBundle

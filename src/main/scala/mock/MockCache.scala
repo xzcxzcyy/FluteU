@@ -14,7 +14,7 @@ class MockCache(content: Seq[Long]) extends Module {
   val io = IO(new Bundle {
     val readAddr  = Input(UInt(addrWidth.W))
     val writeAddr = Input(UInt(addrWidth.W))
-    val storeMode = Input(UInt(storeModeWidth.W))
+    val storeMode = Input(UInt(StoreMode.width.W))
     val readData  = Output(UInt(dataWidth.W))
     val writeData = Input(UInt(dataWidth.W))
   })

@@ -3,6 +3,7 @@ package cache
 import chisel3._
 
 import config.CpuConfig._
+import core.components.StoreMode
 
 // no statemachine, no axi, no 
 /**
@@ -20,7 +21,7 @@ class Cache(
     val io = IO(new Bundle {
         val readAddr  = Input(UInt(addrWidth.W))
         val writeAddr = Input(UInt(addrWidth.W))
-        val storeMode = Input(UInt(storeModeWidth.W))
+        val storeMode = Input(UInt(StoreMode.width.W))
         val readData  = Output(UInt(dataWidth.W))
         val writeData = Input(UInt(dataWidth.W))
     })
