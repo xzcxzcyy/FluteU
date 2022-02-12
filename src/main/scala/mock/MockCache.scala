@@ -1,8 +1,8 @@
 package mock
 
 import chisel3._
-
 import config.CpuConfig._
+import core.components.StoreMode
 
 /**
   * Addresses MUST be aligned to 4 bytes

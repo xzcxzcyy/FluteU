@@ -2,7 +2,7 @@ package core.pipeline
 
 import chisel3._
 import mock.MockDataMem
-import config.CpuConfig.StoreMode
+import core.components.StoreMode
 import core.pipeline.stagereg.{ExMemBundle, MemWbBundle}
 
 class MemoryAccess(memFilePath: String) extends Module {

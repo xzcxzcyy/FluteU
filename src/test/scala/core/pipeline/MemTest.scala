@@ -4,7 +4,7 @@ import chisel3._
 import chiseltest._
 import org.scalatest.freespec.AnyFreeSpec
 import org.scalatest.matchers.should.Matchers
-import config.CpuConfig.StoreMode
+import core.components.StoreMode
 import core.pipeline.MemoryAccess
 
 class MemTest extends AnyFreeSpec with ChiselScalatestTester with Matchers {

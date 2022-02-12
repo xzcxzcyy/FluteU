@@ -6,6 +6,7 @@ import org.scalatest.freespec.AnyFreeSpec
 import org.scalatest.matchers.should.Matchers
 import PokeExpect.{Expect, Poke}
 import config.CpuConfig._
+import core.components.ALUOp
 import core.pipeline.Execution
 import fluteutil.BitMode.fromIntToBitModeLong
 

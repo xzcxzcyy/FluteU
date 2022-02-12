@@ -4,7 +4,7 @@ import Chisel.Cat
 import chisel3._
 import chisel3.util.MuxLookup
 import config.CpuConfig._
-import core.components.{Comparator, Controller, RegFile}
+import core.components._
 import core.pipeline.stagereg.{IdExBundle, IfIdBundle}
 
 class Decode extends Module{
