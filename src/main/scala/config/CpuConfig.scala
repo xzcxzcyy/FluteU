@@ -1,8 +1,7 @@
 package config
 
 import chisel3._
-
-import fluteutil.Math
+import chisel3.util.log2Up
 
 object CpuConfig {
   /// amount ///
@@ -16,7 +15,7 @@ object CpuConfig {
   val addrWidth       = 32
   val regAddrWidth    = 5
   val aluOpWidth      = 4
-  val branchCondWidth = Math.log2Up(branchCondAmount)
+  val branchCondWidth = log2Up(branchCondAmount)
   val opcodeWidth     = 6
   val storeModeWidth  = 2
   val shamtWidth      = 5
