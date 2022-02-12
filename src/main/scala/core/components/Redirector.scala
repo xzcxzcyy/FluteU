@@ -2,6 +2,11 @@ package core.components
 
 import chisel3._
 import config.CpuConfig._
+import config.BasicInstructions
+
+// private object instr extends BasicInstructions {
+//   private def combine()
+// }
 
 class Redirector extends Module {
   class IdIO extends Bundle {
