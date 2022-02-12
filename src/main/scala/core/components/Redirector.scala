@@ -43,27 +43,31 @@ class InstrMatchTester extends Module {
 }
 
 object IdFwd {
-  val none    = 0.U(idFwdWidth.W)
-  val fromMem = 2.U(idFwdWidth.W)
-  val fromWb  = 3.U(idFwdWidth.W)
+  val width = 2
+
+  val none    = 0.U(width.W)
+  val fromMem = 2.U(width.W)
+  val fromWb  = 3.U(width.W)
 }
 
 object ExFwd {
-  val none = 0.U(exFwdWidth.W)
+  val width = 2
+
+  val none = 0.U(width.W)
 
   // distance
-  val one   = 1.U(exFwdWidth.W)
-  val two   = 2.U(exFwdWidth.W)
-  val three = 3.U(exFwdWidth.W)
+  val one   = 1.U(width.W)
+  val two   = 2.U(width.W)
+  val three = 3.U(width.W)
 }
 
 class Redirector extends Module {
   class IdIO extends Bundle {
     val instruction = Input(UInt(dataWidth.W))
-    val idRsChoice  = Output(UInt(idFwdWidth.W))
-    val idRtChoice  = Output(UInt(idFwdWidth.W))
-    val rsFwd       = Output(UInt(exFwdWidth.W))
-    val rtFwd       = Output(UInt(exFwdWidth.W))
+    val idRsChoice  = Output(UInt(IdFwd.width.W))
+    val idRtChoice  = Output(UInt(IdFwd.width.W))
+    val rsFwd       = Output(UInt(ExFwd.width.W))
+    val rtFwd       = Output(UInt(ExFwd.width.W))
   }
 
   class ExIO extends Bundle {

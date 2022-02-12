@@ -20,8 +20,8 @@ class Controller extends Module {
     val branchCond = Output(UInt(BranchCond.width.W))
     val jCond      = Output(UInt(JCond.width.W))
     val regDst     = Output(Bool())
-    val rsrtRecipe = Output(UInt(rsrtRecipeWidth.W))
-    val immRecipe  = Output(UInt(immRecipeWidth.W))
+    val rsrtRecipe = Output(UInt(RsRtRecipe.width.W))
+    val immRecipe  = Output(UInt(ImmRecipe.width.W))
   })
 
   // @formatter:off
@@ -142,19 +142,25 @@ object JCond {
 }
 
 object RegDst {
-  val rt    = 0.U(regDstWidth.W)
-  val rd    = 1.U(regDstWidth.W)
-  val GPR31 = 2.U(regDstWidth.W)
+  val width = 2
+
+  val rt    = 0.U(width.W)
+  val rd    = 1.U(width.W)
+  val GPR31 = 2.U(width.W)
 }
 
 object RsRtRecipe {
-  val normal = 0.U(rsrtRecipeWidth.W)
-  val link   = 1.U(rsrtRecipeWidth.W)
-  val lui    = 2.U(rsrtRecipeWidth.W)
+  val width = 2
+
+  val normal = 0.U(width.W)
+  val link   = 1.U(width.W)
+  val lui    = 2.U(width.W)
 }
 
 object ImmRecipe {
-  val sExt = 0.U(immRecipeWidth.W)
-  val uExt = 1.U(immRecipeWidth.W)
-  val lui  = 2.U(immRecipeWidth.W)
+  val width = 2
+
+  val sExt = 0.U(width.W)
+  val uExt = 1.U(width.W)
+  val lui  = 2.U(width.W)
 }

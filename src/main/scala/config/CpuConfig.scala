@@ -21,9 +21,9 @@ object CpuConfig {
   val shamtWidth      = 5
   val iTypeImmWidth   = 16
   // val jCondWidth      = 2
-  val regDstWidth     = 2
-  val rsrtRecipeWidth = 2
-  val immRecipeWidth  = 2
-  val idFwdWidth      = 2
-  val exFwdWidth      = 2
+  // val regDstWidth     = 2
+  // val rsrtRecipeWidth = 2
+  // val immRecipeWidth  = 2
+  // val idFwdWidth      = 2
+  // val exFwdWidth      = 2
 }
