@@ -19,7 +19,7 @@ class Controller extends Module {
 
     val branchCond = Output(UInt(BranchCond.width.W))
     val jCond      = Output(UInt(JCond.width.W))
-    val regDst     = Output(Bool())
+    val regDst     = Output(UInt(RegDst.width.W))
     val rsrtRecipe = Output(UInt(RsRtRecipe.width.W))
     val immRecipe  = Output(UInt(ImmRecipe.width.W))
   })
