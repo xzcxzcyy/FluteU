@@ -26,7 +26,7 @@ class Controller extends Module {
 
   // @formatter:off
   val signals = ListLookup(io.instruction,
-            // regWriteEn, memToReg, storeMode,          aluOp,  aluXFromShamt,aluYFromImm, branchCond,   jCond,    regDst       RsRtRecipe         ImmRecipe
+            // regWriteEn, memToReg, storeMode,          aluOp,  aluXFromShamt,aluYFromImm, branchCond,   jCond,    regDst       rsrtRecipe         immRecipe
     /*default*/
               List(false.B, false.B, StoreMode.disable,  ALUOp.none, false.B,  false.B, BranchCond.none, JCond.j,  RegDst.rd,    RsRtRecipe.normal, ImmRecipe.sExt),
     Array(
@@ -46,6 +46,10 @@ class Controller extends Module {
     ADDIU  -> List(true.B,  false.B, StoreMode.disable,  ALUOp.addu, false.B,  true.B,  BranchCond.none, JCond.j,  RegDst.rt,    RsRtRecipe.normal, ImmRecipe.sExt),
     SUB    -> List(true.B,  false.B, StoreMode.disable,  ALUOp.sub,  false.B,  false.B, BranchCond.none, JCond.j,  RegDst.rd,    RsRtRecipe.normal, ImmRecipe.sExt),
     SUBU   -> List(true.B,  false.B, StoreMode.disable,  ALUOp.subu, false.B,  false.B, BranchCond.none, JCond.j,  RegDst.rd,    RsRtRecipe.normal, ImmRecipe.sExt),
+    SLT    -> List(true.B,  false.B, StoreMode.disable,  ALUOp.slt,  false.B,  false.B, BranchCond.none, JCond.j,  RegDst.rd,    RsRtRecipe.normal, ImmRecipe.sExt),
+    SLTI   -> List(true.B,  false.B, StoreMode.disable,  ALUOp.slt,  false.B,  true.B,  BranchCond.none, JCond.j,  RegDst.rt,    RsRtRecipe.normal, ImmRecipe.sExt),
+    SLTU   -> List(true.B,  false.B, StoreMode.disable,  ALUOp.sltu, false.B,  false.B, BranchCond.none, JCond.j,  RegDst.rd,    RsRtRecipe.normal, ImmRecipe.sExt),
+    SLTIU  -> List(true.B,  false.B, StoreMode.disable,  ALUOp.sltu, false.B,  true.B,  BranchCond.none, JCond.j,  RegDst.rt,    RsRtRecipe.normal, ImmRecipe.sExt),
     /** Branch and Jump Instructions **/
     BEQ    -> List(false.B, false.B, StoreMode.disable,  ALUOp.none, false.B,  false.B, BranchCond.eq,   JCond.b,  RegDst.rd,    RsRtRecipe.normal, ImmRecipe.sExt),
     BGEZ   -> List(false.B, false.B, StoreMode.disable,  ALUOp.none, false.B,  false.B, BranchCond.gez,  JCond.b,  RegDst.rd,    RsRtRecipe.normal, ImmRecipe.sExt),
@@ -60,33 +64,37 @@ class Controller extends Module {
     JALR   -> List(true.B,  false.B, StoreMode.disable,  ALUOp.none, false.B,  false.B, BranchCond.all,  JCond.jr, RegDst.rd,    RsRtRecipe.link,   ImmRecipe.sExt),
     JR     -> List(false.B, false.B, StoreMode.disable,  ALUOp.none, false.B,  false.B, BranchCond.all,  JCond.jr, RegDst.rd,    RsRtRecipe.normal, ImmRecipe.sExt),
     /** Load, Store, and Memory Control Instructions **/
-    LB     -> List(true.B,  true.B,  StoreMode.disable,  ALUOp.add,  false.B,  true.B,  BranchCond.none, JCond.j,  RegDst.rt,    RsRtRecipe.normal, ImmRecipe.sExt),
+    /* LB */
     /* LBU */
     /* LH */
     /* LHU */
     /* LL */
-    /* LW */
+    LW     -> List(true.B,  true.B,  StoreMode.disable,  ALUOp.add,  false.B,  true.B,  BranchCond.none, JCond.j,  RegDst.rt,    RsRtRecipe.normal, ImmRecipe.sExt),
     /* LWL */
     /* LWR */
     /* PREF */
     /* SB */
     /* SC */
     /* SD */
-    /* SW */
+    SW     -> List(false.B, false.B, StoreMode.word,     ALUOp.add,  false.B,  true.B,  BranchCond.none, JCond.j,  RegDst.rd,    RsRtRecipe.normal, ImmRecipe.sExt),
     /* SWL */
     /* SWR */
     /* SYNC */
     /** Move Instructions **/
+    /* MFHI */
+    /* MFLO */
+    /* MOVN */
+    /* MOVZ */
+    /* MTHI */
+    /* MYLO */
     /** Shift Instructions **/
-    /* SLL */
-    /* SLLV */
-    /* SRA */
-    /* SRAV */
-    /* SRL */
-    /* SRLV */
+    SLL    -> List(true.B,  false.B, StoreMode.disable,  ALUOp.sll,  true.B,  false.B,  BranchCond.none, JCond.j,  RegDst.rd,   RsRtRecipe.normal, ImmRecipe.sExt),
+    SLLV   -> List(true.B,  false.B, StoreMode.disable,  ALUOp.sll,  false.B, false.B,  BranchCond.none, JCond.j,  RegDst.rd,   RsRtRecipe.normal, ImmRecipe.sExt),
+    SRA    -> List(true.B,  false.B, StoreMode.disable,  ALUOp.sra,  true.B,  false.B,  BranchCond.none, JCond.j,  RegDst.rd,   RsRtRecipe.normal, ImmRecipe.sExt),
+    SRAV   -> List(true.B,  false.B, StoreMode.disable,  ALUOp.sra,  false.B, false.B,  BranchCond.none, JCond.j,  RegDst.rd,   RsRtRecipe.normal, ImmRecipe.sExt),
+    SRL    -> List(true.B,  false.B, StoreMode.disable,  ALUOp.srl,  true.B,  false.B,  BranchCond.none, JCond.j,  RegDst.rd,   RsRtRecipe.normal, ImmRecipe.sExt),
+    SRLV   -> List(true.B,  false.B, StoreMode.disable,  ALUOp.srl,  false.B, false.B,  BranchCond.none, JCond.j,  RegDst.rd,   RsRtRecipe.normal, ImmRecipe.sExt),
     /** Trap Instructions **/
-    /** No Operation **/
-    /* NOP */
     )
   )
 

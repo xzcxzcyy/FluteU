@@ -5,7 +5,6 @@ import chiseltest._
 import org.scalatest.freespec.AnyFreeSpec
 import org.scalatest.matchers.should.Matchers
 
-import config.CpuConfig._
 
 class MockDataMemTest extends AnyFreeSpec with ChiselScalatestTester with Matchers {
 
