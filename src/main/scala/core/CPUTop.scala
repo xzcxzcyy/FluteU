@@ -5,7 +5,7 @@ import config.CpuConfig._
 import core.pipeline._
 import core.pipeline.stagereg._
 
-class CPUTop extends Module {
+class CPUTop(iMemFile:String = "test_data/imem.in", dMemFile:String = "test_data/dmem.in") extends Module {
   val io = IO(new Bundle {
     val regfileDebug = Output(Vec(regAmount, UInt(dataWidth.W)))
   })
@@ -15,10 +15,10 @@ class CPUTop extends Module {
   val exmem = Module(new ExMemStage)
   val memwb = Module(new MemWbStage)
 
-  val fetch     = Module(new Fetch("test_data/imem.in"))
+  val fetch     = Module(new Fetch(iMemFile))
   val decode    = Module(new Decode)
   val execution = Module(new Execution)
-  val memAcc    = Module(new MemoryAccess("test_data/dmem.in"))
+  val memAcc    = Module(new MemoryAccess(dMemFile))
   val writeBack = Module(new WriteBack)
 
   io.regfileDebug := decode.io.regfileDebug

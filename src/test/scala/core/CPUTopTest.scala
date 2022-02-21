@@ -24,7 +24,7 @@ class CPUTopTest extends AnyFreeSpec with ChiselScalatestTester with Matchers {
   }
 
   "general tests" in {
-    test(new CPUTop) { u =>
+    test(new CPUTop("target/clang/xor.hex")) { u =>
       var array = (0 until regAmount).map(i => 0.U(dataWidth.W))
       def expect() = {
         u.io.regfileDebug.expect(Vec.Lit(array: _*))
