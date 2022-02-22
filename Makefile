@@ -1,7 +1,7 @@
 BCC=gcc
 SCC=mips-linux-gnu-gcc
 RCC=mips-linux-gnu-gcc
-SRC=src/main/clang
+SRC=src/test/clang
 DIR=target/clang
 
 # generate asm code for mips
