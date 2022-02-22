@@ -1,0 +1,6 @@
+#!/bin/bash
+
+sbt "test:runMain flute.CPUGen -td target/verilog"
+verilator -cc -exe -Mdir target/verilator ../../src/test/clang/verilator_main.cc target/verilog/CPUTop.v
+make -C target/verilator -f VCPUTop.mk
+echo target/verilator/VCPUTop
