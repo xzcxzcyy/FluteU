@@ -8,7 +8,7 @@ class RegFile extends Module {
   val regfile = RegInit(VecInit(Seq.fill(regAmount)(0.U(dataWidth.W))))
   io.r1Data := regfile(io.r1Addr)
   io.r2Data := regfile(io.r2Addr)
-  when (io.writeEnable & (io.writeAddr =/= 0.U(regAddrWidth.W))) {
+  when (io.writeEnable && (io.writeAddr =/= 0.U(regAddrWidth.W))) {
     regfile(io.writeAddr) := io.writeData
   }
 

@@ -16,11 +16,12 @@ class Execution extends Module {
   io.toMem.control.storeMode   := io.fromId.control.storeMode
   io.toMem.control.regWriteEn := io.fromId.control.regWriteEn
 
-  val alu = Module(new ALU())
+  val alu = Module(new ALU)
   alu.io.aluOp          := io.fromId.control.aluOp
   alu.io.x              := Mux(io.fromId.control.aluXFromShamt, io.fromId.shamt, io.fromId.rs)
   alu.io.y              := Mux(io.fromId.control.aluYFromImm, io.fromId.immediate, io.fromId.rt)
   io.toMem.aluResult    := alu.io.result
+  
   io.toMem.memWriteData := io.fromId.rt
   io.toMem.writeRegAddr := io.fromId.writeRegAddr
 

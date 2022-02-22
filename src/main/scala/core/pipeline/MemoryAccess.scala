@@ -20,9 +20,9 @@ class MemoryAccess(memFilePath: String) extends Module {
   val dMem = Module(new MockDataMem(memFilePath))
   dMem.io.addr        := io.fromEx.aluResult
   dMem.io.dataIn      := io.fromEx.memWriteData
-  io.toWb.dataFromMem := dMem.io.dataOut
   dMem.io.enable      := 1.B
   dMem.io.write       := (io.fromEx.control.storeMode =/= StoreMode.disable)
+  io.toWb.dataFromMem := dMem.io.dataOut
 
   io.dMemStallReq := io.fromEx.control.memToReg && (!dMem.io.valid)
 }
