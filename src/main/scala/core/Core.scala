@@ -14,14 +14,17 @@ class Core(implicit conf: CPUConfig) extends MultiIOModule {
         val dCache  = new DCacheIO()
     })
 
-    val fetch   = Module(new Fetch())
-    val decode  = Module(new Decode())
-    val execute = Module(new Execute())
+    val fetch       = Module(new Fetch())
+    val decode      = Module(new Decode())
+    val executors   = for (i <- 1 to conf.superscalar) yield Module(new Execute())
 
     fetch.io.next       := decode.io.fetch
-    decode.io.next      := execute.io.decode
-    fetch.io.feedback   := execute.io.fetch
+
+    for (i <- 0 to conf.superscalar -1) yield {
+        decode.io.next.executors(i)     := executors(i).io.execute
+        fetch.io.feedback.executors(i)  := executors(i).io.feedback
+        io.dCache := executors(i).io.dCache
+    }
 
     io.iCache := fetch.io.iCache
-    io.dCache := execute.io.dCache
 }

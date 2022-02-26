@@ -5,11 +5,13 @@ import chisel3.util.MuxLookup
 
 import flute.config._
 import flute.cache.ICacheIO
+import flute.core.execute.ExecuteFeedbackIO
 
 class FetchIO(implicit conf: CPUConfig) extends Bundle {
 }
 
 class FetchFeedback(implicit conf: CPUConfig) extends Bundle {
+    val executors = Vec(conf.superscalar, new ExecuteFeedbackIO())
 }
 
 class Fetch(implicit conf: CPUConfig) extends Module {

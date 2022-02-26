@@ -9,6 +9,8 @@ case class CPUConfig (
   // Supported branch conditions: none eq ge geu gt gtu le leu lt ltu ne
   // val branchCondAmount = 16  
 
+  val superscalar:Int     = 2,
+
   /// width ///
   val instrWidth:Int      = 32,
   val dataWidth:Int       = 32,
