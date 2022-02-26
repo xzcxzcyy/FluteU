@@ -8,7 +8,7 @@ import flute.core.fetch._
 import flute.core.decode._
 import flute.core.execute._
 
-class Core(implicit conf: CPUConfig) extends MultiIOModule {
+class Core(implicit conf: CPUConfig) extends Module {
     val io = IO(new Bundle {
         val iCache  = new ICacheIO()
         val dCache  = new DCacheIO()
