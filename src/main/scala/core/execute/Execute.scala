@@ -1,19 +1,16 @@
-package flute.core.execute
+package core.execute
 
 import chisel3._
 import chisel3.util.MuxLookup
 
-import flute.config._
-import flute.cache.DCacheIO
+import config.CpuConfig._
+import cache.DCacheIO
 
-class ExecuteIO(implicit conf:CPUConfig) extends Bundle {
-}
+class ExecuteIO extends Bundle {}
 
-class ExecuteFeedbackIO(implicit conf:CPUConfig) extends Bundle {
-}
+class ExecuteFeedbackIO extends Bundle {}
 
-
-class Execute(implicit conf:CPUConfig) extends Module {
+class Execute extends Module {
   val io = IO(new Bundle {
     val execute  = new ExecuteIO()
     val feedback = new ExecuteFeedbackIO()
