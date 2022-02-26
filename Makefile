@@ -1,8 +1,15 @@
-BCC=gcc
-SCC=mips-linux-gnu-gcc
-RCC=mips-linux-gnu-gcc
+PREFIX != if [ -f "/etc/arch-release" ]; then \
+		echo mips-elf; \
+	else \
+	  echo mips-linux-gnu; \
+  fi
+
 SRC=src/test/clang
 DIR=target/clang
+BCC=gcc
+SCC=${PREFIX}-gcc
+RCC=${PREFIX}-gcc
+MCP=${PREFIX}-objcopy
 
 # generate asm code for mips
 ${DIR}/%.asm: ${SRC}/%.c
@@ -15,7 +22,7 @@ ${DIR}/%.exe: ${SRC}/%.c
 # generate raw binary code for mips
 ${DIR}/%.bin: ${SRC}/%.c
 	${RCC} -O1 -o $@.bin -c $^
-	mips-linux-gnu-objcopy -O binary -j .text $@.bin $@
+	${MCP} -O binary -j .text $@.bin $@
 
 # generate hex file for mips
 ${DIR}/%.hex: ${DIR}/%.bin
