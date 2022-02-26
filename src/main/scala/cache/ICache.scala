@@ -8,8 +8,8 @@ import chisel3.util.DecoupledIO
 import chisel3.util.experimental.loadMemoryFromFileInline
 
 class ICacheIO extends Bundle {
-  val addr = Flipped(new DecoupledIO(UInt(addrWidth.W)))
-  val data = new DecoupledIO(Vec(fetchGroupSize, UInt(dataWidth.W)))
+  val addr = Flipped(DecoupledIO(UInt(addrWidth.W)))
+  val data = DecoupledIO(Vec(fetchGroupSize, UInt(dataWidth.W)))
 }
 
 class ICache(memoryFile: String = "test_data/imem.in") extends Module {
