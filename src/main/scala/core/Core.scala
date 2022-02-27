@@ -14,17 +14,13 @@ class Core extends Module {
     val dCache = new DCacheIO
   })
 
-  val fetch     = Module(new Fetch())
-  val decode    = Module(new Decode())
-  val executors = for (i <- 1 to superscalar) yield Module(new Execute())
+  val fetch   = Module(new Fetch())
+  val decode  = Module(new Decode())
+  val execute = Module(new Execute())
 
-  fetch.io.next := decode.io.fetch
-
-  for (i <- 0 to superscalar - 1) yield {
-    decode.io.next.executors(i)    := executors(i).io.execute
-    // fetch.io.feedback.executors(i) := executors(i).io.feedback
-    io.dCache                      := executors(i).io.dCache
-  }
-
-  io.iCache := fetch.io.iCache
+  fetch.io.withDecode <> decode.io.withFetch
+  decode.io.withExecute <> execute.io.withDecode
+  // connect cache here
+  fetch.io.feedbackFromDecode <> decode.io.feedback
+  fetch.io.feedbackFromExec <> execute.io.feedback
 }

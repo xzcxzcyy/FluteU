@@ -47,13 +47,9 @@ class FetchTest extends AnyFreeSpec with ChiselScalatestTester with Matchers {
 class FetchTestTop extends Module {
   val io = IO(new Bundle {
     val withDecode  = new FetchIO
-    val firstInstr  = Output(UInt(instrWidth.W))
-    val secondInstr = Output(UInt(instrWidth.W))
   })
   val iCache = Module(new ICache("test_data/fetch_icache_test.in"))
   val fetch  = Module(new Fetch)
   fetch.io.iCache <> iCache.io
-  io.withDecode <> fetch.io.next
-  io.firstInstr  := fetch.io.next.insts(0.U)
-  io.secondInstr := fetch.io.next.insts(1.U)
+  io.withDecode <> fetch.io.withDecode
 }
