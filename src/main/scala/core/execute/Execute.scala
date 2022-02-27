@@ -3,7 +3,7 @@ package core.execute
 import chisel3._
 import chisel3.util.MuxLookup
 
-import config.CpuConfig._
+import config.CPUConfig._
 import cache.DCacheIO
 
 class ExecuteIO extends Bundle {}

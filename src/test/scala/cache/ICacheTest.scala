@@ -6,7 +6,7 @@ import org.scalatest.freespec.AnyFreeSpec
 import org.scalatest.matchers.should.Matchers
 
 import fluteutil.BitMode.fromIntToBitModeLong
-import config.CpuConfig._
+import config.CPUConfig._
 
 class ICacheTest extends AnyFreeSpec with ChiselScalatestTester with Matchers {
   "test" in {

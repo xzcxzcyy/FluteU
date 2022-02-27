@@ -3,7 +3,7 @@ package core.decode
 import chisel3._
 import chisel3.util.MuxLookup
 
-import config.CpuConfig._
+import config.CPUConfig._
 import core.fetch.FetchIO
 import core.execute.ExecuteIO
 

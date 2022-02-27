@@ -8,7 +8,7 @@ import org.scalatest.freespec.AnyFreeSpec
 import chiseltest.ChiselScalatestTester
 import org.scalatest.matchers.should.Matchers
 import cache.ICache
-import config.CpuConfig._
+import config.CPUConfig._
 import fluteutil.BitMode.fromIntToBitModeLong
 
 class FetchTest extends AnyFreeSpec with ChiselScalatestTester with Matchers {

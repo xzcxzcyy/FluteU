@@ -2,7 +2,7 @@ package core
 
 import chisel3._
 
-import config.CpuConfig._
+import config.CPUConfig._
 import cache._
 import core.fetch._
 import core.decode._

@@ -2,7 +2,7 @@ package cache
 
 import chisel3._
 import chisel3.util.MuxLookup
-import config.CpuConfig._
+import config.CPUConfig._
 
 class DCacheIO extends Bundle {
   val addr = Input(UInt(addrWidth.W))

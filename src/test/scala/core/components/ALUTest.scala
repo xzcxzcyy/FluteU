@@ -5,7 +5,7 @@ import chisel3._
 import chiseltest._
 import org.scalatest.freespec.AnyFreeSpec
 import org.scalatest.matchers.should.Matchers
-import config.CpuConfig._
+import config.CPUConfig._
 import core.components.ALU
 
 import scala.util.Random

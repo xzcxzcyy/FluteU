@@ -3,7 +3,7 @@ package core.fetch
 import chisel3._
 import chisel3.util._
 
-import config.CpuConfig._
+import config.CPUConfig._
 import cache.ICacheIO
 import core.execute.ExecuteFeedbackIO
 
