@@ -24,5 +24,40 @@ class Fetch extends Module {
     val feedback = new FetchFeedback()
     val iCache   = new ICacheIO()
   })
-  
+
+  val instNum = RegInit(0.U(fetchGroupWidth.W))
+  val pc      = Module(new PC)
+  val insts   = RegInit(VecInit(Seq.fill(fetchGroupSize)(0.U(instrWidth.W))))
+
+  val instNumIBPermits = fetchGroupSize.U - instNum + io.next.willProcess
+  val instNumCacheLineHas = Mux(
+    io.iCache.data.valid,
+    fetchGroupSize.U - pc.io.out(1 + fetchGroupWidth, 1 + 1),
+    0.U(fetchGroupWidth.W)
+  )
+  val instNumInc =
+    Mux(instNumIBPermits <= instNumCacheLineHas, instNumIBPermits, instNumCacheLineHas)
+  instNum     := instNum - io.next.willProcess + instNumInc
+  pc.io.stall := io.iCache.data.valid
+  pc.io.in    := pc.io.in + instNumInc
+  for (i <- 0 to fetchGroupSize - 1) yield {
+    when (i.U + 1.U + io.next.willProcess <= instNum) {
+      insts(i.U) := insts(i.U + io.next.willProcess)
+    } .otherwise {
+      insts(i.U) := io.iCache.data.bits(i.U + io.next.willProcess - instNum)
+    }
+  }
+}
+
+class PC extends Module {
+  val io = IO(new Bundle {
+    val out   = Output(UInt(addrWidth.W))
+    val in    = Input(UInt(addrWidth.W))
+    val stall = Input(Bool())
+  })
+  val data = RegInit(0.U(addrWidth.W))
+  when(!io.stall) {
+    data := io.in
+  }
+  io.out := data
 }
