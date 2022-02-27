@@ -5,6 +5,7 @@ import config.CpuConfig._
 import chisel3._
 import chisel3.util.MuxLookup
 import chisel3.util.DecoupledIO
+import chisel3.util.Cat
 import chisel3.util.experimental.loadMemoryFromFileInline
 
 class ICacheIO extends Bundle {
@@ -12,56 +13,31 @@ class ICacheIO extends Bundle {
   val data = DecoupledIO(Vec(fetchGroupSize, UInt(dataWidth.W)))
 }
 
+/**
+  * Currently, ICache does not check addr.valid, data.ready.
+  * Icache also asserts addr.ready at all time.
+  * The only useful port is data.valid
+  *
+  * @param memoryFile Path to memory file.
+  */
 class ICache(memoryFile: String = "test_data/imem.in") extends Module {
   val io = IO(new ICacheIO)
 
-  val memAddr = io.addr.bits(31, 2)
+  val instInd = Cat(io.addr.bits(31, 2 + fetchGroupWidth), 0.U(fetchGroupWidth.W))
 
-  val mem     = SyncReadMem(1024, UInt(dataWidth.W))
-  val addrBuf = RegInit(0.U(addrWidth.W))
-  val dataBuf = RegInit(VecInit(Seq.fill(fetchGroupSize)(0.U(instrWidth.W))))
-  val state   = RegInit(0.U(2.W))
+  val mem = SyncReadMem(1024, UInt(dataWidth.W))
 
-  val memPorts = for (i <- 0 to fetchGroupSize - 1) yield mem.read(memAddr + i.U)
+  val memPorts = for (i <- 0 to fetchGroupSize - 1) yield mem.read(instInd + i.U)
+
+  val lastInstInd = RegNext(instInd, 0.U(30.W))
 
   if (memoryFile.trim().nonEmpty) {
     loadMemoryFromFileInline(mem, memoryFile)
   }
 
-  when(state === 0.U) {
-    when(io.addr.valid) {
-      state   := 1.U
-      addrBuf := io.addr.bits
-    }.otherwise {
-      state := 0.U
-    }
-  }.elsewhen(state === 1.U) {
-    for (i <- 0 to fetchGroupSize - 1) yield dataBuf(i.U) := memPorts(i)
-    when(io.addr.valid) {
-      state   := 2.U
-      addrBuf := io.addr.bits
-    }.otherwise {
-      state := 3.U
-    }
-  }.elsewhen(state === 2.U) {
-    for (i <- 0 to fetchGroupSize - 1) yield dataBuf(i.U) := memPorts(i)
-    when(io.addr.valid) {
-      state   := 2.U
-      addrBuf := io.addr.bits
-    }.otherwise {
-      state := 3.U
-    }
-  }.otherwise {
-    when(io.addr.valid) {
-      state   := 1.U
-      addrBuf := io.addr.bits
-    }.otherwise {
-      state := 0.U
-    }
-
-  }
-
-  io.data.valid := (state === 2.U || state === 3.U)
   io.addr.ready := 1.B
-  io.data.bits  := dataBuf
+  io.data.valid := (lastInstInd === instInd)
+  for (i <- 0 to fetchGroupSize - 1) yield {
+    io.data.bits(i.U) := memPorts(i)
+  }
 }
