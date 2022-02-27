@@ -20,6 +20,15 @@ class FetchTest extends AnyFreeSpec with ChiselScalatestTester with Matchers {
       dp.willProcess.poke(8.U)
       c.clock.step()
       dp.instNum.expect(0.U)
+      dp.willProcess.poke(0.U)
+      c.clock.step()
+      dp.instNum.expect(8.U)
+      dp.willProcess.poke(2.U)
+      // may have something wrong in here...
+      c.clock.step()
+      dp.instNum.expect(6.U)
+      c.clock.step()
+      dp.instNum.expect(8.U)
     }
   }
 }
