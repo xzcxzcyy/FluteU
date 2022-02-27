@@ -8,6 +8,8 @@ import org.scalatest.freespec.AnyFreeSpec
 import chiseltest.ChiselScalatestTester
 import org.scalatest.matchers.should.Matchers
 import cache.ICache
+import config.CpuConfig._
+import fluteutil.BitMode.fromIntToBitModeLong
 
 class FetchTest extends AnyFreeSpec with ChiselScalatestTester with Matchers {
   "Fetch instructions travelling test" in {
@@ -17,17 +19,26 @@ class FetchTest extends AnyFreeSpec with ChiselScalatestTester with Matchers {
       dp.willProcess.poke(0.U)
       c.clock.step()
       dp.instNum.expect(8.U)
+      dp.insts(0).expect(0x3801ffff.BM.U)
+      dp.insts(1).expect(0x380200ff.BM.U)
       dp.willProcess.poke(8.U)
       c.clock.step()
       dp.instNum.expect(0.U)
       dp.willProcess.poke(0.U)
       c.clock.step()
       dp.instNum.expect(8.U)
+      dp.insts(0).expect(0xeeeeeeee.BM.U)
+      dp.insts(1).expect(0x00000001.U)
       dp.willProcess.poke(2.U)
-      // may have something wrong in here...
+      // another group in here...
       c.clock.step()
+      dp.insts(0).expect(0x2.U)
+      dp.insts(1).expect(0x3.U)
       dp.instNum.expect(6.U)
+      dp.willProcess.poke(1.U)
       c.clock.step()
+      dp.insts(0).expect(0x3.U)
+      dp.insts(1).expect(0x4.U)
       dp.instNum.expect(8.U)
     }
   }
@@ -35,10 +46,14 @@ class FetchTest extends AnyFreeSpec with ChiselScalatestTester with Matchers {
 
 class FetchTestTop extends Module {
   val io = IO(new Bundle {
-    val withDecode = new FetchIO
+    val withDecode  = new FetchIO
+    val firstInstr  = Output(UInt(instrWidth.W))
+    val secondInstr = Output(UInt(instrWidth.W))
   })
-  val iCache = Module(new ICache)
+  val iCache = Module(new ICache("test_data/fetch_icache_test.in"))
   val fetch  = Module(new Fetch)
   fetch.io.iCache <> iCache.io
-  io.withDecode     <> fetch.io.next
+  io.withDecode <> fetch.io.next
+  io.firstInstr  := fetch.io.next.insts(0.U)
+  io.secondInstr := fetch.io.next.insts(1.U)
 }

@@ -33,7 +33,7 @@ class Fetch extends Module {
   val instNumCacheLineHas = Mux(
     io.iCache.data.valid,
     fetchGroupSize.U - pc.io.out(1 + fetchGroupWidth, 1 + 1),
-    0.U(fetchGroupWidth.W)
+    0.U((fetchGroupWidth + 1).W)
   )
   val instNumInc =
     Mux(instNumIBPermits <= instNumCacheLineHas, instNumIBPermits, instNumCacheLineHas)
@@ -41,10 +41,14 @@ class Fetch extends Module {
   pc.io.stall := !io.iCache.data.valid
   pc.io.in    := pc.io.out + Cat(instNumInc, 0.U(2.W))
   for (i <- 0 to fetchGroupSize - 1) yield {
-    when(i.U + 1.U + io.next.willProcess <= instNum) {
+    when(i.U + io.next.willProcess < instNum) {
       insts(i.U) := insts(i.U + io.next.willProcess)
+    }.elsewhen(i.U + io.next.willProcess - instNum < instNumCacheLineHas) {
+      insts(i.U) := io.iCache.data.bits(
+        i.U + io.next.willProcess - instNum + pc.io.out(1 + fetchGroupWidth, 1 + 1)
+      )
     }.otherwise {
-      insts(i.U) := io.iCache.data.bits(i.U + io.next.willProcess - instNum)
+      insts(i.U) := 0.U
     }
   }
 
