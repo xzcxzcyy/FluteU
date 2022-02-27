@@ -22,7 +22,7 @@ class Core extends Module {
 
   for (i <- 0 to superscalar - 1) yield {
     decode.io.next.executors(i)    := executors(i).io.execute
-    fetch.io.feedback.executors(i) := executors(i).io.feedback
+    // fetch.io.feedback.executors(i) := executors(i).io.feedback
     io.dCache                      := executors(i).io.dCache
   }
 
