@@ -1,4 +1,4 @@
-package flute.core.components
+package core.components
 
 import chisel3._
 

@@ -1,22 +1,20 @@
-package flute.core.execute
+package core.execute
 
 import chisel3._
 import chisel3.util.MuxLookup
 
-import flute.config._
-import flute.cache.DCacheIO
+import config.CPUConfig._
+import cache.DCacheIO
+import core.decode.DecodeIO
 
-class ExecuteIO(implicit conf:CPUConfig) extends Bundle {
-}
+class ExecutorIO extends Bundle {}
 
-class ExecuteFeedbackIO(implicit conf:CPUConfig) extends Bundle {
-}
+class ExecuteFeedbackIO extends Bundle {}
 
-
-class Execute(implicit conf:CPUConfig) extends Module {
+class Execute extends Module {
   val io = IO(new Bundle {
-    val execute  = new ExecuteIO()
-    val feedback = new ExecuteFeedbackIO()
-    val dCache   = new DCacheIO()
+    val withDecode = Flipped(new DecodeIO())
+    val feedback   = new ExecuteFeedbackIO()
+    val dCache     = Vec(superscalar, Flipped(new DCacheIO()))
   })
 }

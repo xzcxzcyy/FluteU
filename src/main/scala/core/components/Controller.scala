@@ -2,7 +2,7 @@ package core.components
 
 import chisel3._
 import chisel3.util.ListLookup
-import config.CpuConfig._
+import config.CPUConfig._
 import config.Instructions._
 import chisel3.util.log2Up
 

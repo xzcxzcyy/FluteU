@@ -2,7 +2,7 @@ package mock
 
 import chisel3._
 import chisel3.util.experimental.loadMemoryFromFileInline
-import config.CpuConfig._
+import config.CPUConfig._
 
 class MockInstrMem(memoryFile: String = "") extends Module {
   val width: Int = 32

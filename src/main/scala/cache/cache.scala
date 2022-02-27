@@ -2,7 +2,7 @@ package cache
 
 import chisel3._
 
-import config.CpuConfig._
+import config.CPUConfig._
 import core.components.StoreMode
 
 // no statemachine, no axi, no 
