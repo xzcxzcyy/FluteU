@@ -36,6 +36,7 @@ class IssueQEntry extends Bundle {
 class IssueQ[T <: Data](entryType : T) extends Module {
   val io = IO(new Bundle {
     val dataOut  = Output(Vec(16, entryType))
+    val ctrl = Output(Vec(16, UInt(3.W)))
     val entryNum = Output(UInt(log2Up(16).W))
 
     /// enqueue
@@ -59,7 +60,7 @@ class IssueQ[T <: Data](entryType : T) extends Module {
     val readSecond = 4.U(3.W)
   }
 
-  val ctrl = Wire(Vec(16, UInt(2.W)))
+  val ctrl = Wire(Vec(16, UInt(3.W)))
 
   for (i <- 0 until 16) {
     val data = mem.read(i.U)
@@ -94,7 +95,7 @@ class IssueQ[T <: Data](entryType : T) extends Module {
   io.entryNum := entryNum
 
   val issueAddr = Wire(Vec(2, UInt(log2Up(16).W)))
-  for (i <- 0 until 2) issueAddr(i) := Mux(io.issueAddr(i).valid, io.issueAddr(i).bits, 32.U)
+  for (i <- 0 until 2) issueAddr(i) := Mux(io.issueAddr(i).valid, io.issueAddr(i).bits, 15.U)
 
   for (i <- 0 until 16) {
     ctrl(i) := MuxCase(
@@ -107,6 +108,11 @@ class IssueQ[T <: Data](entryType : T) extends Module {
         (i.U >= issueAddr(1) - 1.U)                         -> MoveState.preSecond
       )
     )
+    io.ctrl(i) := ctrl(i)
+  }
+
+  for (i <- 0 until 16) {
+    io.dataOut(i) := mem.read(i.U)
   }
 
 }
