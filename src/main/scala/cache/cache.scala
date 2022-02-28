@@ -1,11 +1,10 @@
 package cache
 
 import chisel3._
-
 import config.CPUConfig._
-import core.components.StoreMode
+import core.decode.StoreMode
 
-// no statemachine, no axi, no 
+// no statemachine, no axi, no
 /**
   * Addresses MUST be aligned to 4 bytes
   * 
