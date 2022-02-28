@@ -5,8 +5,8 @@ import chisel3.util.MuxLookup
 import chisel3.util.log2Up
 import chisel3.util._
 
-import config.CpuConfig._
-import core.components.{ALUOp, StoreMode}
+import config.CPUConfig._
+import core.components.ALUOp
 import chisel3.util.MuxCase
 
 // 指令解码后的结果(需要修改)
