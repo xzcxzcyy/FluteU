@@ -20,8 +20,11 @@ class Execute extends Module {
 
 
   val idExStage = Module(new IdExStage)
-  idExStage.io.in := io.withDecode.microOps(0)
-
-  // xx := idExStage.io.data
+  // 依据 io.withDecode.microOps(0).valid 判断输入数据是否有效
+  // 提供 io.withDecode.microOps(0).ready
+  // 若流水畅通 ready 为 1; 流水拥塞 ready 为 0
+  // 理想流水暂不考虑
+  idExStage.io.in := io.withDecode.microOps(0).bits
+  // xx := idExStage.io.data.bits
  
 }
