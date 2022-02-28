@@ -2,7 +2,7 @@ package core.components
 
 import chisel3._
 import chiseltest._
-import core.components.Controller
+import core.decode.Controller
 import org.scalatest.freespec.AnyFreeSpec
 import org.scalatest.matchers.should.Matchers
 

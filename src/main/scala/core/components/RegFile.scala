@@ -1,7 +1,7 @@
 package core.components
 
 import chisel3._
-import config.CpuConfig._
+import config.CPUConfig._
 
 class RegFile extends Module {
   val io = IO(new RegFileIO)

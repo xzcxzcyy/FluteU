@@ -1,7 +1,7 @@
 package core.components
 
 import chisel3._
-import config.CpuConfig._
+import config.CPUConfig._
 import chisel3.util.MuxLookup
 
 class Comparator extends Module{

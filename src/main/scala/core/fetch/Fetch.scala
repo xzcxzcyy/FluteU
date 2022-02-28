@@ -3,48 +3,50 @@ package core.fetch
 import chisel3._
 import chisel3.util._
 
-import config.CpuConfig._
+import config.CPUConfig._
 import cache.ICacheIO
 import core.execute.ExecuteFeedbackIO
+import core.decode.DecodeFeedbackIO
 
 class FetchIO extends Bundle {
   // 指令队列，不确定指令用什么格式往下传，需要附带什么信息，暂用32位表示
   val insts       = Output(Vec(fetchGroupSize, UInt(instrWidth.W)))
-  val instNum     = Output(UInt((fetchGroupWidth + 1).W)) // 队列指令数量
-  val willProcess = Input(UInt((fetchGroupWidth + 1).W))  // 下一拍到来时，decode取走指令条数
-}
-
-class FetchFeedback extends Bundle {
-  val executors = Vec(superscalar, new ExecuteFeedbackIO())
+  val instNum     = Output(UInt(fetchAmountWidth.W)) // 队列指令数量
+  val willProcess = Input(UInt(fetchAmountWidth.W))  // 下一拍到来时，decode取走指令条数
 }
 
 class Fetch extends Module {
   val io = IO(new Bundle {
-    val next = new FetchIO()
-    // val feedback = new FetchFeedback()
-    val iCache = Flipped(new ICacheIO())
+    val withDecode         = new FetchIO()
+    val feedbackFromDecode = Flipped(new DecodeFeedbackIO())
+    val feedbackFromExec   = Flipped(new ExecuteFeedbackIO())
+    val iCache             = Flipped(new ICacheIO())
   })
 
-  val instNum = RegInit(0.U((fetchGroupWidth + 1).W))
+  val instNum = RegInit(0.U(fetchAmountWidth.W))
   val pc      = Module(new PC)
   val insts   = RegInit(VecInit(Seq.fill(fetchGroupSize)(0.U(instrWidth.W))))
 
-  val instNumIBPermits = fetchGroupSize.U - instNum + io.next.willProcess
+  val instNumIBPermits = fetchGroupSize.U - instNum + io.withDecode.willProcess
   val instNumCacheLineHas = Mux(
     io.iCache.data.valid,
     fetchGroupSize.U - pc.io.out(1 + fetchGroupWidth, 1 + 1),
-    0.U(fetchGroupWidth.W)
+    0.U(fetchAmountWidth.W)
   )
   val instNumInc =
     Mux(instNumIBPermits <= instNumCacheLineHas, instNumIBPermits, instNumCacheLineHas)
-  instNum     := instNum - io.next.willProcess + instNumInc
+  instNum     := instNum - io.withDecode.willProcess + instNumInc
   pc.io.stall := !io.iCache.data.valid
   pc.io.in    := pc.io.out + Cat(instNumInc, 0.U(2.W))
   for (i <- 0 to fetchGroupSize - 1) yield {
-    when(i.U + 1.U + io.next.willProcess <= instNum) {
-      insts(i.U) := insts(i.U + io.next.willProcess)
+    when(i.U + io.withDecode.willProcess < instNum) {
+      insts(i.U) := insts(i.U + io.withDecode.willProcess)
+    }.elsewhen(i.U + io.withDecode.willProcess - instNum < instNumCacheLineHas) {
+      insts(i.U) := io.iCache.data.bits(
+        i.U + io.withDecode.willProcess - instNum + pc.io.out(1 + fetchGroupWidth, 1 + 1)
+      )
     }.otherwise {
-      insts(i.U) := io.iCache.data.bits(i.U + io.next.willProcess - instNum)
+      insts(i.U) := 0.U
     }
   }
 
@@ -52,8 +54,8 @@ class Fetch extends Module {
   io.iCache.addr.valid := 1.B
   io.iCache.data.ready := 1.B
 
-  io.next.instNum := instNum
-  io.next.insts   := insts
+  io.withDecode.instNum := instNum
+  io.withDecode.insts   := insts
 
 }
 

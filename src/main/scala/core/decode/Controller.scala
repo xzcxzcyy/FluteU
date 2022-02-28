@@ -1,14 +1,14 @@
-package core.components
+package core.decode
 
 import chisel3._
-import chisel3.util.ListLookup
-import config.CpuConfig._
+import chisel3.util.{ListLookup, log2Up}
+import config.CPUConfig._
 import config.Instructions._
-import chisel3.util.log2Up
+import core.components.ALUOp
 
 class Controller extends Module {
   val io = IO(new Bundle {
-    val instruction = Input(UInt(instrWidth.W))
+    val instr         = Input(UInt(instrWidth.W))
 
     val regWriteEn    = Output(Bool())
     val memToReg      = Output(Bool())
@@ -25,7 +25,7 @@ class Controller extends Module {
   })
 
   // @formatter:off
-  val signals = ListLookup(io.instruction,
+  val signals = ListLookup(io.instr,
             // regWriteEn, memToReg, storeMode,          aluOp,  aluXFromShamt,aluYFromImm, branchCond,   jCond,    regDst       rsrtRecipe         immRecipe
     /*default*/
               List(false.B, false.B, StoreMode.disable,  ALUOp.none, false.B,  false.B, BranchCond.none, JCond.j,  RegDst.rd,    RsRtRecipe.normal, ImmRecipe.sExt),

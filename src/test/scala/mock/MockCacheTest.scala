@@ -5,8 +5,8 @@ import chiseltest._
 import org.scalatest.freespec.AnyFreeSpec
 import org.scalatest.matchers.should.Matchers
 import fluteutil.BitMode.fromIntToBitModeLong
-import config.CpuConfig._
-import core.components.StoreMode
+import config.CPUConfig._
+import core.decode.StoreMode
 
 class MockCacheTest extends AnyFreeSpec with ChiselScalatestTester with Matchers {
   val content = Seq(
