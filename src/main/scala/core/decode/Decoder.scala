@@ -6,7 +6,7 @@ import chisel3.util.MuxLookup
 import config.CPUConfig._
 import core.components._
 
-class DecodedSig extends Bundle {
+class MicroOp extends Bundle {
   class ControlSig extends Bundle {
     val regWriteEn    = Bool()
     val loadMode      = Bool()
@@ -29,7 +29,7 @@ class Decoder extends Module {
     val writeBackAddr = Input(UInt(regAddrWidth.W))
     val writeBackData = Input(UInt(dataWidth.W))
     val writeBackEn   = Input(Bool())
-    val decodedSig    = Output(new DecodedSig)
+    val decodedSig    = Output(new MicroOp)
   })
 
   val controller = Module(new Controller())

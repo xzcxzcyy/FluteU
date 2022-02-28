@@ -17,4 +17,11 @@ class Execute extends Module {
     val feedback   = new ExecuteFeedbackIO()
     val dCache     = Vec(superscalar, Flipped(new DCacheIO()))
   })
+
+
+  val idExStage = Module(new IdExStage)
+  idExStage.io.in := io.withDecode.microOps(0)
+
+  // xx := idExStage.io.data
+ 
 }

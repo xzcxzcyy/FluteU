@@ -8,7 +8,7 @@ import core.fetch.FetchIO
 import core.execute.ExecutorIO
 
 class DecodeIO extends Bundle {
-  val executors = Vec(superscalar, new ExecutorIO())
+  val microOps = Vec(superscalar, new MicroOp)
 }
 
 class DecodeFeedbackIO extends Bundle {}
