@@ -24,17 +24,11 @@ class Decode extends Module {
 
   val regFile = Module(new RegFile(superscalar, superscalar))
 
-  val decoders = Vec(superscalar, new Decoder)
+  val decoders = for (i <- 0 until superscalar) yield Module(new Decoder)
   for (i <- 0 until superscalar) {
     // read
-    regFile.io.read(i).r1Addr := decoders(i).io.rsAddr
-    regFile.io.read(i).r2Addr := decoders(i).io.rtAddr
-    decoders(i).io.rsData := regFile.io.read(i).r1Data
-    decoders(i).io.rtData := regFile.io.read(i).r2Data
-
+    regFile.io.read(i) <> decoders(i).io.withRegfile
     // write
-    regFile.io.write(i).writeEnable := io.regFileWrite(i).writeEnable
-    regFile.io.write(i).writeAddr := io.regFileWrite(i).writeAddr
-    regFile.io.write(i).writeData := io.regFileWrite(i).writeData
+    regFile.io.write(i) := io.regFileWrite
   }
 }

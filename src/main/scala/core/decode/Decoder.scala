@@ -26,12 +26,8 @@ class MicroOp extends Bundle {
 class Decoder extends Module {
   val io = IO(new Bundle {
     val instr         = Input(UInt(instrWidth.W))
-    val rsData        = Input(UInt(dataWidth.W))
-    val rtData        = Input(UInt(dataWidth.W))
-
+    val withRegfile   = Flipped(new RegFileReadIO)
     val microOp       = Output(new MicroOp)
-    val rsAddr        = Output(UInt(regAddrWidth.W))
-    val rtAddr        = Output(UInt(regAddrWidth.W))
   })
 
   // Controller //////////////////////////////////////////////////////
@@ -49,11 +45,11 @@ class Decoder extends Module {
 
   val rsDataWire = Wire(UInt(dataWidth.W))
   val rtDataWire = Wire(UInt(dataWidth.W))
-  io.rsAddr := io.instr(25, 21)
-  io.rtAddr := io.instr(20, 16)
-  rsDataWire := io.rsData
+  io.withRegfile.r1Addr := io.instr(25, 21)
+  io.withRegfile.r2Addr := io.instr(20, 16)
+  rsDataWire := io.withRegfile.r1Data
   io.microOp.rs := rsDataWire
-  rtDataWire := io.rtData
+  rtDataWire := io.withRegfile.r2Data
   io.microOp.rt := rtDataWire
   io.microOp.writeRegAddr := MuxLookup(
     key = controller.io.regDst,
