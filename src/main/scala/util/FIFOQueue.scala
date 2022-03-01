@@ -44,7 +44,7 @@ class FIFOQueue[T <: Data](gen:T, numEntries: Int, numRead: Int, numWrite: Int) 
       }
     }
 
-    io.write(i).ready := offset < numEnq
+    io.write(i).ready := offset < enqEntries
   }
 
   for (i <- 0 until numRead) {
@@ -60,7 +60,7 @@ class FIFOQueue[T <: Data](gen:T, numEntries: Int, numRead: Int, numWrite: Int) 
       io.read(i).bits := DontCare
     }
 
-    io.read(i).valid := offset < numDeq
+    io.read(i).valid := offset < deqEntries
   }
 
   head_ptr := head_ptr + numDeq
