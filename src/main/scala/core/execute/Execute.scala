@@ -6,10 +6,10 @@ import chisel3.util.MuxLookup
 import config.CPUConfig._
 import cache.DCacheIO
 import core.decode.DecodeIO
-import core.components.{RegFileIO,ALU}
+import core.components.{RegFileWriteIO,ALU}
 
 class ExecutorIO extends Bundle {
-  val withRF = Vec(superscalar,Flipped(new RegFileIO()))
+  val withRF = Vec(superscalar,Flipped(new RegFileWriteIO()))
 }
 
 class ExecuteFeedbackIO extends Bundle {}
@@ -23,11 +23,8 @@ class Execute extends Module {
   })
 
 
-  // val idExStage = Module(new IdExStage)
-  // val idExStages = Vec(superscalar,Module(new IdExStage))
-  val idExStages = for(i<-0 until superscalar) yield{Module(new IdExStage)}
-  // val alus = Vec(superscalar,Module(new ALU))
-  val alus = for(i<- 0 until superscalar) yield {Module(new ALU)}
+  val idExStages = for(i<-0 until superscalar) yield{ Module(new IdExStage) }
+  val alus = for(i<- 0 until superscalar) yield { Module(new ALU) }
   // 依据 io.withDecode.microOps(0).valid 判断输入数据是否有效
   // 提供 io.withDecode.microOps(0).ready
   // 若流水畅通 ready 为 1; 流水拥塞 ready 为 0
@@ -48,7 +45,6 @@ class Execute extends Module {
     io.withWb.withRF(i).writeAddr   := data.writeRegAddr
     io.withWb.withRF(i).writeEnable := data.controlSig.regWriteEn
     io.withWb.withRF(i).writeData   := alus(i).io.result
-    io.withWb.withRF(i).r1Addr      := DontCare
-    io.withWb.withRF(i).r2Addr      := DontCare
+    
   }
 }
