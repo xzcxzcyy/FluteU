@@ -26,35 +26,36 @@ class MicroOp extends Bundle {
 class Decoder extends Module {
   val io = IO(new Bundle {
     val instr         = Input(UInt(instrWidth.W))
-    val writeBackAddr = Input(UInt(regAddrWidth.W))
-    val writeBackData = Input(UInt(dataWidth.W))
-    val writeBackEn   = Input(Bool())
-    val decodedSig    = Output(new MicroOp)
+    val rsData        = Input(UInt(dataWidth.W))
+    val rtData        = Input(UInt(dataWidth.W))
+
+    val microOp       = Output(new MicroOp)
+    val rsAddr        = Output(UInt(regAddrWidth.W))
+    val rtAddr        = Output(UInt(regAddrWidth.W))
   })
 
-  val controller = Module(new Controller())
-  val regFile    = Module(new RegFile())
-
   // Controller //////////////////////////////////////////////////////
+  val controller = Module(new Controller())
   controller.io.instr := io.instr
-  io.decodedSig.controlSig.regWriteEn    := controller.io.regWriteEn
-  io.decodedSig.controlSig.loadMode      := controller.io.memToReg
-  io.decodedSig.controlSig.storeMode     := controller.io.storeMode
-  io.decodedSig.controlSig.aluOp         := controller.io.aluOp
-  io.decodedSig.controlSig.aluXFromShamt := controller.io.aluXFromShamt
-  io.decodedSig.controlSig.aluYFromImm   := controller.io.aluYFromImm
+  io.microOp.controlSig.regWriteEn    := controller.io.regWriteEn
+  io.microOp.controlSig.loadMode      := controller.io.memToReg
+  io.microOp.controlSig.storeMode     := controller.io.storeMode
+  io.microOp.controlSig.aluOp         := controller.io.aluOp
+  io.microOp.controlSig.aluXFromShamt := controller.io.aluXFromShamt
+  io.microOp.controlSig.aluYFromImm   := controller.io.aluYFromImm
   ////////////////////////////////////////////////////////////////////
 
   // RegFile /////////////////////////////////////////////////////////
-  val rsData = Wire(UInt(dataWidth.W))
-  val rtData = Wire(UInt(dataWidth.W))
-  regFile.io.r1Addr := io.instr(25, 21)  // rs
-  regFile.io.r2Addr := io.instr(20, 16)  // rt
-  rsData := regFile.io.r1Data
-  io.decodedSig.rs := rsData
-  rtData := regFile.io.r2Data
-  io.decodedSig.rt := rtData
-  io.decodedSig.writeRegAddr := MuxLookup(
+
+  val rsDataWire = Wire(UInt(dataWidth.W))
+  val rtDataWire = Wire(UInt(dataWidth.W))
+  io.rsAddr := io.instr(25, 21)
+  io.rtAddr := io.instr(20, 16)
+  rsDataWire := io.rsData
+  io.microOp.rs := rsDataWire
+  rtDataWire := io.rtData
+  io.microOp.rt := rtDataWire
+  io.microOp.writeRegAddr := MuxLookup(
     key = controller.io.regDst,
     default = io.instr(15, 11),
     mapping = Seq(
@@ -63,9 +64,6 @@ class Decoder extends Module {
       RegDst.GPR31 -> 31.U(regAddrWidth.W)
     )
   )
-  regFile.io.writeEnable := io.writeBackEn
-  regFile.io.writeAddr := io.writeBackAddr
-  regFile.io.writeData := io.writeBackData
   /////////////////////////////////////////////////////////////////
 
   // Immediate ////////////////////////////////////////////////////
@@ -79,11 +77,11 @@ class Decoder extends Module {
       ImmRecipe.lui  -> Cat(io.instr(15, 0), 0.U(15.W))
     )
   )
-  io.decodedSig.immediate := extendedImm
+  io.microOp.immediate := extendedImm
   /////////////////////////////////////////////////////////////////
 
   // Shamt ////////////////////////////////////////////////////////
-  io.decodedSig.shamt := io.instr(10, 6)
+  io.microOp.shamt := io.instr(10, 6)
   /////////////////////////////////////////////////////////////////
 }
 
