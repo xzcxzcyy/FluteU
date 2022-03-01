@@ -20,7 +20,7 @@ class ExecuteTest extends AnyFreeSpec with ChiselScalatestTester with Matchers {
             c.io.withDecode.microOps(0).valid.poke(1.B)
         
             c.clock.step()
-            c.io.withWb.withRF(0).writeData.expect(2.U)
+            c.io.withRegFile(0).writeData.expect(2.U)
         }
     }
 }

@@ -5,7 +5,6 @@ import chisel3.util._
 import config.CPUConfig._
 import core.components.{RegFile, RegFileWriteIO}
 import core.fetch.FetchIO
-import core.execute.ExecutorIO
 
 // the io that with next
 class DecodeIO extends Bundle {
