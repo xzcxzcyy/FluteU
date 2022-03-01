@@ -1,4 +1,4 @@
-package core.execute
+package core.execute.aluexec
 
 import core.decode.MicroOp
 import core.components._

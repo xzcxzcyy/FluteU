@@ -70,8 +70,22 @@ class IssueQTest extends AnyFreeSpec with ChiselScalatestTester with Matchers {
   }
 }
 
-class SimpleEntry extends Bundle {
-  val data = UInt(32.W)
+class TestIssueQ extends IssueQ(UInt(32.W))
+
+class IdeaIssueQueueTest extends AnyFreeSpec with ChiselScalatestTester with Matchers {
+  "test" in {
+    test(new TestIdeaQ) { c =>
+      c.io.in(0).bits.poke(1.U)
+      c.io.in(0).valid.poke(1.B)
+      c.io.in(1).bits.poke(2.U)
+      c.io.in(1).valid.poke(1.B)
+
+      c.clock.step()
+
+      c.io.out(0).bits.expect(1.U)
+      c.io.out(1).bits.expect(2.U)
+    }
+  }
 }
 
-class TestIssueQ extends IssueQ(UInt(32.W))
+class TestIdeaQ extends IdeaIssueQueue(UInt(32.W))
