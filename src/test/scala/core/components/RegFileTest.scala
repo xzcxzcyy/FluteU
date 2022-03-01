@@ -8,7 +8,7 @@ import chisel3.experimental.VecLiterals._
 import core.components.RegFile
 
 class RegFileTest extends AnyFreeSpec with ChiselScalatestTester with Matchers {
-  "Register File Test" in {
+  "General Test" in {
     test(new RegFile(2, 2)) { c =>
       for (i <- 0 until 2) {
         val pos = i + 1
@@ -33,6 +33,25 @@ class RegFileTest extends AnyFreeSpec with ChiselScalatestTester with Matchers {
       c.io.read(0).r2Data.expect(2.U)
       c.io.read(1).r1Data.expect(3.U)
       c.io.read(1).r2Data.expect(4.U)
+    }
+  }
+
+  /**
+    * ATTENTION: DO NOT DO THIS; BEHAVIOR IS UNDEFINED.
+    */
+  "Write hazard test" in {
+    test(new RegFile(2, 2)) { c =>
+      c.io.write(0).writeEnable.poke(1.B)
+      c.io.write(0).writeAddr.poke(1.U)
+      c.io.write(0).writeData.poke(1111.U)
+
+      c.io.write(1).writeEnable.poke(1.B)
+      c.io.write(1).writeAddr.poke(1.U)
+      c.io.write(1).writeData.poke(2222.U)
+
+      c.clock.step()
+      // 实验结果罢了
+      c.io.debug(1).expect(2222.U)
     }
   }
 
