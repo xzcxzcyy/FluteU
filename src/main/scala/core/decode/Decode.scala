@@ -19,6 +19,8 @@ class Decode extends Module {
     val withFetch    = Flipped(new FetchIO())
     val feedback     = new DecodeFeedbackIO()
     val regFileWrite = Vec(superscalar, new RegFileWriteIO())
+
+    val debug = Output(Vec(regAmount, UInt(dataWidth.W)))
   })
 
   val regFile = Module(new RegFile(superscalar, superscalar))
@@ -29,6 +31,8 @@ class Decode extends Module {
 
   val willProcess = Mux(io.withFetch.instNum < 2.U, io.withFetch.instNum, 2.U)
   // willProcess = min(2, instNum)
+
+  io.debug := regFile.io.debug
 
   for (i <- 0 until superscalar) {
     // read
