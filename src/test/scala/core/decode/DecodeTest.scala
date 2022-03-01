@@ -26,12 +26,22 @@ class DecodeTest extends AnyFreeSpec with ChiselScalatestTester with Matchers {
 			d(0).bits.controlSig.aluOp.expect(5.U)
 			d(1).bits.controlSig.aluOp.expect(5.U)
 			c.clock.step()
+
 			d(0).bits.controlSig.aluOp.expect(3.U)
 			d(0).bits.immediate.expect(0xffff.U)
 			d(0).valid.expect(1.B)
+
+			///
+			d(0).bits.writeRegAddr.expect(1.U)
+			d(0).bits.controlSig.loadMode.expect(0.B)
+
 			d(1).bits.controlSig.aluOp.expect(3.U)
 			d(1).bits.immediate.expect(0x00ff.U)
 			d(1).valid.expect(1.B)
+
+			///
+			d(1).bits.writeRegAddr.expect(2.U)
+
 			c.clock.step()
 			d(0).bits.controlSig.aluOp.expect(5.U)
 			d(1).bits.controlSig.aluOp.expect(5.U)
@@ -40,6 +50,20 @@ class DecodeTest extends AnyFreeSpec with ChiselScalatestTester with Matchers {
 			d(1).bits.controlSig.aluOp.expect(3.U)
     }
   }
+
+	"test2" in {
+		test(new Decode) { c=>
+			c.io.regFileWrite(0).writeEnable.poke(1.B)
+			c.io.regFileWrite(0).writeAddr.poke(2.U)
+			c.io.regFileWrite(0).writeData.poke(0xff.U)
+
+			c.io.debug(1).expect(0.U)
+
+			c.clock.step()
+
+			c.io.debug(2).expect(0xff.U)
+		}
+	}
 }
 
 class IFIDTop extends Module {

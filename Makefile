@@ -33,7 +33,9 @@ ${DIR}/%.debug: ${DIR}/%.bin
 	mips-linux-gnu-objdump -d $^.bin
 	hexdump -C $^
 
-all: ${DIR} ${DIR}/xor.hex
+xor: ${DIR} ${DIR}/xor.hex
+
+xor_load: ${DIR} ${DIR}/xor_load.hex
 
 ${DIR}:
 	mkdir -p ${DIR}

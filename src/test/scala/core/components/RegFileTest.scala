@@ -33,6 +33,7 @@ class RegFileTest extends AnyFreeSpec with ChiselScalatestTester with Matchers {
       c.io.read(0).r2Data.expect(2.U)
       c.io.read(1).r1Data.expect(3.U)
       c.io.read(1).r2Data.expect(4.U)
+      c.io.debug(1).expect(1.U)
     }
   }
 
