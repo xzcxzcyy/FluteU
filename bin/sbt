@@ -1,0 +1,13 @@
+#!/bin/bash
+
+mkdir -p target
+
+sbt="target/sbt"
+
+download(){
+    curl -Ls https://raw.githubusercontent.com/dwijnand/sbt-extras/master/sbt > $sbt && chmod +x $sbt || rm $sbt
+}
+
+[ ! -f "$sbt" ] && download
+
+[ -f "$sbt" ] && $sbt $*
