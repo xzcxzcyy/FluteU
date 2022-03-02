@@ -41,10 +41,14 @@ class PreDecode extends Module {
       io.targetAddr.bits  := Cat(pcplusfour(31, 28), io.instruction.bits(25, 0), 0.U(2.W))
       io.targetAddr.valid := 1.B
       io.stallReq         := 0.B
-    }.otherwise {
+    }.elsewhen(Inst.needWait(io.instruction.bits)) {
       io.targetAddr.valid := 0.B
       io.targetAddr.bits  := DontCare
       io.stallReq         := 1.B
+    }.otherwise {
+      io.targetAddr.valid := 0.B
+      io.targetAddr.bits  := DontCare
+      io.stallReq         := 0.B
     }
   }.otherwise {
     io.stallReq         := 0.B
