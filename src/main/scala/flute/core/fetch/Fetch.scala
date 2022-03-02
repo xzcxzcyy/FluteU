@@ -10,8 +10,7 @@ import flute.core.execute.ExecuteFeedbackIO
 import flute.core.decode.DecodeFeedbackIO
 
 class FetchIO extends Bundle {
-  // 指令队列，不确定指令用什么格式往下传，需要附带什么信息，暂用32位表示
-  val insts       = Output(Vec(fetchGroupSize, new IBEntry))
+  val insts       = Output(Vec(fetchGroupSize, new IBEntry)) // 指令队列
   val instNum     = Output(UInt(fetchAmountWidth.W)) // 队列指令数量
   val willProcess = Input(UInt(fetchAmountWidth.W))  // 下一拍到来时，decode取走指令条数
 }
@@ -61,11 +60,11 @@ class Fetch extends Module {
     when(i.U + io.withDecode.willProcess < instNum) {
       iB(i.U) := iB(i.U + io.withDecode.willProcess)
     }.elsewhen(i.U + io.withDecode.willProcess - instNum < instNumCacheLineHas) {
-      iB(i.U) := io.iCache.data.bits(
+      iB(i.U).inst := io.iCache.data.bits(
         i.U + io.withDecode.willProcess - instNum + pc.io.out(1 + fetchGroupWidth, 1 + 1)
       )
     }.otherwise {
-      iB(i.U) := 0.U
+      iB(i.U) := (new IBEntry).Lit()
     }
   }
 
