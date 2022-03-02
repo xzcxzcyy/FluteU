@@ -32,6 +32,7 @@ class PreDecode extends Module {
     val pc          = Input(UInt(addrWidth.W))
     val stallReq    = Output(Bool())
     val targetAddr  = ValidIO(UInt(instrWidth.W))
+    val isBranch    = Output(Bool())
   })
 
   val pcplusfour = io.pc + 4.U
@@ -55,4 +56,7 @@ class PreDecode extends Module {
     io.targetAddr.bits  := DontCare
     io.targetAddr.valid := 0.B
   }
+
+  io.isBranch := io.instruction.valid &&
+    (Inst.needUpdate(io.instruction.bits) || Inst.needWait(io.instruction.bits))
 }

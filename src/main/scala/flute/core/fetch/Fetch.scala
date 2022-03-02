@@ -45,10 +45,12 @@ class Fetch extends Module {
     )
   }
 
+  val earliestBranchInd = PriorityEncoder(preDecoders.map(_.io.isBranch))
+
   val instNumIBPermits = fetchGroupSize.U - instNum + io.withDecode.willProcess
   val instNumCacheLineHas = Mux(
     io.iCache.data.valid,
-    fetchGroupSize.U - pc.io.out(1 + fetchGroupWidth, 1 + 1),
+    fetchGroupSize.U - bias,
     0.U(fetchAmountWidth.W)
   )
   val instNumInc =
@@ -61,7 +63,12 @@ class Fetch extends Module {
       iB(i.U) := iB(i.U + io.withDecode.willProcess)
     }.elsewhen(i.U + io.withDecode.willProcess - instNum < instNumCacheLineHas) {
       iB(i.U).inst := io.iCache.data.bits(
-        i.U + io.withDecode.willProcess - instNum + pc.io.out(1 + fetchGroupWidth, 1 + 1)
+        i.U + io.withDecode.willProcess - instNum + bias
+      )
+      iB(i.U).addr := Cat(
+        pc.io.out(31, fetchGroupWidth + 2),
+        i.U + io.withDecode.willProcess - instNum + bias,
+        0.U(2.W)
       )
     }.otherwise {
       iB(i.U) := (new IBEntry).Lit()
