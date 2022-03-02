@@ -21,6 +21,10 @@ class MicroOp extends Bundle {
   val writeRegAddr = UInt(regAddrWidth.W)
   val immediate    = UInt(dataWidth.W)
   val shamt        = UInt(shamtWidth.W)
+
+  // for issue wake up
+  val rsAddr = UInt(instrWidth.W)
+  val rtAddr = UInt(instrWidth.W)
 }
 
 class Decoder extends Module {
@@ -79,5 +83,9 @@ class Decoder extends Module {
   // Shamt ////////////////////////////////////////////////////////
   io.microOp.shamt := io.instr(10, 6)
   /////////////////////////////////////////////////////////////////
+
+  // Issue Wake Up ////////////////////////////////////////////////
+  io.microOp.rsAddr := io.instr(25, 21)
+  io.microOp.rtAddr := io.instr(20, 16)
 }
 
