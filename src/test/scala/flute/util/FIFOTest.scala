@@ -6,8 +6,8 @@ import chiseltest._
 import org.scalatest.freespec.AnyFreeSpec
 import org.scalatest.matchers.should.Matchers
 
-import fluteutil.BitMode.fromIntToBitModeLong
-import config.CPUConfig._
+import flute.util.BitMode.fromIntToBitModeLong
+import flute.config.CPUConfig._
 
 class FIFOTest extends AnyFreeSpec with ChiselScalatestTester with Matchers {
   /**
