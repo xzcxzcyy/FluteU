@@ -4,6 +4,8 @@ PREFIX != if [ -f "/etc/arch-release" ]; then \
 	  echo mips-linux-gnu; \
   fi
 
+TARGET=xor.hexS xor.hex xor_load.hex
+
 SRC=src/test/clang
 DIR=target/clang
 BCC=gcc
@@ -40,9 +42,7 @@ ${DIR}/%.debug: ${DIR}/%.bin
 	mips-linux-gnu-objdump -d $^.bin
 	hexdump -C $^
 
-xor: ${DIR} ${DIR}/xor.hex
-
-xor_load: ${DIR} ${DIR}/xor_load.hex
+all: ${DIR} $(addprefix target/clang/,$(TARGET))
 
 ${DIR}:
 	mkdir -p ${DIR}
