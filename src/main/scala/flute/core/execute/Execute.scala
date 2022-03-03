@@ -1,7 +1,7 @@
 package flute.core.execute
 
 import chisel3._
-import chisel3.util.MuxLookup
+import chisel3.util.{MuxLookup, Valid}
 
 import flute.config.CPUConfig._
 import flute.cache.DCacheIO
@@ -9,7 +9,9 @@ import flute.core.decode.DecodeIO
 import flute.core.components.{RegFileWriteIO, ALU}
 import flute.core.execute.aluexec.ALUExecutor
 
-class ExecuteFeedbackIO extends Bundle {}
+class ExecuteFeedbackIO extends Bundle {
+  val branchAddr = Output(Valid(UInt(addrWidth.W)))
+}
 
 class Execute extends Module {
   val io = IO(new Bundle {

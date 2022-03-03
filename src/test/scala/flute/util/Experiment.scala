@@ -6,6 +6,10 @@ import chiseltest._
 import org.scalatest.freespec.AnyFreeSpec
 import org.scalatest.matchers.should.Matchers
 
+/**
+  * Experiment
+  * Anyone can place codes here for API verification use.
+  */
 class Experiment extends AnyFreeSpec with ChiselScalatestTester with Matchers {
   "Priority encoder test" in {
     test(new EncoderTester) { c =>
