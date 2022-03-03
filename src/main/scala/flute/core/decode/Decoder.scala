@@ -48,6 +48,7 @@ class Decoder extends Module {
   ////////////////////////////////////////////////////////////////////
 
   // RegFile /////////////////////////////////////////////////////////
+
   val rsDataWire = Wire(UInt(dataWidth.W))
   val rtDataWire = Wire(UInt(dataWidth.W))
   io.withRegfile.r1Addr := io.instr(25, 21)
