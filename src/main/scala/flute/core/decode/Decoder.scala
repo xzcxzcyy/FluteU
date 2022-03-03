@@ -14,6 +14,7 @@ class MicroOp extends Bundle {
     val aluOp         = UInt(ALUOp.width.W)
     val aluYFromImm   = Bool()
     val aluXFromShamt = Bool()
+    val bjCond        = UInt(BJCond.width.W)
   }
   val controlSig      = new ControlSig()
   val rs           = UInt(dataWidth.W)
@@ -43,6 +44,7 @@ class Decoder extends Module {
   io.microOp.controlSig.aluOp         := controller.io.aluOp
   io.microOp.controlSig.aluXFromShamt := controller.io.aluXFromShamt
   io.microOp.controlSig.aluYFromImm   := controller.io.aluYFromImm
+  io.microOp.controlSig.bjCond        := controller.io.bjCond
   ////////////////////////////////////////////////////////////////////
 
   // RegFile /////////////////////////////////////////////////////////
