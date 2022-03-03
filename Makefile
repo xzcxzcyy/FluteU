@@ -20,9 +20,16 @@ ${DIR}/%.exe: ${SRC}/%.c
 	${BCC} -o $@ $^
 
 # generate raw binary code for mips
-${DIR}/%.bin: ${SRC}/%.c
-	${RCC} -O1 -o $@.bin -c $^
-	${MCP} -O binary -j .text $@.bin $@
+${DIR}/%.bin: ${DIR} ${SRC}/%.c
+	${RCC} -O1 -o ${DIR}/$*.o -c $^
+	${MCP} -O binary -j .text ${DIR}/$*.o $@
+
+${DIR}/%.binS: ${DIR} ${SRC}/%.S
+	${RCC} -O1 -o ${DIR}/$*.oS -c $^
+	${MCP} -O binary -j .text ${DIR}/$*.oS $@
+
+${DIR}/%.hexS: ${DIR}/%.binS
+	hexdump -ve '4/1 "%02x"' -e '"\n"' $^ > $@
 
 # generate hex file for mips
 ${DIR}/%.hex: ${DIR}/%.bin
