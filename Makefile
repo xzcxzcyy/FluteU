@@ -4,7 +4,7 @@ PREFIX != if [ -f "/etc/arch-release" ]; then \
 	  echo mips-linux-gnu; \
   fi
 
-TARGET=xor.hexS xor.hex xor_load.hex
+TARGET=xor.hexS xor.hex xor_load.hex BGEZ.hexS mul.hexS jmp.hexS
 
 SRC=src/test/clang
 DIR=target/clang
@@ -39,7 +39,11 @@ ${DIR}/%.hex: ${DIR}/%.bin
 
 # debug
 ${DIR}/%.debug: ${DIR}/%.bin
-	mips-linux-gnu-objdump -d $^.bin
+	mips-linux-gnu-objdump -d ${DIR}/$*.o
+	hexdump -C $^
+
+${DIR}/%.debugS: ${DIR}/%.binS
+	mips-linux-gnu-objdump -d ${DIR}/$*.oS
 	hexdump -C $^
 
 all: ${DIR} $(addprefix target/clang/,$(TARGET))
