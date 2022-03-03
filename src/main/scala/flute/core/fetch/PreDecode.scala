@@ -7,6 +7,14 @@ import flute.config.CPUConfig._
 import flute.config.BasicInstructions
 import flute.util.BitPatCombine
 
+class PreDecodeOutput extends Bundle {
+  val targetAddr = new Bundle {
+    val valid = Bool()
+    val bits  = UInt(addrWidth.W)
+  }
+  val isBranch = Bool()
+}
+
 class PreDecode extends Module {
 
   private object Inst extends BasicInstructions {
@@ -30,33 +38,32 @@ class PreDecode extends Module {
   val io = IO(new Bundle {
     val instruction = Flipped(ValidIO(UInt(instrWidth.W)))
     val pc          = Input(UInt(addrWidth.W))
-    val stallReq    = Output(Bool())
-    val targetAddr  = ValidIO(UInt(instrWidth.W))
-    val isBranch    = Output(Bool())
+    val out         = Output(new PreDecodeOutput)
+    // val stallReq    = Output(Bool())
   })
 
   val pcplusfour = io.pc + 4.U
 
   when(io.instruction.valid) {
     when(Inst.needUpdate(io.instruction.bits)) {
-      io.targetAddr.bits  := Cat(pcplusfour(31, 28), io.instruction.bits(25, 0), 0.U(2.W))
-      io.targetAddr.valid := 1.B
-      io.stallReq         := 0.B
+      io.out.targetAddr.bits  := Cat(pcplusfour(31, 28), io.instruction.bits(25, 0), 0.U(2.W))
+      io.out.targetAddr.valid := 1.B
+      // io.stallReq         := 0.B
     }.elsewhen(Inst.needWait(io.instruction.bits)) {
-      io.targetAddr.valid := 0.B
-      io.targetAddr.bits  := DontCare
-      io.stallReq         := 1.B
+      io.out.targetAddr.valid := 0.B
+      io.out.targetAddr.bits  := DontCare
+      // io.stallReq         := 1.B
     }.otherwise {
-      io.targetAddr.valid := 0.B
-      io.targetAddr.bits  := DontCare
-      io.stallReq         := 0.B
+      io.out.targetAddr.valid := 0.B
+      io.out.targetAddr.bits  := DontCare
+      // io.stallReq         := 0.B
     }
   }.otherwise {
-    io.stallReq         := 0.B
-    io.targetAddr.bits  := DontCare
-    io.targetAddr.valid := 0.B
+    // io.stallReq         := 0.B
+    io.out.targetAddr.bits  := DontCare
+    io.out.targetAddr.valid := 0.B
   }
 
-  io.isBranch := io.instruction.valid &&
+  io.out.isBranch := io.instruction.valid &&
     (Inst.needUpdate(io.instruction.bits) || Inst.needWait(io.instruction.bits))
 }

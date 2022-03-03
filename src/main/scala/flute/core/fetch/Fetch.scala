@@ -26,6 +26,7 @@ class Fetch extends Module {
     val feedbackFromDecode = Flipped(new DecodeFeedbackIO())
     val feedbackFromExec   = Flipped(new ExecuteFeedbackIO())
     val iCache             = Flipped(new ICacheIO())
+    val state              = Output(UInt(State.width.W))
   })
 
   private object State {
@@ -33,20 +34,35 @@ class Fetch extends Module {
     val Free          = 0.U(width.W)
     val FirstAndBlock = 1.U(width.W)
     val Blocked       = 2.U(width.W)
+    val RESERVED      = 3.U(width.W)
   }
 
   val instNum     = RegInit(0.U(fetchAmountWidth.W))
   val pc          = Module(new PC)
   val iB          = RegInit(VecInit(Seq.fill(fetchGroupSize)((new IBEntry).Lit())))
   val preDecoders = for (i <- 0 until fetchGroupSize) yield Module(new PreDecode)
-  val branchAddr  = RegInit(Valid(UInt(addrWidth.W)).Lit())
-  val state       = RegInit(State.Free)
+  val branchAddr = RegInit(
+    (new Bundle {
+      val valid = Bool()
+      val bits  = UInt(addrWidth.W)
+    }).Lit()
+  )
+  val state = RegInit(State.Free)
 
-  val nextState = Wire(UInt(State.width.W))
-  val nextPc    = Wire(UInt(addrWidth.W))
+  val nextState     = Wire(UInt(State.width.W))
+  val nextPc        = Wire(UInt(addrWidth.W))
+  val instNumInc    = Wire(UInt(fetchAmountWidth.W))
+
+  instNumInc := DontCare
+  nextPc     := DontCare
+  nextState  := DontCare
 
   val bias          = pc.io.out(1 + fetchGroupWidth, 1 + 1)
-  val preDecoderIOs = VecInit(preDecoders.map(_.io))
+  val preDecoderIOs = Wire(Vec(fetchGroupSize, new PreDecodeOutput))
+
+  io.state := state
+
+  for (i <- 0 until fetchGroupSize) yield preDecoderIOs(i) := preDecoders(i).io.out
 
   for (i <- 0 until fetchGroupSize) {
     preDecoders(i).io.instruction.bits  := io.iCache.data.bits(i)
@@ -58,7 +74,7 @@ class Fetch extends Module {
     )
   }
 
-  val earliestBranchInd = PriorityEncoder(preDecoders.map(_.io.isBranch))
+  val earliestBranchInd = PriorityEncoder(preDecoderIOs.map(_.isBranch))
 
   val instNumIBPermits = fetchGroupSize.U - instNum + io.withDecode.willProcess //四位
   val instNumCacheLineHas = Mux(
@@ -66,7 +82,7 @@ class Fetch extends Module {
     earliestBranchInd - bias + 1.U(fetchAmountWidth.W),
     0.U(fetchAmountWidth.W)
   ) //四位
-  val instNumInc = Wire(UInt(fetchAmountWidth.W))
+
   switch(state) {
     is(State.Free) {
       instNumInc := Mux(
@@ -136,6 +152,12 @@ class Fetch extends Module {
         nextState := State.Blocked
       }
     }
+
+    // is(State.RESERVED) {
+    //   instNumInc := DontCare
+    //   nextPc     := DontCare
+    //   nextState  := DontCare
+    // }
   }
 
   for (i <- 0 until fetchGroupSize) yield {
