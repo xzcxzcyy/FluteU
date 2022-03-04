@@ -299,16 +299,17 @@ class BubbleIssueQueue extends Module {
     //////////////////////////// OP&RAW Check ////////////////////////////
 
     /// Determine issueRdy
-    val lastBranch = instr(0).controlSig.bjCond =/= BJCond.none
+    // val lastBranch = instr(0).controlSig.bjCond =/= BJCond.none
 
-    when(lastBranch && issueRdy(0)) {
-      // 强制延迟槽一同发出
-      issueRdy(1) := 1.B
-    }.otherwise {
-      // 发射条件: 无访存 WAW RAW冲突,且操作数准备完毕
-      issueRdy(1) := !memUsed && !wAW && !rAW && opRdy
-    }
+    // when(lastBranch && issueRdy(0)) {
+    //   // 强制延迟槽一同发出
+    //   issueRdy(1) := 1.B
+    // }.otherwise {
+    //   // 发射条件: 无访存 WAW RAW冲突,且操作数准备完毕
+    //   issueRdy(1) := !memUsed && !wAW && !rAW && opRdy
+    // }
 
+    issueRdy(1) := !memUsed && !wAW && !rAW && opRdy
   }
 
   val willIssue = Wire(Vec(2, Bool()))
@@ -333,8 +334,8 @@ class BubbleIssueQueue extends Module {
     writeRegAddr(i) := instr(i).writeRegAddr
     writeEn(i)      := instr(i).controlSig.regWriteEn
   }
-  
-  for(i <- 0 to 31) {
+
+  for(i <- 1 to 31) {
     val changeTo = 
       writingBoard(i.U) + (willIssue(0) && writeEn(0) && writeRegAddr(0) === i.U).asUInt + (willIssue(1) && writeEn(1) && writeRegAddr(1) === i.U).asUInt - (io.regFileWrite(0).writeEnable && io.regFileWrite(0).writeAddr === i.U).asUInt - (io.regFileWrite(1).writeEnable && io.regFileWrite(1).writeAddr === i.U).asUInt
     
