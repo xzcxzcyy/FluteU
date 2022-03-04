@@ -10,7 +10,7 @@ import flute.core.components.{RegFileWriteIO, ALU}
 import flute.core.execute.aluexec.ALUExecutor
 
 class ExecuteFeedbackIO extends Bundle {
-  val branchAddr = UInt(instrWidth.W)
+  val branchAddr = Valid(UInt(instrWidth.W))
 }
 
 class Execute extends Module {
@@ -27,9 +27,13 @@ class Execute extends Module {
   // 理想流水暂不考虑
   // xx := idExStage.io.data.bits
   val aluExecutors = for (i <- 0 until superscalar) yield Module(new ALUExecutor)
+  io.feedback.branchAddr.valid := 0.B
+  io.feedback.branchAddr.bits  := DontCare
   for (i <- 0 until superscalar) {
+    when(aluExecutors(i).io.feedback.branchAddr.valid){
+      io.feedback.branchAddr <> aluExecutors(i).io.feedback.branchAddr
+    }
     aluExecutors(i).io.source <> io.withDecode.microOps(i)
-    io.feedback.branchAddr := aluExecutors(i).io.feedback.branchAddr
     io.dCache(i) <> aluExecutors(i).io.dCache
     io.withRegFile(i) <> aluExecutors(i).io.regFile
   }
