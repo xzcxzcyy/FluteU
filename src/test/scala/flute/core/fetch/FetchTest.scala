@@ -58,7 +58,7 @@ class FetchTest extends AnyFreeSpec with ChiselScalatestTester with Matchers {
       dp.insts(7).inst.expect(0x380200ff.BM.U)
     }
   }
-
+/*
   "Fetch With Branch Travel Test" in {
     test(new FetchTestTop("target/clang/bubble_fetch_test.hex")) { c =>
       val clock = c.clock
@@ -89,6 +89,33 @@ class FetchTest extends AnyFreeSpec with ChiselScalatestTester with Matchers {
       insts(6).inst.expect(0x20010003.BM.U)
       state.expect(State.Free)
       instNum.expect(8.U)
+    }
+  }
+*/
+
+  "beq_bne test" in {
+    test(new FetchTestTop("target/clang/beq_bne.hexS")) { c =>
+      val clock = c.clock
+      val instNum = c.io.withDecode.instNum
+      val insts = c.io.withDecode.insts
+      val willProcess = c.io.withDecode.willProcess
+      val state = c.io.state
+      val branchAddr = c.io.feedbackFromExec.branchAddr
+
+      instNum.expect(0.U)
+      state.expect(State.Free)
+      clock.step()
+      instNum.expect(4.U)
+      state.expect(State.FirstAndBlock)
+      clock.step()
+      state.expect(State.Blocked)
+      instNum.expect(5.U)
+      branchAddr.valid.poke(1.B)
+      branchAddr.bits.poke(20.U)
+      clock.step()
+      branchAddr.valid.poke(0.B)
+      state.expect(State.Free)
+      
     }
   }
 }

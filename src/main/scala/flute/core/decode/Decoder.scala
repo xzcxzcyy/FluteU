@@ -45,7 +45,7 @@ class Decoder extends Module {
 
   // Controller //////////////////////////////////////////////////////
   val controller = Module(new Controller())
-  controller.io.instr                 := io.instr
+  controller.io.instr                 := io.instr.inst
   io.microOp.controlSig.regWriteEn    := controller.io.regWriteEn
   io.microOp.controlSig.loadMode      := controller.io.memToReg
   io.microOp.controlSig.storeMode     := controller.io.storeMode
