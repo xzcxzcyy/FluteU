@@ -174,8 +174,8 @@ class BubbleIssueQueue extends Module {
     io.regFileRead(i).r2Addr := instr(i).rtAddr
 
     // regFile
-    io.out(i).bits.rs           := io.regFileRead(i).r1Data
-    io.out(i).bits.rt           := io.regFileRead(i).r2Data
+    io.out(i).bits.rs := io.regFileRead(i).r1Data
+    io.out(i).bits.rt := io.regFileRead(i).r2Data
 
     io.out(i).bits.controlSig   := instr(i).controlSig
     io.out(i).bits.immediate    := instr(i).immediate
@@ -313,21 +313,31 @@ class BubbleIssueQueue extends Module {
 
   val willIssue = Wire(Vec(2, Bool()))
   // Dequeue
-  for(i <- 0 to 1) {
+  for (i <- 0 to 1) {
     // 产生valid信号
     io.out(i).valid := issueRdy(i)
-    
+
     // 但是否发射取决于ready和issueRdy二者
-    willIssue(i) := issueRdy(i) && io.out(i).ready
-    compressQueue.io.issueAddr(i).valid := willIssue
+    willIssue(i)                        := issueRdy(i) && io.out(i).ready
+    compressQueue.io.issueAddr(i).valid := willIssue(i)
   }
-  
+
   compressQueue.io.enqData <> io.in
 
   // update writingBoard
-  for(i <- 0 to 1) {
-    val writeRegAddr = instr(i).writeRegAddr
-    val writeEn = instr(i).controlSig.regWriteEn
-    // TODO update writingBoard
+
+  val writeRegAddr = Wire(Vec(2, UInt(32.W)))
+  val writeEn      = Wire(Vec(2, Bool()))
+
+  for (i <- 0 to 1) {
+    writeRegAddr(i) := instr(i).writeRegAddr
+    writeEn(i)      := instr(i).controlSig.regWriteEn
+  }
+  
+  for(i <- 0 to 31) {
+    val changeTo = 
+      writingBoard(i.U) + (willIssue(0) && writeEn(0) && writeRegAddr(0) === i.U).asUInt + (willIssue(1) && writeEn(1) && writeRegAddr(1) === i.U).asUInt - (io.regFileWrite(0).writeEnable && io.regFileWrite(0).writeAddr === i.U).asUInt - (io.regFileWrite(1).writeEnable && io.regFileWrite(1).writeAddr === i.U).asUInt
+    
+    writingBoard(i.U) := changeTo
   }
 }
