@@ -246,7 +246,7 @@ class BubbleIssueQueue extends Module {
     val writeRegAddr     = instr(1).writeRegAddr
     val wEn              = instr(1).controlSig.regWriteEn
     val lastWriteRegAddr = instr(0).writeRegAddr
-    val lastWEn          = instr(1).controlSig.regWriteEn
+    val lastWEn          = instr(0).controlSig.regWriteEn
     val wAW              = wEn && lastWEn && (writeRegAddr === lastWriteRegAddr)
     /////////////////////////// WAW Check ////////////////////////////
 
@@ -268,8 +268,8 @@ class BubbleIssueQueue extends Module {
     val branch = instr(1).controlSig.bjCond =/= BJCond.none
     val rsRdy  = writingBoard(rsAddr) === 0.U
     val rtRdy  = writingBoard(rtAddr) === 0.U
-    val rsHd   = lastWriteRegAddr === rsAddr && lastWEn // rs hazards with last instr
-    val rtHd   = lastWriteRegAddr === rtAddr && lastWEn // rt hazards with last instr
+    val rsHd   = (lastWriteRegAddr === rsAddr) && lastWEn // rs hazards with last instr
+    val rtHd   = (lastWriteRegAddr === rtAddr) && lastWEn // rt hazards with last instr
 
     val opRdy = Wire(Bool())
     val rAW   = Wire(Bool())
