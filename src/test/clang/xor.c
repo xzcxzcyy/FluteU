@@ -1,6 +1,4 @@
-void xor() {
-    __asm__(
-        "xori $1,$0,0xffff;"
+__asm__("xori $1,$0,0xffff;"
         "xori $2,$0,0x00ff;"
         "nop;"
         "nop;"
@@ -13,6 +11,4 @@ void xor() {
         "nop;"
         "nop;"
         "nop;"
-        "nop;"
-    );
-}
+        "nop;");
