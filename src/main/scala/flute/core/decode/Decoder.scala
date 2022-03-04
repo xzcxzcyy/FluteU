@@ -16,7 +16,7 @@ class MicroOp extends Bundle {
     val aluXFromShamt = Bool()
     val bjCond        = UInt(BJCond.width.W)
   }
-  val controlSig      = new ControlSig()
+  val controlSig   = new ControlSig()
   val rs           = UInt(dataWidth.W)
   val rt           = UInt(dataWidth.W)
   val writeRegAddr = UInt(regAddrWidth.W)
@@ -26,18 +26,20 @@ class MicroOp extends Bundle {
   // for issue wake up
   val rsAddr = UInt(instrWidth.W)
   val rtAddr = UInt(instrWidth.W)
+  // temporary: branchAddr calculated in Ex
+  val pc     = UInt(instrWidth.W)
 }
 
 class Decoder extends Module {
   val io = IO(new Bundle {
-    val instr         = Input(UInt(instrWidth.W))
-    val withRegfile   = Flipped(new RegFileReadIO)
-    val microOp       = Output(new MicroOp)
+    val instr       = Input(UInt(instrWidth.W))
+    val withRegfile = Flipped(new RegFileReadIO)
+    val microOp     = Output(new MicroOp)
   })
 
   // Controller //////////////////////////////////////////////////////
   val controller = Module(new Controller())
-  controller.io.instr := io.instr
+  controller.io.instr                 := io.instr
   io.microOp.controlSig.regWriteEn    := controller.io.regWriteEn
   io.microOp.controlSig.loadMode      := controller.io.memToReg
   io.microOp.controlSig.storeMode     := controller.io.storeMode
@@ -53,10 +55,10 @@ class Decoder extends Module {
   val rtDataWire = Wire(UInt(dataWidth.W))
   io.withRegfile.r1Addr := io.instr(25, 21)
   io.withRegfile.r2Addr := io.instr(20, 16)
-  rsDataWire := io.withRegfile.r1Data
-  io.microOp.rs := rsDataWire
-  rtDataWire := io.withRegfile.r2Data
-  io.microOp.rt := rtDataWire
+  rsDataWire            := io.withRegfile.r1Data
+  io.microOp.rs         := rsDataWire
+  rtDataWire            := io.withRegfile.r2Data
+  io.microOp.rt         := rtDataWire
   io.microOp.writeRegAddr := MuxLookup(
     key = controller.io.regDst,
     default = io.instr(15, 11),
@@ -90,4 +92,3 @@ class Decoder extends Module {
   io.microOp.rsAddr := io.instr(25, 21)
   io.microOp.rtAddr := io.instr(20, 16)
 }
-

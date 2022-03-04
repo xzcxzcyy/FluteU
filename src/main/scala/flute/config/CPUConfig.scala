@@ -19,6 +19,7 @@ object CPUConfig {
   val instrWidth    = 32
   val dataWidth     = 32
   val addrWidth     = 32
+  val byteWidth     = 8
   val regAddrWidth  = 5
   val opcodeWidth   = 6
   val shamtWidth    = 5
