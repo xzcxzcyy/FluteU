@@ -15,8 +15,8 @@ class ICacheTest extends AnyFreeSpec with ChiselScalatestTester with Matchers {
       c.io.addr.bits.poke(0.U)
       c.clock.step()
       c.io.data.valid.expect(1.B)
-      c.io.data.bits(0).expect(0x3801ffff.BM.U)
-      c.io.data.bits(1).expect(0x380200ff.U)
+      c.io.data.bits(0).expect(0x380200f0.BM.U)
+      c.io.data.bits(1).expect(0x380200f1.U)
     }
   }
 }
