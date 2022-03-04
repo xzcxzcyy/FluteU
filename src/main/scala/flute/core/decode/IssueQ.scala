@@ -9,7 +9,7 @@ import flute.config.CPUConfig._
 import flute.core.components.ALUOp
 import chisel3.util.MuxCase
 import flute.core.components._
-import flute.core.decode.StoreMode
+import flute.core.decode.{StoreMode, BJCond}
 
 class IssueQEntry extends Bundle {
   val entry = new MicroOp()
@@ -147,29 +147,42 @@ class IdeaIssueQueue[T <: Data](entryType: T) extends Module {
   io.in(1).ready := vaild2
 }
 
-
-
+// 气泡发射队列
+// 发射指令前读RegFile
 class BubbleIssueQueue extends Module {
   val io = IO(new Bundle {
     val in  = Flipped(Vec(2, DecoupledIO(new MicroOp)))
     val out = Vec(2, DecoupledIO(new MicroOp))
 
-    val regFileRead   = Flipped(Vec(superscalar, new RegFileReadIO()))
+    val regFileRead  = Flipped(Vec(superscalar, new RegFileReadIO()))
     val regFileWrite = Vec(superscalar, new RegFileWriteIO())
   })
 
-  val compressQueue = Module(new IssueQ(new MicroOp))
+  val compressQueue = Module(new CompressQ(new MicroOp))
 
   // 默认发射指令从队首两条取出
   for (i <- 0 to 1) compressQueue.io.issueAddr(i).bits := i.U
 
   val instr    = for (i <- 0 to 1) yield compressQueue.io.issueData(i)
   val instrNum = compressQueue.io.entryNum
+  val issueRdy = Wire(Vec(2, Bool())) // 是否能被发射
 
-  // 绑定out端口
+  // 绑定io data端口
   for (i <- 0 to 1) {
-    io.out(i).bits  := instr(i).bits
-    io.out(i).valid := instr(i).valid
+    // regFile
+    io.regFileRead(i).r1Addr := instr(i).rsAddr
+    io.regFileRead(i).r2Addr := instr(i).rtAddr
+
+    // regFile
+    io.out(i).bits.rs           := io.regFileRead(i).r1Data
+    io.out(i).bits.rt           := io.regFileRead(i).r2Data
+
+    io.out(i).bits.controlSig   := instr(i).controlSig
+    io.out(i).bits.immediate    := instr(i).immediate
+    io.out(i).bits.rsAddr       := instr(i).rsAddr
+    io.out(i).bits.rtAddr       := instr(i).rtAddr
+    io.out(i).bits.shamt        := instr(i).shamt
+    io.out(i).bits.writeRegAddr := instr(i).writeRegAddr
   }
 
   // 判断发射指令的条数
@@ -180,96 +193,141 @@ class BubbleIssueQueue extends Module {
   // 对于第一条指令
   when(instrNum === 0.U) {
     // 显然不发射
-    compressQueue.io.issueAddr(0).valid := 0.B
+    issueRdy(0) := 0.B
   }.otherwise {
-    val shamt = instr(0).bits.controlSig.aluXFromShamt
-    val rsAddr = instr(0).bits.rsAddr
-    val imm = instr(0).bits.controlSig.aluYFromImm
-    val rtAddr = instr(0).bits.rtAddr
 
-    val rsRdy = writingBoard(rsAddr) === 0.U
-    val rtRdy = writingBoard(rtAddr) === 0.U
+    ///////////////////////////// OP Check /////////////////////////////
+    val shamt  = instr(0).controlSig.aluXFromShamt
+    val rsAddr = instr(0).rsAddr
+    val imm    = instr(0).controlSig.aluYFromImm
+    val rtAddr = instr(0).rtAddr
+    val branch = instr(0).controlSig.bjCond =/= BJCond.none
+    val rsRdy  = writingBoard(rsAddr) === 0.U
+    val rtRdy  = writingBoard(rtAddr) === 0.U
 
     val opRdy = Wire(Bool())
-    
+
     when(imm) {
       // I型指令  rt = rs op imm
-      opRdy := rsRdy
+      when(branch) {
+        // 分支指令 beq rs,rt,imm
+        opRdy := rsRdy && rtRdy
+        // 如果可以发射，则强制延迟槽一同发射
+      }.otherwise {
+        opRdy := rsRdy
+      }
     }.otherwise {
       // R型指令  rd = rs op rt
-      // 移位指令 rd = rt op shamt 
+      // 移位指令 rd = rt op shamt
       when(shamt) {
+        // 此时rs未使用
         opRdy := rtRdy
       }.otherwise {
         opRdy := rsRdy && rtRdy
         // J型指令 TODO(?)
       }
     }
+    ///////////////////////////// OP Check /////////////////////////////
 
     // 第一条指令是否发射只取决于操作数是否准备完毕
-    compressQueue.io.issueAddr(0).valid := opRdy
+    issueRdy(0) := opRdy
   }
 
   // 对于第二条指令
   when(instrNum < 2.U) {
     // 指令不足两条，显然不发射
-    compressQueue.io.issueAddr(1).valid := 0.B
+    issueRdy(1) := 0.B
   }.otherwise {
     // 检查与前一条指令是否有RAW或WAW，原因：
     // RAW: 必须避免
     // WAW: 将可能出现寄存器写冲突，不能并行执行
-    val lastRdAddr = instr(0).bits.writeRegAddr
-    val lastWEn = instr(0).bits.controlSig.regWriteEn
-    
-    val rsAddr = instr(1).bits.rsAddr
-    val rsDis = instr(1).bits.controlSig.aluXFromShamt
 
-    val rtAddr = instr(1).bits.rtAddr
-    val rtDis = instr(1).bits.controlSig.aluYFromImm
-    val rdAddr = instr(1).bits.writeRegAddr
-    val wEn = instr(1).bits.controlSig.regWriteEn
-
-    // WAW
-    val wAW = lastWEn && wEn && (lastRdAddr === rdAddr)
-    // RAW
-    val rAW = lastWEn && (rsDis || rsAddr === lastRdAddr) && (rtDis || rtAddr === lastRdAddr)
+    //////////////////////////// WAW Check ////////////////////////////
+    val writeRegAddr     = instr(1).writeRegAddr
+    val wEn              = instr(1).controlSig.regWriteEn
+    val lastWriteRegAddr = instr(0).writeRegAddr
+    val lastWEn          = instr(1).controlSig.regWriteEn
+    val wAW              = wEn && lastWEn && (writeRegAddr === lastWriteRegAddr)
+    /////////////////////////// WAW Check ////////////////////////////
 
     // 为了避免访存冲突，所有访存指令默认只能送往EXUnit0执行。后续会进行更改 TODO(2)
     // lw指令loadMode = 1; sw指令stroeMode != disable
-    val memUsed = instr(1).bits.controlSig.loadMode || instr(1).bits.controlSig.storeMode =/= StoreMode.disable
+
+    //////////////////////////// LW/SW Check ////////////////////////////
+    val memUsed =
+      instr(1).controlSig.loadMode || instr(1).controlSig.storeMode =/= StoreMode.disable
+    //////////////////////////// LW/SW Check ////////////////////////////
 
     // 同样通过writingBoad判断操作数(可能用到了之前的指令的结果)是否准备完毕
-    val rsRdy = rsDis || writingBoard(rsAddr) === 0.U
-    val rtRdy = rtDis || writingBoard(rtAddr) === 0.U
-    val opNumRdy = rsRdy && rtRdy
 
-    // 第二条指令能够发送的条件: 无WAW RAW 访存,且操作数准备完毕
+    //////////////////////////// OP&RAW Check ////////////////////////////
+    val shamt  = instr(1).controlSig.aluXFromShamt
+    val imm    = instr(1).controlSig.aluYFromImm
+    val rsAddr = instr(1).rsAddr
+    val rtAddr = instr(1).rtAddr
+    val branch = instr(1).controlSig.bjCond =/= BJCond.none
+    val rsRdy  = writingBoard(rsAddr) === 0.U
+    val rtRdy  = writingBoard(rtAddr) === 0.U
+    val rsHd   = lastWriteRegAddr === rsAddr && lastWEn // rs hazards with last instr
+    val rtHd   = lastWriteRegAddr === rtAddr && lastWEn // rt hazards with last instr
 
-    val imm = instr(1).bits.controlSig.aluXFromShamt
-    val shamt = instr(1).bits.controlSig.aluXFromShamt
-    
-    val hazard = Wire(Bool())
-
+    val opRdy = Wire(Bool())
+    val rAW   = Wire(Bool())
     when(imm) {
       // I型指令  rt = rs op imm
-      when(memUsed) {
-        // lw/sw指令
-        hazard := 1.B
+      when(branch) {
+        // 分支指令 beq rs,rt,imm
+        opRdy := rsRdy && rtRdy
+        rAW   := rsHd && rtHd
       }.otherwise {
-
+        opRdy := rsRdy
+        rAW   := rtHd
       }
-
-    }.otherwise{
+    }.otherwise {
       // R型指令  rd = rs op rt
-      // 移位指令 rd = rt op shamt 
+      // 移位指令 rd = rt op shamt
       when(shamt) {
-
+        // 此时rs未使用
+        opRdy := rtRdy
+        rAW   := rtHd
       }.otherwise {
-
+        opRdy := rsRdy && rtRdy
+        rAW   := rsHd && rtHd
+        // J型指令 TODO(?)
       }
     }
-    
+    //////////////////////////// OP&RAW Check ////////////////////////////
+
+    /// Determine issueRdy
+    val lastBranch = instr(0).controlSig.bjCond =/= BJCond.none
+
+    when(lastBranch && issueRdy(0)) {
+      // 强制延迟槽一同发出
+      issueRdy(1) := 1.B
+    }.otherwise {
+      // 发射条件: 无访存 WAW RAW冲突,且操作数准备完毕
+      issueRdy(1) := !memUsed && !wAW && !rAW && opRdy
+    }
 
   }
 
+  val willIssue = Wire(Vec(2, Bool()))
+  // Dequeue
+  for(i <- 0 to 1) {
+    // 产生valid信号
+    io.out(i).valid := issueRdy(i)
+    
+    // 但是否发射取决于ready和issueRdy二者
+    willIssue(i) := issueRdy(i) && io.out(i).ready
+    compressQueue.io.issueAddr(i).valid := willIssue
+  }
+  
+  compressQueue.io.enqData <> io.in
+
+  // update writingBoard
+  for(i <- 0 to 1) {
+    val writeRegAddr = instr(i).writeRegAddr
+    val writeEn = instr(i).controlSig.regWriteEn
+    // TODO update writingBoard
+  }
 }

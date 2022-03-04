@@ -24,7 +24,7 @@ class IssueQTest extends AnyFreeSpec with ChiselScalatestTester with Matchers {
       }
       def setNoIssue() = {
         c.io.issueAddr(0).valid.poke(0.B)
-        c.io.issueAddr(0).valid.poke(0.B)
+        c.io.issueAddr(1).valid.poke(0.B)
       }
       def setNoEnq() = {
         c.io.enqAddr(0).valid.poke(0.B)
@@ -89,3 +89,11 @@ class IdeaIssueQueueTest extends AnyFreeSpec with ChiselScalatestTester with Mat
 }
 
 class TestIdeaQ extends IdeaIssueQueue(UInt(32.W))
+
+class BubbleIssueQueueTest extends AnyFreeSpec with ChiselScalatestTester with Matchers {
+  "test" in {
+    test(new BubbleIssueQueue) { c=>
+
+    }
+  }
+}
