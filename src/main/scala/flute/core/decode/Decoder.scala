@@ -5,6 +5,7 @@ import chisel3._
 import chisel3.util.MuxLookup
 import flute.config.CPUConfig._
 import flute.core.components._
+import flute.core.fetch.IBEntry
 
 class MicroOp extends Bundle {
   class ControlSig extends Bundle {
@@ -32,10 +33,15 @@ class MicroOp extends Bundle {
 
 class Decoder extends Module {
   val io = IO(new Bundle {
-    val instr       = Input(UInt(instrWidth.W))
+    val instr       = Input(new IBEntry)
     val withRegfile = Flipped(new RegFileReadIO)
     val microOp     = Output(new MicroOp)
   })
+
+  // 解开 Fetch 传来的 IBEntry 结构
+  val instruction = Wire(UInt(instrWidth.W))
+  instruction   := io.instr.inst
+  io.microOp.pc := io.instr.addr
 
   // Controller //////////////////////////////////////////////////////
   val controller = Module(new Controller())
@@ -53,18 +59,18 @@ class Decoder extends Module {
 
   val rsDataWire = Wire(UInt(dataWidth.W))
   val rtDataWire = Wire(UInt(dataWidth.W))
-  io.withRegfile.r1Addr := io.instr(25, 21)
-  io.withRegfile.r2Addr := io.instr(20, 16)
+  io.withRegfile.r1Addr := instruction(25, 21)
+  io.withRegfile.r2Addr := instruction(20, 16)
   rsDataWire            := io.withRegfile.r1Data
   io.microOp.rs         := rsDataWire
   rtDataWire            := io.withRegfile.r2Data
   io.microOp.rt         := rtDataWire
   io.microOp.writeRegAddr := MuxLookup(
     key = controller.io.regDst,
-    default = io.instr(15, 11),
+    default = instruction(15, 11),
     mapping = Seq(
-      RegDst.rt    -> io.instr(20, 16),
-      RegDst.rd    -> io.instr(15, 11),
+      RegDst.rt    -> instruction(20, 16),
+      RegDst.rd    -> instruction(15, 11),
       RegDst.GPR31 -> 31.U(regAddrWidth.W)
     )
   )
@@ -76,19 +82,19 @@ class Decoder extends Module {
     key = controller.io.immRecipe,
     default = 0.U(dataWidth.W),
     mapping = Seq(
-      ImmRecipe.sExt -> io.instr(15, 0),
-      ImmRecipe.uExt -> Cat(0.U(15.W), io.instr(15, 0)),
-      ImmRecipe.lui  -> Cat(io.instr(15, 0), 0.U(15.W))
+      ImmRecipe.sExt -> instruction(15, 0),
+      ImmRecipe.uExt -> Cat(0.U(15.W), instruction(15, 0)),
+      ImmRecipe.lui  -> Cat(instruction(15, 0), 0.U(15.W))
     )
   )
   io.microOp.immediate := extendedImm
   /////////////////////////////////////////////////////////////////
 
   // Shamt ////////////////////////////////////////////////////////
-  io.microOp.shamt := io.instr(10, 6)
+  io.microOp.shamt := instruction(10, 6)
   /////////////////////////////////////////////////////////////////
 
   // Issue Wake Up ////////////////////////////////////////////////
-  io.microOp.rsAddr := io.instr(25, 21)
-  io.microOp.rtAddr := io.instr(20, 16)
+  io.microOp.rsAddr := instruction(25, 21)
+  io.microOp.rtAddr := instruction(20, 16)
 }
