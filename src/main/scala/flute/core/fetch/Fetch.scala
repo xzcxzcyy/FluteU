@@ -34,7 +34,7 @@ class Fetch extends Module {
     val Free          = 0.U(width.W)
     val FirstAndBlock = 1.U(width.W)
     val Blocked       = 2.U(width.W)
-    val RESERVED      = 3.U(width.W)
+    val RESERVED      = 3.U(width.W) // illegal state; do not use
   }
 
   val instNum     = RegInit(0.U(fetchAmountWidth.W))
@@ -153,11 +153,10 @@ class Fetch extends Module {
       }
     }
 
-    // is(State.RESERVED) {
-    //   instNumInc := DontCare
-    //   nextPc     := DontCare
-    //   nextState  := DontCare
-    // }
+    is(State.RESERVED) {
+      nextPc    := 0.U
+      nextState := State.RESERVED
+    }
   }
 
   for (i <- 0 until fetchGroupSize) yield {
