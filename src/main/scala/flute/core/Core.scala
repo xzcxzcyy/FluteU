@@ -11,7 +11,7 @@ import flute.core.execute._
 class Core extends Module {
   val io = IO(new Bundle {
     val iCache = Flipped(new ICacheIO)
-    val dCache = new DCacheIO
+    val dCache = Flipped(Vec(superscalar,new DCacheIO))
     val rFdebug = Output(Vec(regAmount, UInt(dataWidth.W)))
   })
 
@@ -24,7 +24,7 @@ class Core extends Module {
   fetch.io.withDecode <> decode.io.withFetch
   decode.io.withExecute <> execute.io.withDecode
   decode.io.regFileWrite := execute.io.withRegFile
-  io.dCache := DontCare // TODO: connect dcache here
+  io.dCache <> execute.io.dCache
   fetch.io.iCache <> io.iCache
   fetch.io.feedbackFromDecode <> decode.io.feedback
   fetch.io.feedbackFromExec <> execute.io.feedback
