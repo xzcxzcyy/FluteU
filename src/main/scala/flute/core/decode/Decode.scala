@@ -25,7 +25,7 @@ class Decode extends Module {
 
   val regFile = Module(new RegFile(superscalar, superscalar))
 
-  val issueQueue = Module(new IdeaIssueQueue(new MicroOp))
+  val issueQueue = Module(new BubbleIssueQueue)
 
   val decoders = for (i <- 0 until superscalar) yield Module(new Decoder)
 
@@ -36,9 +36,10 @@ class Decode extends Module {
 
   for (i <- 0 until superscalar) {
     // read
-    regFile.io.read(i) <> decoders(i).io.withRegfile
+    regFile.io.read(i) <> issueQueue.io.regFileRead(i)
     // write
     regFile.io.write(i) := io.regFileWrite(i)
+    issueQueue.io.regFileWrite(i) := io.regFileWrite(i) // 更新其writingBoard
 
     // fetch
     decoders(i).io.instr := io.withFetch.insts(i)

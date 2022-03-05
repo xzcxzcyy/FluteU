@@ -183,6 +183,7 @@ class BubbleIssueQueue extends Module {
     io.out(i).bits.rtAddr       := instr(i).rtAddr
     io.out(i).bits.shamt        := instr(i).shamt
     io.out(i).bits.writeRegAddr := instr(i).writeRegAddr
+    io.out(i).bits.pc           := instr(i).pc
   }
 
   // 判断发射指令的条数
@@ -335,10 +336,16 @@ class BubbleIssueQueue extends Module {
     writeEn(i)      := instr(i).controlSig.regWriteEn
   }
 
-  for(i <- 1 to 31) {
-    val changeTo = 
-      writingBoard(i.U) + (willIssue(0) && writeEn(0) && writeRegAddr(0) === i.U).asUInt + (willIssue(1) && writeEn(1) && writeRegAddr(1) === i.U).asUInt - (io.regFileWrite(0).writeEnable && io.regFileWrite(0).writeAddr === i.U).asUInt - (io.regFileWrite(1).writeEnable && io.regFileWrite(1).writeAddr === i.U).asUInt
-    
+  for (i <- 1 to 31) {
+    val changeTo =
+      writingBoard(i.U) + (willIssue(0) && writeEn(0) && writeRegAddr(
+        0
+      ) === i.U).asUInt + (willIssue(1) && writeEn(1) && writeRegAddr(1) === i.U).asUInt - (io
+        .regFileWrite(0)
+        .writeEnable && io.regFileWrite(0).writeAddr === i.U).asUInt - (io
+        .regFileWrite(1)
+        .writeEnable && io.regFileWrite(1).writeAddr === i.U).asUInt
+
     writingBoard(i.U) := changeTo
   }
 }
