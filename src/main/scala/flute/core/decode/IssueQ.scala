@@ -212,7 +212,7 @@ class BubbleIssueQueue extends Module {
 
     when(imm) {
       // I型指令  rt = rs op imm
-      when(branch && save) {
+      when(branch || save) {
         // 分支指令 beq rs,rt,imm; SW指令 sw rt,rs,imm
         opRdy := rsRdy && rtRdy
         // 如果可以发射，则强制延迟槽一同发射
