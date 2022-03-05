@@ -32,35 +32,48 @@ class FIFOQueue[T <: Data](gen:T, numEntries: Int, numRead: Int, numWrite: Int) 
   val numDeq = Mux(deqEntries < numTryDeq, deqEntries, numTryDeq)
   val numEnq = Mux(enqEntries < numTryEnq, enqEntries, numTryEnq)
 
-  // Assumptions:
-  // 读写端口的均需要把1集中放前面
-  // 类似[1, 0, 1]的读写行为是未定义的
   for (i <- 0 until numWrite) {
-    val offset = i.U
+    val offset = Wire(UInt(log2Up(numEntries).W))
+    if (i == 0) {
+      offset := 0.U
+    } else {
+      offset := PopCount(io.write.slice(0, i).map(_.valid))
+    }
 
     when (io.write(i).valid) {
       when (offset < numEnq) {
         data((tail_ptr + offset)(log2Up(numEntries) - 1, 0)) := io.write(i).bits
+        io.write(i).ready := 1.B
+      }.otherwise {
+        io.write(i).ready := 0.B
       }
+    }.otherwise {
+      io.write(i).ready := 0.B
     }
-
-    io.write(i).ready := offset < enqEntries
   }
 
   for (i <- 0 until numRead) {
-    val offset = i.U
+    val offset = Wire(UInt(log2Up(numEntries).W))
+    if (i == 0) {
+      offset := 0.U
+    } else {
+      offset := PopCount(io.write.slice(0, i).map(_.ready))
+    }
 
     when (io.read(i).ready) {
       when (offset < numDeq) {
+        io.read(i).valid := 1.B
         io.read(i).bits := data((head_ptr + offset)(log2Up(numEntries) - 1, 0))
       }.otherwise{
+        io.read(i).valid := 0.B
         io.read(i).bits := DontCare
       }
     }.otherwise{
+      io.read(i).valid := 0.B
       io.read(i).bits := DontCare
     }
 
-    io.read(i).valid := offset < deqEntries
+    
   }
 
   head_ptr := head_ptr + numDeq

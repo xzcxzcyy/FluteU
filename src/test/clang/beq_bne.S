@@ -7,9 +7,9 @@ addi $s1,$zero,2
 addi $s3,$zero,4
 beq $s0, $s2, Next1
 beq $s0, $s0, Next1
-addi $s1,$zero,255    # can not execute
-addi $s2,$zero,255
-addi $s3,$zero,255
+addi $s1,$zero,251    # can not execute
+addi $s2,$zero,252
+addi $s3,$zero,253
 
 Next1:
 
@@ -17,8 +17,8 @@ Next1:
  bne $s1, $s2, Next2
 
  addi $s1,$zero,254    # can not execute
- addi $s2,$zero,254
- addi $s3,$zero,254
+ addi $s2,$zero,255
+ addi $s3,$zero,256
 
 Next2:
  nop

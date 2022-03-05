@@ -63,7 +63,7 @@ class ALUExecutor extends Module {
   io.feedback.branchAddr.valid := idEx.io.data.controlSig.bjCond =/= BJCond.none
   io.feedback.branchAddr.bits := Mux(
     branchTaken,
-    idEx.io.data.pc + 4.U + idEx.io.data.immediate,
+    idEx.io.data.pc + 4.U + Cat(idEx.io.data.immediate, 0.U(2.W)),
     idEx.io.data.pc + 8.U
   )
 
