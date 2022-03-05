@@ -14,7 +14,7 @@ import org.scalatest.matchers.should.Matchers
 
 class CoreTest extends AnyFreeSpec with ChiselScalatestTester with Matchers {
   "beq_bne.test" in {
-    test(new CoreTester) { c =>
+    test(new CoreTester("target/clang/beq_bne.hexS")) { c =>
       val rf = c.io.rFdebug
       rf(0).expect(0.U)
       c.clock.step(50)
@@ -25,13 +25,31 @@ class CoreTest extends AnyFreeSpec with ChiselScalatestTester with Matchers {
       rf(19).expect(4.U)
     }
   }
+
+  "sw_flat.test" in {
+    test(new CoreTester("target/clang/sw_flat.hexS")) { c =>
+      val rf = c.io.rFdebug
+      rf(4).expect(0.U)
+      c.clock.step(20)
+      rf(4).expect(0x1234.U)
+    }
+  }
+
+  "sb_flat.test" in {
+    test(new CoreTester("target/clang/sb_flat.hexS")) { c => 
+      val rf = c.io.rFdebug
+      rf(4).expect(0.U)
+      c.clock.step(20)
+      rf(4).expect(0x03020100.U)
+    }
+  }
 }
 
-class CoreTester extends Module {
+class CoreTester(memoryFile: String = "") extends Module {
   val io = IO(new Bundle {
     val rFdebug = Output(Vec(regAmount, UInt(dataWidth.W)))
   })
-  val iCache = Module(new ICache("target/clang/beq_bne.hexS"))
+  val iCache = Module(new ICache(memoryFile))
   val dCache = Module(new DCache) // TODO: Specify cache file here
   val core   = Module(new Core)
   io.rFdebug := core.io.rFdebug
