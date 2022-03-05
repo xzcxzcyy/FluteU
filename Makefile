@@ -46,11 +46,11 @@ ${DIR}/%.hex: ${DIR}/%.bin
 	hexdump -ve '4/1 "%02x"' -e '"\n"' $^ > $@
 
 # debug
-${DIR}/%.debug: ${DIR}/%.bin
+%.debug: ${DIR}/%.bin
 	mips-linux-gnu-objdump -d ${DIR}/$*.o
 	hexdump -C $^
 
-${DIR}/%.debugS: ${DIR}/%.binS
+%.debugS: ${DIR}/%.binS
 	mips-linux-gnu-objdump -d ${DIR}/$*.oS
 	hexdump -C $^
 
