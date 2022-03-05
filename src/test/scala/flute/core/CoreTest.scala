@@ -38,9 +38,9 @@ class CoreTest extends AnyFreeSpec with ChiselScalatestTester with Matchers {
   "sb_flat.test" in {
     test(new CoreTester("target/clang/sb_flat.hexS")) { c => 
       val rf = c.io.rFdebug
-      rf(4).expect(0.U)
-      c.clock.step(20)
-      rf(4).expect(0x03020100.U)
+      rf(17).expect(0.U)
+      c.clock.step(50)
+      rf(17).expect(0x03020100.U)
     }
   }
 }
@@ -50,7 +50,7 @@ class CoreTester(memoryFile: String = "") extends Module {
     val rFdebug = Output(Vec(regAmount, UInt(dataWidth.W)))
   })
   val iCache = Module(new ICache(memoryFile))
-  val dCache = Module(new DCache) // TODO: Specify cache file here
+  val dCache = Module(new DCache("test_data/zero.in")) // TODO: Specify cache file here
   val core   = Module(new Core)
   io.rFdebug := core.io.rFdebug
   core.io.dCache <> dCache.io.port
