@@ -13,34 +13,34 @@ import chiseltest.ChiselScalatestTester
 import org.scalatest.matchers.should.Matchers
 
 class CoreTest extends AnyFreeSpec with ChiselScalatestTester with Matchers {
-  "beq_bne.test" in {
-    test(new CoreTester("target/clang/beq_bne.hexS")) { c =>
-      val rf = c.io.rFdebug
-      rf(0).expect(0.U)
-      c.clock.step(50)
-      rf(0).expect(0.U)
-      rf(16).expect(1.U)
-      rf(17).expect(2.U)
-      rf(18).expect(3.U)
-      rf(19).expect(4.U)
-    }
-  }
+  // "beq_bne.test" in {
+  //   test(new CoreTester("target/clang/beq_bne.hexS")) { c =>
+  //     val rf = c.io.rFdebug
+  //     rf(0).expect(0.U)
+  //     c.clock.step(50)
+  //     rf(0).expect(0.U)
+  //     rf(16).expect(1.U)
+  //     rf(17).expect(2.U)
+  //     rf(18).expect(3.U)
+  //     rf(19).expect(4.U)
+  //   }
+  // }
 
-  "sw_flat.test" in {
-    test(new CoreTester("target/clang/sw_flat.hexS")) { c =>
-      val rf = c.io.rFdebug
-      rf(4).expect(0.U)
-      c.clock.step(20)
-      rf(4).expect(0x1234.U)
-    }
-  }
+  // "sw_flat.test" in {
+  //   test(new CoreTester("target/clang/sw_flat.hexS")) { c =>
+  //     val rf = c.io.rFdebug
+  //     rf(4).expect(0.U)
+  //     c.clock.step(20)
+  //     rf(4).expect(0x1234.U)
+  //   }
+  // }
 
   "sb_flat.test" in {
     test(new CoreTester("target/clang/sb_flat.hexS")) { c => 
       val rf = c.io.rFdebug
-      rf(17).expect(0.U)
-      c.clock.step(50)
-      rf(17).expect(0x03020100.U)
+      rf(4).expect(0.U)
+      c.clock.step(20)
+      rf(4).expect(0x00000100.U)
     }
   }
 }
