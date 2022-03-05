@@ -248,7 +248,11 @@ class BubbleIssueQueue extends Module {
     val wEn              = instr(1).controlSig.regWriteEn
     val lastWriteRegAddr = instr(0).writeRegAddr
     val lastWEn          = instr(0).controlSig.regWriteEn
-    val wAW              = wEn && lastWEn && (writeRegAddr === lastWriteRegAddr)
+    // 检查与第一条指令是否有WAW冲突
+    val wAW =
+      wEn && lastWEn && (writeRegAddr === lastWriteRegAddr) && 
+      (writingBoard(writeRegAddr) === 0.U)
+      // 检查与流水线内的指令是否有WAW冲突
     /////////////////////////// WAW Check ////////////////////////////
 
     // 为了避免访存冲突，所有访存指令默认只能送往EXUnit0执行。后续会进行更改 TODO(2)
@@ -310,7 +314,8 @@ class BubbleIssueQueue extends Module {
     //   issueRdy(1) := !memUsed && !wAW && !rAW && opRdy
     // }
 
-    issueRdy(1) := !memUsed && !wAW && !rAW && opRdy
+    issueRdy(1) := !memUsed && !wAW && !rAW && opRdy && issueRdy(0)
+    // 第二条指令发射条件：无访存 无WAW 无RAW 操作数准备好 且第一条指令可以发射
   }
 
   val willIssue = Wire(Vec(2, Bool()))
