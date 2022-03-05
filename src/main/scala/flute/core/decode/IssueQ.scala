@@ -205,13 +205,15 @@ class BubbleIssueQueue extends Module {
     val branch = instr(0).controlSig.bjCond =/= BJCond.none
     val rsRdy  = writingBoard(rsAddr) === 0.U
     val rtRdy  = writingBoard(rtAddr) === 0.U
+    val save =
+      instr(0).controlSig.storeMode =/= StoreMode.disable
 
     val opRdy = Wire(Bool())
 
     when(imm) {
       // I型指令  rt = rs op imm
-      when(branch) {
-        // 分支指令 beq rs,rt,imm
+      when(branch && save) {
+        // 分支指令 beq rs,rt,imm; SW指令 sw rt,rs,imm
         opRdy := rsRdy && rtRdy
         // 如果可以发射，则强制延迟槽一同发射
       }.otherwise {
