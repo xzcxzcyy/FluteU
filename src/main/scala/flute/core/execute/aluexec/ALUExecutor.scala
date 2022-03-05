@@ -57,11 +57,12 @@ class ALUExecutor extends Module {
       BJCond.ltu  -> alu.io.flag.lessU,
       BJCond.ltz  -> alu.io.flag.lessS,
       BJCond.ne   -> !alu.io.flag.equal,
-      BJCond.none -> 0.B
+      BJCond.none -> 0.B,
+      BJCond.jr   -> 1.B,
     )
   )
-  val branchAddr = idEx.io.data.controlSig.bjCond =/= BJCond.none
-  val branchValid = Mux(
+  val branchValid = idEx.io.data.controlSig.bjCond =/= BJCond.none
+  val branchAddr = Mux(
     branchTaken,
     idEx.io.data.pc + 4.U + Cat(idEx.io.data.immediate, 0.U(2.W)),
     idEx.io.data.pc + 8.U
