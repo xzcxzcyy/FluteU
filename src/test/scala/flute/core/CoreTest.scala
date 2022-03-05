@@ -52,6 +52,22 @@ class CoreTest extends AnyFreeSpec with ChiselScalatestTester with Matchers {
       rf(4).expect(0xffffff00L.U)
     }
   }
+
+  "s2_swap" in {
+    test(new CoreTester("s2_swap")) { c => 
+      val rf = c.io.rFdebug
+      c.clock.step(6)
+      rf(4).expect(0x12.U)
+      rf(5).expect(0x34.U)
+      c.clock.step(4)
+      rf(4).expect(0x34.U)
+      rf(5).expect(0x34.U)
+      rf(8).expect(0x12.U)
+      c.clock.step(4)
+      rf(4).expect(0x34.U)
+      rf(5).expect(0x12.U)
+    }
+  }
 }
 
 class CoreTester(memoryFile: String = "") extends Module {
