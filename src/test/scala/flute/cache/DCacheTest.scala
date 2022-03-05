@@ -35,9 +35,9 @@ class DCacheTest extends AnyFreeSpec with ChiselScalatestTester with Matchers {
         c.io.port(p).readData.expect(expectdata.U)
       }
 
-      writetest(0, 0, 0x3f3f3f3f, StoreMode.word)
       writetest(1, 4, 0x00003f3f, StoreMode.halfword)
-      writetest(0, 8, 0x0000003f, StoreMode.byte)
+      writetest(1, 8, 0x0000003f, StoreMode.byte)
+      writetest(0, 0, 0x3f3f3f3f, StoreMode.word)
     }
   }
   "test read first" in {
