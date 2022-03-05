@@ -17,6 +17,13 @@ class Experiment extends AnyFreeSpec with ChiselScalatestTester with Matchers {
       c.io.out.expect(3.U)
     }
   }
+
+  "Sign extender test" in {
+    test(new SExtTester) { c =>
+      c.io.in.poke(0xfffe.U)
+      c.io.out.expect(0xfffffffeL.U)
+    }
+  }
 }
 
 class EncoderTester extends Module {
@@ -26,4 +33,13 @@ class EncoderTester extends Module {
   })
 
   io.out := PriorityEncoder(io.in)
+}
+
+class SExtTester extends Module {
+  val io = IO(new Bundle{
+    val out = Output(UInt(32.W))
+    val in  = Input(UInt(16.W))
+  })
+  
+  io.out := Cat(Fill(16, io.in(15)), io.in(15, 0))
 }

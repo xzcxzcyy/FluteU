@@ -60,8 +60,8 @@ class ALUExecutor extends Module {
       BJCond.none -> 0.B
     )
   )
-  io.feedback.branchAddr.valid := idEx.io.data.controlSig.bjCond =/= BJCond.none
-  io.feedback.branchAddr.bits := Mux(
+  val branchAddr = idEx.io.data.controlSig.bjCond =/= BJCond.none
+  val branchValid = Mux(
     branchTaken,
     idEx.io.data.pc + 4.U + Cat(idEx.io.data.immediate, 0.U(2.W)),
     idEx.io.data.pc + 8.U
@@ -73,10 +73,14 @@ class ALUExecutor extends Module {
   exMem.io.in.control.loadMode   := idEx.io.data.controlSig.loadMode
   exMem.io.in.control.regWriteEn := idEx.io.data.controlSig.regWriteEn
   exMem.io.in.control.storeMode  := idEx.io.data.controlSig.storeMode
+  exMem.io.in.branchAddr         := branchAddr
+  exMem.io.in.branchValid        := branchValid
 
-  io.dCache.addr      := exMem.io.data.aluResult
-  io.dCache.writeData := exMem.io.data.memWriteData
-  io.dCache.storeMode := exMem.io.data.control.storeMode
+  io.feedback.branchAddr.bits  := exMem.io.data.branchAddr
+  io.feedback.branchAddr.valid := exMem.io.data.branchValid
+  io.dCache.addr               := exMem.io.data.aluResult
+  io.dCache.writeData          := exMem.io.data.memWriteData
+  io.dCache.storeMode          := exMem.io.data.control.storeMode
 
   memWb.io.in.aluResult        := exMem.io.data.aluResult
   memWb.io.in.dataFromMem      := io.dCache.readData

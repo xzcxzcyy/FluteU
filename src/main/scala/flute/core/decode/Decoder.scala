@@ -6,6 +6,7 @@ import chisel3.util.MuxLookup
 import flute.config.CPUConfig._
 import flute.core.components._
 import flute.core.fetch.IBEntry
+import chisel3.util.Fill
 
 class MicroOp extends Bundle {
   class ControlSig extends Bundle {
@@ -87,7 +88,7 @@ class Decoder extends Module {
     key = controller.io.immRecipe,
     default = 0.U(dataWidth.W),
     mapping = Seq(
-      ImmRecipe.sExt -> instruction(15, 0),
+      ImmRecipe.sExt -> Cat(Fill(16, instruction(15)), instruction(15, 0)),
       ImmRecipe.uExt -> Cat(0.U(15.W), instruction(15, 0)),
       ImmRecipe.lui  -> Cat(instruction(15, 0), 0.U(15.W))
     )
