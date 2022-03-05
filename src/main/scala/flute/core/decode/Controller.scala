@@ -5,6 +5,7 @@ import chisel3.util.{ListLookup, log2Up}
 import flute.config.CPUConfig._
 import flute.config.Instructions._
 import flute.core.components.ALUOp
+import flute.core.components.ALU
 
 class Controller extends Module {
   val io = IO(new Bundle {
@@ -72,7 +73,7 @@ class Controller extends Module {
     /* LWL */
     /* LWR */
     /* PREF */
-    /* SB */
+    SB     -> List(false.B, false.B, StoreMode.byte,     ALUOp.add,  false.B,  true.B,  BJCond.none, RegDst.rd,    RsRtRecipe.normal, ImmRecipe.sExt),
     /* SC */
     /* SD */
     SW     -> List(false.B, false.B, StoreMode.word,     ALUOp.add,  false.B,  true.B,  BJCond.none, RegDst.rd,    RsRtRecipe.normal, ImmRecipe.sExt),
