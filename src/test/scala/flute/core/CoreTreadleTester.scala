@@ -23,8 +23,27 @@ class CoreTreadleTester extends AnyFreeSpec with ChiselScalatestTester with Matc
     )
 
     val tester = TreadleTester(firrtlAnno)
-    tester.step()
-    tester.expect("core.fetch.pc.io_out", 32)
+    var clock = 1
+
+    for(tick <- 1 to 5) {
+        tester.step()
+        println(s"================ clock $clock ================")
+        val pc = tester.peek("core.fetch.pc.io_out")
+        println(s"pc: ${pc}")
+        for(i <- 0 to 7) {
+            val inst = tester.peek(s"iCache.io_data_bits_$i")
+            println(s"fetch_$i: ${"%08x".format(inst)}")
+        }
+
+        val willProcess = tester.peek(s"core.fetch.io_withDecode_willProcess")
+        println(s"willProcess: $willProcess")
+
+        for(i <- 0 to 1) {
+            val inst = tester.peek(s"core.decode.io_withFetch_insts_${i}_inst")
+            println(s"decode_$i: ${"%08x".format(inst)}")
+        }
+        clock += 1
+    }
 
     tester.report()
   }
