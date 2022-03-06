@@ -80,10 +80,10 @@ class CoreTest extends AnyFreeSpec with ChiselScalatestTester with Matchers {
       rf(17).expect(0x2f2f.U)
       rf(18).expect(0x3f3f.U)
       c.clock.step(7)
-      rf(5).expect(0x2f2f.U)
-      rf(6).expect(0x3f3f.U)
+      rf(5).expect(0x2f.U)
+      rf(6).expect(0x3f.U)
       c.clock.step(2)
-      rf(4).expect(0x1f1f.U)
+      rf(4).expect(0x1f.U)
     }
   }
 }
