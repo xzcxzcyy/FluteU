@@ -13,7 +13,7 @@ TARGET=xor.hexS xor.hex xori.hexS xor_load.hex \
 		sb.hexS sh.hexS srav.hexS srlv.hexS subu.hexS \
 		multu.hexS mul.hexS divu.hexS benchmark.hexS \
 		sb_flat.hexS sw_flat.hexS \
-		s1_base.hexS s2_swap.hexS
+		s1_base.hexS s2_swap.hexS s3_loadstore.hexS
 
 SRC=src/test/clang
 DIR=target/clang
