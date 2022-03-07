@@ -19,6 +19,7 @@ class FIFOQueue[T <: Data](gen:T, numEntries: Int, numRead: Int, numWrite: Int) 
 
   val writeReady = RegInit(VecInit(Seq.fill(numWrite)(true.B)))
   val readValid  = RegInit(VecInit(Seq.fill(numRead)(false.B)))
+  val readAddrs  = RegInit(VecInit(Seq.fill(numRead)(0.U(log2Up(numEntries).W))))
 
   for (i <- 0 until numWrite) {
     io.write(i).ready := writeReady(i)
@@ -31,7 +32,6 @@ class FIFOQueue[T <: Data](gen:T, numEntries: Int, numRead: Int, numWrite: Int) 
   // tail是数据入队的位置（该位置目前没数据），head是数据出队的第一个位置（该位置放了最老的数据）
   val head_ptr = RegInit(0.U(log2Up(numEntries).W))
   val tail_ptr = RegInit(0.U(log2Up(numEntries).W))
-  val read_ptr = RegInit(0.U(log2Up(numEntries).W))
 
   val numValid = Mux(tail_ptr < head_ptr, numEntries.U - head_ptr + tail_ptr, tail_ptr - head_ptr)
 
@@ -73,7 +73,8 @@ class FIFOQueue[T <: Data](gen:T, numEntries: Int, numRead: Int, numWrite: Int) 
 
     when (io.read(i).ready) {
       when (offset < numDeq) {
-        io.read(i).bits := data(read_ptr + offset)
+        readAddrs(i) := head_ptr + offset
+        io.read(i).bits := data(readAddrs(i))
         readValid(i) := true.B
       }.otherwise{
         io.read(i).bits := DontCare
@@ -83,10 +84,6 @@ class FIFOQueue[T <: Data](gen:T, numEntries: Int, numRead: Int, numWrite: Int) 
       io.read(i).bits := DontCare
       readValid(i) := false.B
     }
-  }
-
-  when(numDeq > 0.U) {
-    read_ptr := head_ptr
   }
 
   head_ptr := head_ptr + numDeq
