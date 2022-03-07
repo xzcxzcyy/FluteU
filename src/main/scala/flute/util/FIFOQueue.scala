@@ -6,31 +6,42 @@ import chisel3.util._
 class FIFOBundle[T <: Data](gen: T, numRead: Int, numWrite:Int) extends Bundle {
   val read  = Vec(numRead, Decoupled(gen))
   val write = Flipped(Vec(numWrite, Decoupled(gen)))
-  // val test  = Output(UInt(32.W))
 }
 
 class FIFOQueue[T <: Data](gen:T, numEntries: Int, numRead: Int, numWrite: Int) extends Module {
-  assert(isPow2(numEntries) && numEntries > 1)
+  assert(isPow2(numRead) && numRead > 1)
+  assert(isPow2(numWrite) && numWrite > 1)
+  assert(isPow2(numEntries) && numEntries > numRead + numWrite)
 
   val io = IO(new FIFOBundle(gen, numRead, numWrite))
 
-  // io.test := 2.U(3.W) - 5.U(3.W)
-
   val data = Mem(numEntries, gen)
+
+  val writeReady = RegInit(VecInit(Seq.fill(numWrite)(true.B)))
+  val readValid  = RegInit(VecInit(Seq.fill(numRead)(false.B)))
+
+  for (i <- 0 until numWrite) {
+    io.write(i).ready := writeReady(i)
+  }
+
+  for (i <- 0 until numRead) {
+    io.read(i).valid := readValid(i)
+  }
 
   // tail是数据入队的位置（该位置目前没数据），head是数据出队的第一个位置（该位置放了最老的数据）
   val head_ptr = RegInit(0.U(log2Up(numEntries).W))
   val tail_ptr = RegInit(0.U(log2Up(numEntries).W))
+  val read_ptr = RegInit(0.U(log2Up(numEntries).W))
 
-  // 为了区分空队列和满队列满，队列不允许真正全部放满（numEntries=8时，有8个位置，但同一时刻最多只能用7个）
-  val difference = tail_ptr - head_ptr
-  val deqEntries = difference
-  val enqEntries = (numEntries - 1).U - difference
+  val numValid = Mux(tail_ptr < head_ptr, numEntries.U - head_ptr + tail_ptr, tail_ptr - head_ptr)
 
   val numTryEnq = PopCount(io.write.map(_.valid))
+  val maxEnq = numEntries.U - numValid - 1.U
+  val numEnq = Mux(maxEnq < numTryEnq, maxEnq, numTryEnq)
+
   val numTryDeq = PopCount(io.read.map(_.ready))
-  val numDeq = Mux(deqEntries < numTryDeq, deqEntries, numTryDeq)
-  val numEnq = Mux(enqEntries < numTryEnq, enqEntries, numTryEnq)
+  val maxDeq = numValid + numEnq
+  val numDeq = Mux(maxDeq < numTryDeq, maxDeq, numTryDeq)
 
   for (i <- 0 until numWrite) {
     val offset = Wire(UInt(log2Up(numEntries).W))
@@ -42,13 +53,13 @@ class FIFOQueue[T <: Data](gen:T, numEntries: Int, numRead: Int, numWrite: Int) 
 
     when (io.write(i).valid) {
       when (offset < numEnq) {
-        data((tail_ptr + offset)(log2Up(numEntries) - 1, 0)) := io.write(i).bits
-        io.write(i).ready := 1.B
+        data(tail_ptr + offset) := io.write(i).bits
+        writeReady(i) := true.B
       }.otherwise {
-        io.write(i).ready := 0.B
+        writeReady(i) := false.B
       }
     }.otherwise {
-      io.write(i).ready := 0.B
+      writeReady(i) := true.B
     }
   }
 
@@ -62,18 +73,20 @@ class FIFOQueue[T <: Data](gen:T, numEntries: Int, numRead: Int, numWrite: Int) 
 
     when (io.read(i).ready) {
       when (offset < numDeq) {
-        io.read(i).valid := 1.B
-        io.read(i).bits := data((head_ptr + offset)(log2Up(numEntries) - 1, 0))
+        io.read(i).bits := data(read_ptr + offset)
+        readValid(i) := true.B
       }.otherwise{
-        io.read(i).valid := 0.B
         io.read(i).bits := DontCare
+        readValid(i) := false.B
       }
     }.otherwise{
-      io.read(i).valid := 0.B
       io.read(i).bits := DontCare
+      readValid(i) := false.B
     }
+  }
 
-    
+  when(numDeq > 0.U) {
+    read_ptr := head_ptr
   }
 
   head_ptr := head_ptr + numDeq
