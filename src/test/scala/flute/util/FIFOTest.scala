@@ -14,19 +14,20 @@ import chisel3.stage.{ChiselGeneratorAnnotation, ChiselStage}
 import scala.math.BigInt
 
 class FIFOTest extends AnyFreeSpec with ChiselScalatestTester with Matchers {
-  "fifo" in {
+  case class In(writeValid:Boolean, readReady:Boolean, writeBits:Int = 0)
+  case class Out(writeReady:Boolean, readValid:Boolean, readBits:Int = 0)
+
+  class FIFOTestHelper(withWriteBuffer:Boolean = false) {
     val firrtlAnno = (new ChiselStage).execute(
       Array(),
       Seq(
         TargetDirAnnotation("target"),
-        ChiselGeneratorAnnotation(() => new FIFOQueue(UInt(32.W), 8, 2, 2))
+        ChiselGeneratorAnnotation(() => new FIFOQueue(UInt(32.W), 8, 2, 2, withWriteBuffer))
       )
     )
 
     val fifo = TreadleTester(firrtlAnno)
  
-    case class In(writeValid:Boolean, readReady:Boolean, writeBits:Int = 0)
-    case class Out(writeReady:Boolean, readValid:Boolean, readBits:Int = 0)
 
     def toInt(b:Boolean):Int = {
       if(b) 1 else 0
@@ -60,24 +61,50 @@ class FIFOTest extends AnyFreeSpec with ChiselScalatestTester with Matchers {
         }
       }
     }
+  }
 
-      test(Seq(In(true, false, 1), In(true, false, 2)), Seq(Out(true, false), Out(true, false)))
-      test(Seq(In(true, false, 3), In(true, false, 4)), Seq(Out(true, false), Out(true, false)))
-      test(Seq(In(true, false, 5), In(true, false, 6)), Seq(Out(true, false), Out(true, false)))
-      test(Seq(In(true, false, 7), In(true, false, 8)), Seq(Out(true, false), Out(false, false)))
-      test(Seq(In(false, false, 9), In(true, false, 8)), Seq(Out(true, false), Out(false, false)))
-      test(Seq(In(false, true, 9), In(true, false, 8)), Seq(Out(true, true, 1), Out(false, false)))
-      test(Seq(In(false, true, 9), In(true, false, 8)), Seq(Out(true, true, 2), Out(true, false)))
-      test(Seq(In(true, true, 9), In(true, true, 10)), Seq(Out(true, true, 3), Out(false, true, 4)))
-      test(Seq(In(true, true, 10), In(true, true, 11)), Seq(Out(true, true, 5), Out(true, true, 6)))
-      test(Seq(In(false, true), In(false, true)), Seq(Out(true, true, 7), Out(true, true, 8)))
-      test(Seq(In(false, true), In(false, true)), Seq(Out(true, true, 9), Out(true, true, 10)))
-      test(Seq(In(false, true), In(false, true)), Seq(Out(true, true, 11), Out(true, false)))
-      test(Seq(In(true, true, 12), In(true, true, 13)), Seq(Out(true, true, 12), Out(true, true, 13)))
-      test(Seq(In(true, true, 14), In(true, true, 15)), Seq(Out(true, true, 14), Out(true, true, 15)))
-      test(Seq(In(true, true, 16), In(true, true, 17)), Seq(Out(true, true, 16), Out(true, true, 17)))
-      test(Seq(In(true, true, 12), In(true, true, 13)), Seq(Out(true, true, 12), Out(true, true, 13)))
-      test(Seq(In(true, true, 14), In(true, true, 15)), Seq(Out(true, true, 14), Out(true, true, 15)))
-      test(Seq(In(true, true, 16), In(true, true, 17)), Seq(Out(true, true, 16), Out(true, true, 17)))
+  "fifo without write buffer" in {
+    val fifo = new FIFOTestHelper()
+    fifo.test(Seq(In(true, false, 1), In(true, false, 2)), Seq(Out(true, false), Out(true, false)))
+    fifo.test(Seq(In(true, false, 3), In(true, false, 4)), Seq(Out(true, false), Out(true, false)))
+    fifo.test(Seq(In(true, false, 5), In(true, false, 6)), Seq(Out(true, false), Out(true, false)))
+    fifo.test(Seq(In(true, false, 7), In(true, false, 8)), Seq(Out(true, false), Out(false, false)))
+    fifo.test(Seq(In(false, false, 9), In(true, false, 8)), Seq(Out(true, false), Out(false, false)))
+    fifo.test(Seq(In(false, true, 9), In(true, false, 8)), Seq(Out(true, true, 1), Out(false, false)))
+    fifo.test(Seq(In(false, true, 9), In(true, false, 8)), Seq(Out(true, true, 2), Out(true, false)))
+    fifo.test(Seq(In(true, true, 9), In(true, true, 10)), Seq(Out(true, true, 3), Out(false, true, 4)))
+    fifo.test(Seq(In(true, true, 10), In(true, true, 11)), Seq(Out(true, true, 5), Out(true, true, 6)))
+    fifo.test(Seq(In(false, true), In(false, true)), Seq(Out(true, true, 7), Out(true, true, 8)))
+    fifo.test(Seq(In(false, true), In(false, true)), Seq(Out(true, true, 9), Out(true, true, 10)))
+    fifo.test(Seq(In(false, true), In(false, true)), Seq(Out(true, true, 11), Out(true, false)))
+    fifo.test(Seq(In(true, true, 12), In(true, true, 13)), Seq(Out(true, true, 12), Out(true, true, 13)))
+    fifo.test(Seq(In(true, true, 14), In(true, true, 15)), Seq(Out(true, true, 14), Out(true, true, 15)))
+    fifo.test(Seq(In(true, true, 16), In(true, true, 17)), Seq(Out(true, true, 16), Out(true, true, 17)))
+    fifo.test(Seq(In(true, true, 12), In(true, true, 13)), Seq(Out(true, true, 12), Out(true, true, 13)))
+    fifo.test(Seq(In(true, true, 14), In(true, true, 15)), Seq(Out(true, true, 14), Out(true, true, 15)))
+    fifo.test(Seq(In(true, true, 16), In(true, true, 17)), Seq(Out(true, true, 16), Out(true, true, 17)))
+  }
+
+  "fifo with write buffer" in {
+    val fifo = new FIFOTestHelper(true)
+
+    fifo.test(Seq(In(true, false, 1), In(true, false, 2)), Seq(Out(true, false), Out(true, false)))
+    fifo.test(Seq(In(true, false, 3), In(true, false, 4)), Seq(Out(true, false), Out(true, false)))
+    fifo.test(Seq(In(true, false, 5), In(true, false, 6)), Seq(Out(true, false), Out(true, false)))
+    fifo.test(Seq(In(true, false, 7), In(true, false, 8)), Seq(Out(true, false), Out(false, false)))
+    fifo.test(Seq(In(false, false, 9), In(true, false, 8)), Seq(Out(true, false), Out(false, false)))
+    fifo.test(Seq(In(false, true, 9), In(true, false, 8)), Seq(Out(true, true, 1), Out(false, false)))
+    fifo.test(Seq(In(false, true, 9), In(true, false, 8)), Seq(Out(true, true, 2), Out(true, false)))
+    fifo.test(Seq(In(true, true, 9), In(true, true, 10)), Seq(Out(true, true, 3), Out(false, true, 4))) // insert 10 fault but hold in write buffer
+    fifo.test(Seq(In(true, true, 10), In(true, true, 11)), Seq(Out(true, true, 5), Out(true, true, 6))) // another 10, ignore 11
+    fifo.test(Seq(In(false, true), In(false, true)), Seq(Out(true, true, 7), Out(true, true, 8)))
+    fifo.test(Seq(In(false, true), In(false, true)), Seq(Out(true, true, 9), Out(true, true, 10)))
+    fifo.test(Seq(In(false, true), In(false, true)), Seq(Out(true, true, 10), Out(true, false))) // diff 11 -> 10
+    fifo.test(Seq(In(true, true, 12), In(true, true, 13)), Seq(Out(true, true, 12), Out(true, true, 13)))
+    fifo.test(Seq(In(true, true, 14), In(true, true, 15)), Seq(Out(true, true, 14), Out(true, true, 15)))
+    fifo.test(Seq(In(true, true, 16), In(true, true, 17)), Seq(Out(true, true, 16), Out(true, true, 17)))
+    fifo.test(Seq(In(true, true, 12), In(true, true, 13)), Seq(Out(true, true, 12), Out(true, true, 13)))
+    fifo.test(Seq(In(true, true, 14), In(true, true, 15)), Seq(Out(true, true, 14), Out(true, true, 15)))
+    fifo.test(Seq(In(true, true, 16), In(true, true, 17)), Seq(Out(true, true, 16), Out(true, true, 17)))
   }
 }
