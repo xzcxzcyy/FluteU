@@ -92,21 +92,21 @@ class IdeaIssueQueueTest extends AnyFreeSpec with ChiselScalatestTester with Mat
 class TestIdeaQ extends IdeaIssueQueue(UInt(32.W))
 
 class BubbleIssueQueueTest extends AnyFreeSpec with ChiselScalatestTester with Matchers {
-  "RAW" in {
-    test(new BubbleIssueQueue) { c=>
-      c.io.in(0).valid.poke(1.B)
-      c.io.in(0).bits.writeRegAddr.poke(1.U)
-      c.io.in(0).bits.controlSig.regWriteEn.poke(1.B)
-      c.io.in(0).bits.controlSig.aluOp.poke(ALUOp.add)
+  // "RAW" in {
+  //   test(new BubbleIssueQueue) { c=>
+  //     c.io.in(0).valid.poke(1.B)
+  //     c.io.in(0).bits.writeRegAddr.poke(1.U)
+  //     c.io.in(0).bits.controlSig.regWriteEn.poke(1.B)
+  //     c.io.in(0).bits.controlSig.aluOp.poke(ALUOp.add)
       
-      c.io.in(1).valid.poke(1.B)
-      c.io.in(1).bits.rsAddr.poke(1.U)
-      c.io.in(1).bits.rtAddr.poke(1.U)
+  //     c.io.in(1).valid.poke(1.B)
+  //     c.io.in(1).bits.rsAddr.poke(1.U)
+  //     c.io.in(1).bits.rtAddr.poke(1.U)
 
-      c.clock.step()
+  //     c.clock.step()
 
-      c.io.out(0).valid.expect(1.B)
-      c.io.out(1).valid.expect(0.B)
-    }
-  }
+  //     c.io.out(0).valid.expect(1.B)
+  //     c.io.out(1).valid.expect(0.B)
+  //   }
+  // }
 }
