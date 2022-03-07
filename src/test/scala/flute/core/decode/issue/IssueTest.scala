@@ -8,5 +8,7 @@ import org.scalatest.matchers.should.Matchers
 import flute.util.BitMode.fromIntToBitModeLong
 import flute.config.CPUConfig._
 class IssueTest extends AnyFreeSpec with ChiselScalatestTester with Matchers {
-
+  "compile" in {
+    test(new Issue) { c => }
+  }
 }

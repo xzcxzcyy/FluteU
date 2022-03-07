@@ -56,8 +56,32 @@ class Issue extends Module {
   for (i <- 0 until 2) {
     regFile.io.read(i).r1Addr := uOps(i).rsAddr
     regFile.io.read(i).r2Addr := uOps(i).rtAddr
-    // TODO
+
+    val rs = regFile.io.read(i).r1Data
+    opRes(i).op1 := Mux(uOps(i).op1.valid, uOps(i).op1.op, rs)
+
+    val rt = regFile.io.read(i).r2Data
+    opRes(i).op2 := Mux(uOps(i).op2.valid, uOps(i).op2.op, rt)
   }
-  
+
+  // toEx
+  for (i <- 0 until 2) {
+    io.toEx(i).bits.aluOp        := uOps(i).aluOp
+    io.toEx(i).bits.bjCond       := uOps(i).bjCond
+    io.toEx(i).bits.immediate    := uOps(i).immediate
+    io.toEx(i).bits.loadMode     := uOps(i).loadMode
+    io.toEx(i).bits.pc           := uOps(i).pc
+    io.toEx(i).bits.regWriteEn   := uOps(i).regWriteEn
+    io.toEx(i).bits.rsAddr       := uOps(i).rsAddr
+    io.toEx(i).bits.rtAddr       := uOps(i).rtAddr
+    io.toEx(i).bits.storeMode    := uOps(i).storeMode
+    io.toEx(i).bits.writeRegAddr := uOps(i).writeRegAddr
+
+    // operand
+    io.toEx(i).bits.op1.op    := opRes(i).op1
+    io.toEx(i).bits.op1.valid := 1.B
+    io.toEx(i).bits.op2.op    := opRes(i).op2
+    io.toEx(i).bits.op2.valid := 1.B
+  }
 
 }

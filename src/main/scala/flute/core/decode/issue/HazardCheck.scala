@@ -11,12 +11,14 @@ class DecoupledSig extends Bundle {
 
 class HazardCheck extends Module {
   val io = IO(new Bundle {
-    val in = Vec(2, Flipped(DecoupledIO(new MicroOp)))
+    val in  = Vec(2, Flipped(DecoupledIO(new MicroOp)))
     val out = Vec(2, new DecoupledSig)
 
     val query = Flipped(new QueryWBIO)
   })
-
-
-
+  for (i <- 0 until 4) io.query.addrIn(i) := i.U
+  for (i <- 0 until 2) {
+    io.in(i).ready  := 0.B
+    io.out(i).valid := 0.B
+  }
 }
