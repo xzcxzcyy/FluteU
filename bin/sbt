@@ -10,4 +10,4 @@ download(){
 
 [ ! -f "$sbt" ] && download
 
-[ -f "$sbt" ] && $sbt $*
+[ -f "$sbt" ] && $sbt "$*"
