@@ -36,7 +36,7 @@ class Fetch extends Module {
   }
 
   val pc          = Module(new PC)
-  val ibuffer     = Module(new Ibuffer(new IBEntry, 16, fetchGroupSize, decodeWay))
+  val ibuffer     = Module(new Ibuffer(new IBEntry, 16, decodeWay, fetchGroupSize))
   val preDecoders = for (i <- 0 until fetchGroupSize) yield Module(new PreDecode)
   val branchAddr  = RegInit(ValidBundle(UInt(addrWidth.W)).Lit())
   val state       = RegInit(State.Free)
@@ -76,7 +76,7 @@ class Fetch extends Module {
         io.iCache.data.valid && (i.U >= bias) && (i.U <= earliestBranchInd)
     }.elsewhen(state === State.FirstAndBlock) {
       ibuffer.io.write(i).valid := io.iCache.data.valid && (i.U === bias)
-    }.elsewhen(state === State.Blocked || state === State.RESERVED) {
+    }.otherwise { // State.{Blocked, RESERVED}
       ibuffer.io.write(i).valid := 0.B
     }
   }

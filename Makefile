@@ -12,7 +12,7 @@ TARGET=xor.hexS xor.hex xori.hexS xor_load.hex \
 		lb.hexS lbu.hexS lh.hexS lhu.hexS lui.hexS \
 		sb.hexS sh.hexS srav.hexS srlv.hexS subu.hexS \
 		multu.hexS mul.hexS divu.hexS benchmark.hexS \
-		sb_flat.hexS sw_flat.hexS
+		sb_flat.hexS sw_flat.hexS fetch1_base.hexS
 
 SRC=src/test/clang
 DIR=target/clang
