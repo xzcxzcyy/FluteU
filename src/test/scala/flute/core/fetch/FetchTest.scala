@@ -38,17 +38,42 @@ class FetchTest extends AnyFreeSpec with Matchers with ChiselScalatestTester {
     def displayReadPort() = {
       for (i <- 0 until 2) {
         val instruction = peek(s"io_withDecode_ibufferEntries_${i}_bits_inst")
-        val instDir = peek(s"fetch.ibuffer.data_${i}_inst")
         val address = peek(s"io_withDecode_ibufferEntries_${i}_bits_addr")
         val valid = peek(s"io_withDecode_ibufferEntries_${i}_valid")
         println(s"inst #$i: ${"%08x".format(instruction)}")
         println(s"addr #$i: ${"%08x".format(address)}")
         println(s"valid #$i: ${valid}")
-        println(s"direct_inst #${i}: ${"%08x".format(instDir)}")
       }
     }
 
-    step(2)
+    step()
+    displayReadPort()
+
+    poke("io_withDecode_ibufferEntries_0_ready", 1)
+    step()
+    poke("io_withDecode_ibufferEntries_0_ready", 0)
+    displayReadPort()
+
+    for (i <- 0 until 2) {
+      poke(s"io_withDecode_ibufferEntries_${i}_ready", 1)
+    }
+    step(1)
+    for (i <- 0 until 2) {
+      poke(s"io_withDecode_ibufferEntries_${i}_ready", 0)
+    }
+    
+    displayReadPort()
+
+    poke(s"io_feedbackFromExec_branchAddr_valid", 1)
+    poke(s"io_feedbackFromExec_branchAddr_bits", 0x10)
+    step(1)
+    poke(s"io_feedbackFromExec_branchAddr_valid", 0)
+    poke(s"io_feedbackFromExec_branchAddr_bits", 0)
+
+    displayReadPort()
+
+    step(1)
+
     displayReadPort()
 
     t.report()

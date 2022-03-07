@@ -2,6 +2,9 @@
 
 addi $1,$0,0x1
 addi $2,$0,0x1
-beq $1,$2,0x4
+beq $1,$2,target
 addu $2,$2,$1
+
+target:
+
 addu $4,$2,$1
