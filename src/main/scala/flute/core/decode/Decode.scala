@@ -5,6 +5,7 @@ import chisel3.util._
 import flute.config.CPUConfig._
 import flute.core.components.{RegFile, RegFileWriteIO}
 import flute.core.fetch.FetchIO
+import flute.core.decode.issue.{FIFOQueue, Issue}
 
 // the io that with next
 class DecodeIO extends Bundle {
@@ -23,35 +24,24 @@ class Decode extends Module {
     val debug = Output(Vec(regAmount, UInt(dataWidth.W)))
   })
 
-  // val regFile = Module(new RegFile(superscalar, superscalar))
+  val decoders = for (i <- 0 until 2) yield Module(new Decoder)
 
-  // val issueQueue = Module(new BubbleIssueQueue)
+  val issueQueue = Module(new FIFOQueue(new MicroOp, 16, superscalar, decodeWay))
 
-  // val decoders = for (i <- 0 until superscalar) yield Module(new Decoder)
+  val issuer = Module(new Issue)
 
-  // val willProcess = Mux(io.withFetch.instNum < 2.U, io.withFetch.instNum, 2.U)
-  // // willProcess = min(2, instNum)
+  for (i <- 0 until decodeWay) {
+    decoders(i).io.instr        := io.withFetch.ibufferEntries(i).bits
+    issueQueue.io.write(i).bits := decoders(i).io.microOp
 
-  // io.debug := regFile.io.debug
+    // r/v
+    io.withFetch.ibufferEntries(i).ready := issueQueue.io.write(i).ready
+    issueQueue.io.write(i).valid         := io.withFetch.ibufferEntries(i).valid
+  }
 
-  // for (i <- 0 until superscalar) {
-  //   // read
-  //   regFile.io.read(i) <> issueQueue.io.regFileRead(i)
-  //   // write
-  //   regFile.io.write(i) := io.regFileWrite(i)
-  //   issueQueue.io.regFileWrite(i) := io.regFileWrite(i) // 更新其writingBoard
+  issuer.io.fromId <> issueQueue.io.read
 
-  //   // fetch
-  //   decoders(i).io.instr := io.withFetch.insts(i)
+  io.withExecute.microOps <> issuer.io.toEx
 
-  //   // issue
-  //   issueQueue.io.in(i).bits  := decoders(i).io.microOp
-  //   issueQueue.io.in(i).valid := Mux(willProcess > i.U, 1.B, 0.B)
-
-  //   // ex
-  //   io.withExecute.microOps(i) <> issueQueue.io.out(i)
-  // }
-
-  // io.withFetch.willProcess := willProcess
-
+  issuer.io.regFileWrite := io.regFileWrite
 }
