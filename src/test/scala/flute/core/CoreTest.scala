@@ -50,11 +50,13 @@ class CoreTest extends AnyFreeSpec with ChiselScalatestTester with Matchers {
 }
 
 class CoreTester(memoryFile: String = "") extends Module {
-  val io     = IO(new Bundle {})
+  val io     = IO(new Bundle {
+    val rFdebug = Output(Vec(regAmount, UInt(dataWidth.W)))
+  })
   val iCache = Module(new ICache(memoryFile))
   val dCache = Module(new DCache("test_data/zero.in")) // TODO: Specify cache file here
   val core   = Module(new Core)
-  // io.rFdebug := core.io.rFdebug
+  io.rFdebug := core.io.rFdebug
   core.io.dCache <> dCache.io.port
   core.io.iCache <> iCache.io
 }

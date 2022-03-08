@@ -11,11 +11,14 @@ class Issue extends Module {
     val fromId       = Vec(2, Flipped(DecoupledIO(new MicroOp)))
     val toEx         = Vec(2, DecoupledIO(new MicroOp))
     val regFileWrite = Vec(superscalar, new RegFileWriteIO())
+    val debug = Output(Vec(regAmount, UInt(dataWidth.W)))
   })
 
   val hazardCheck  = Module(new HazardCheck)
   val writingBoard = Module(new WritingBoard)
   val regFile      = Module(new RegFile(superscalar, superscalar))
+
+  io.debug := regFile.io.debug
 
   val uOps = for (i <- 0 until 2) yield io.fromId(i).bits
 
