@@ -27,7 +27,7 @@ class PreDecode extends Module {
         BLTZ,
         BLTZAL,
         BNE,
-        JALR,
+        // JALR,
         JR,
       )
     )
