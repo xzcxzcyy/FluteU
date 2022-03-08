@@ -181,7 +181,7 @@ class FetchTest extends AnyFreeSpec with Matchers with ChiselScalatestTester {
     step(2)
 
     displayReadPort()
-    
+
     poke(s"io_feedbackFromExec_branchAddr_valid", 1)
     poke(s"io_feedbackFromExec_branchAddr_bits", 0x30)
     step(1)
@@ -221,6 +221,69 @@ class FetchTest extends AnyFreeSpec with Matchers with ChiselScalatestTester {
       poke(s"io_withDecode_ibufferEntries_${i}_ready", 0)
     }
     displayReadPort()
+  }
+
+  "fetch2_j" in {
+    println("=================== Fetch2: J ===================")
+
+    val firrtlAnno = (new ChiselStage).execute(
+      Array(),
+      Seq(
+        TargetDirAnnotation("target"),
+        ChiselGeneratorAnnotation(() => new FetchTestTop("fetch2_j"))
+      )
+    )
+
+    val t     = TreadleTester(firrtlAnno)
+    val poke  = t.poke _
+    val peek  = t.peek _
+    var clock = 0
+    def step(n: Int = 1) = {
+      t.step(n)
+      clock += n
+      println(s">>>>>>>>>>>>>>>>>> Total clock steped: ${clock} ")
+    }
+    def displayReadPort() = {
+      for (i <- 0 until 2) {
+        val instruction = peek(s"io_withDecode_ibufferEntries_${i}_bits_inst")
+        val address     = peek(s"io_withDecode_ibufferEntries_${i}_bits_addr")
+        val valid       = peek(s"io_withDecode_ibufferEntries_${i}_valid")
+        println(s"inst #$i: ${"%08x".format(instruction)}")
+        println(s"addr #$i: ${"%08x".format(address)}")
+        println(s"valid #$i: ${valid}")
+      }
+      println("state: " + peek(s"fetch.state"))
+    }
+    def take(n: Int) = {
+      for (i <- 0 until n) {
+        poke(s"io_withDecode_ibufferEntries_${i}_ready", 1)
+      }
+      step()
+      for (i <- 0 until n) {
+        poke(s"io_withDecode_ibufferEntries_${i}_ready", 0)
+      }
+    }
+
+    step()
+    displayReadPort()
+
+    take(1)
+    displayReadPort()
+
+    take(1)
+    displayReadPort()
+
+    take(2)
+    displayReadPort()
+
+    take(2)
+    displayReadPort()
+
+    step(1)
+    displayReadPort()
+
+    t.report()
+
   }
 }
 
