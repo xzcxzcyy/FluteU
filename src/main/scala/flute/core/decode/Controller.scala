@@ -59,8 +59,8 @@ class Controller extends Module {
     BNE    -> List(false.B, LoadMode.disable,  StoreMode.disable,   ALUOp.none, Op1Recipe.rs,      Op2Recipe.rt,   BJCond.ne,   RegDst.rd,    ImmRecipe.sExt),
     J      -> List(false.B, LoadMode.disable,  StoreMode.disable,   ALUOp.none, Op1Recipe.rs,      Op2Recipe.rt,   BJCond.all,  RegDst.rd,    ImmRecipe.sExt),
     JAL    -> List(true.B,  LoadMode.disable,  StoreMode.disable,   ALUOp.add,  Op1Recipe.pcPlus8, Op2Recipe.zero, BJCond.all,  RegDst.GPR31, ImmRecipe.sExt),
-    JALR   -> List(true.B,  LoadMode.disable,  StoreMode.disable,   ALUOp.add,  Op1Recipe.pcPlus8, Op2Recipe.zero, BJCond.jr,   RegDst.rd,    ImmRecipe.sExt),
-    JR     -> List(false.B, LoadMode.disable,  StoreMode.disable,   ALUOp.none, Op1Recipe.rs,      Op2Recipe.rt,   BJCond.jr,   RegDst.rd,    ImmRecipe.sExt),
+    // JALR   -> List(true.B,  LoadMode.disable,  StoreMode.disable,   ALUOp.add,  Op1Recipe.pcPlus8, Op2Recipe.zero, BJCond.jr,   RegDst.rd,    ImmRecipe.sExt),
+    JR     -> List(false.B, LoadMode.disable,  StoreMode.disable,   ALUOp.none, Op1Recipe.rs,      Op2Recipe.zero, BJCond.jr,   RegDst.rd,    ImmRecipe.sExt),
     /** Load, Store, and Memory Control Instructions **/
     /* LB */
     /* LBU */
