@@ -36,7 +36,7 @@ class CoreTest extends AnyFreeSpec with ChiselScalatestTester with Matchers {
   // }
 
   // "sb_flat.test" in {
-  //   test(new CoreTester("sb_flat")) { c => 
+  //   test(new CoreTester("target/clang/sb_flat.hexS")) { c =>
   //     val rf = c.io.rFdebug
   //     rf(4).expect(0.U)
   //     c.clock.step(20)
@@ -44,68 +44,17 @@ class CoreTest extends AnyFreeSpec with ChiselScalatestTester with Matchers {
   //   }
   // }
 
-  "s1_base" in {
-    test(new CoreTester("s1_base")) { c => 
-      val rf = c.io.rFdebug
-      rf(4).expect(0.U)
-      c.clock.step(10)
-      rf(4).expect(0xffffff00L.U)
-    }
-  }
-
-  "s2_swap" in {
-    test(new CoreTester("s2_swap")) { c => 
-      val rf = c.io.rFdebug
-      c.clock.step(6)
-      rf(4).expect(0x12.U)
-      rf(5).expect(0x34.U)
-      c.clock.step(4)
-      rf(4).expect(0x34.U)
-      rf(5).expect(0x34.U)
-      rf(8).expect(0x12.U)
-      c.clock.step(4)
-      rf(4).expect(0x34.U)
-      rf(5).expect(0x12.U)
-    }
-  }
-
-  "s3_loadstore" in {
-    test(new CoreTester("s3_loadstore")) { c => 
-      val rf = c.io.rFdebug
-      c.clock.step(8)
-      rf(8).expect(0x00.U)
-      rf(9).expect(0x10.U)
-      rf(10).expect(0x20.U)
-      rf(16).expect(0x1f1f.U)
-      rf(17).expect(0x2f2f.U)
-      rf(18).expect(0x3f3f.U)
-      c.clock.step(7)
-      rf(5).expect(0x2f.U)
-      rf(6).expect(0x3f.U)
-      c.clock.step(2)
-      rf(4).expect(0x1f.U)
-    }
-  }
-
-  "s4_loadstore" in {
-    test(new CoreTester("s4_loadstore")) { c => 
-      val rf = c.io.rFdebug
-      c.clock.step(11)
-      rf(4).expect(0x1f.U)
-      c.clock.step(8)
-      rf(5).expect(0x1f1f.U)
-    }
+  "experiment" in {
+    test(new CoreTester("test_data/zero.in")) { c => }
   }
 }
 
 class CoreTester(memoryFile: String = "") extends Module {
-  val io = IO(new Bundle {
-    val rFdebug = Output(Vec(regAmount, UInt(dataWidth.W)))
-  })
-  val iCache = Module(new ICache(s"target/clang/${memoryFile}.hexS"))
+  val io     = IO(new Bundle {})
+  val iCache = Module(new ICache(memoryFile))
   val dCache = Module(new DCache("test_data/zero.in")) // TODO: Specify cache file here
   val core   = Module(new Core)
-  io.rFdebug := core.io.rFdebug
+  // io.rFdebug := core.io.rFdebug
   core.io.dCache <> dCache.io.port
   core.io.iCache <> iCache.io
 }

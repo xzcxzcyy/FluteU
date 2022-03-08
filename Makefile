@@ -12,6 +12,8 @@ TARGET=xor.hexS xor.hex xori.hexS xor_load.hex \
 		lb.hexS lbu.hexS lh.hexS lhu.hexS lui.hexS \
 		sb.hexS sh.hexS srav.hexS srlv.hexS subu.hexS \
 		multu.hexS mul.hexS divu.hexS benchmark.hexS \
+		fetch1_base.hexS \
+		fetch2_j.hexS \
 		sb_flat.hexS sw_flat.hexS \
 		s1_base.hexS s2_swap.hexS s3_loadstore.hexS s4_loadstore.hexS
 

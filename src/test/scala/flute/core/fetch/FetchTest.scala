@@ -11,124 +11,289 @@ import flute.cache.ICache
 import flute.config.CPUConfig._
 import flute.util.BitMode.fromIntToBitModeLong
 import flute.core.execute.ExecuteFeedbackIO
+import firrtl.options.TargetDirAnnotation
+import chisel3.stage.ChiselGeneratorAnnotation
+import treadle.TreadleTester
+import chisel3.stage.ChiselStage
 
-class FetchTest extends AnyFreeSpec with ChiselScalatestTester with Matchers {
+class FetchTest extends AnyFreeSpec with Matchers with ChiselScalatestTester {
+  "Fetch1: base" in {
+    println("=================== Fetch1: base ===================")
 
-  object State {
-    val width         = 2
-    val Free          = 0.U(width.W)
-    val FirstAndBlock = 1.U(width.W)
-    val Blocked       = 2.U(width.W)
-    val RESERVED      = 3.U(width.W) // illegal state; do not use
+    val firrtlAnno = (new ChiselStage).execute(
+      Array(),
+      Seq(
+        TargetDirAnnotation("target"),
+        ChiselGeneratorAnnotation(() => new FetchTestTop("fetch1_base"))
+      )
+    )
+
+    val t     = TreadleTester(firrtlAnno)
+    val poke  = t.poke _
+    val peek  = t.peek _
+    var clock = 0
+    def step(n: Int = 1) = {
+      t.step(n)
+      clock += n
+      println(s">>>>>>>>>>>>>>>>>> Total clock steped: ${clock} ")
+    }
+    def displayReadPort() = {
+      for (i <- 0 until 2) {
+        val instruction = peek(s"io_withDecode_ibufferEntries_${i}_bits_inst")
+        val address     = peek(s"io_withDecode_ibufferEntries_${i}_bits_addr")
+        val valid       = peek(s"io_withDecode_ibufferEntries_${i}_valid")
+        println(s"inst #$i: ${"%08x".format(instruction)}")
+        println(s"addr #$i: ${"%08x".format(address)}")
+        println(s"valid #$i: ${valid}")
+      }
+      println("state: " + peek(s"fetch.state"))
+    }
+
+    step()
+    displayReadPort()
+
+    for (j <- 0 until 8) {
+      for (i <- 0 until 2) {
+        poke(s"io_withDecode_ibufferEntries_${i}_ready", 1)
+      }
+      step(1)
+      for (i <- 0 until 2) {
+        poke(s"io_withDecode_ibufferEntries_${i}_ready", 0)
+      }
+      displayReadPort()
+    }
+
+    poke(s"io_feedbackFromExec_branchAddr_valid", 1)
+    poke(s"io_feedbackFromExec_branchAddr_bits", 0x4c)
+    step(1)
+    poke(s"io_feedbackFromExec_branchAddr_valid", 0)
+    poke(s"io_feedbackFromExec_branchAddr_bits", 0)
+
+    displayReadPort()
+
+    for (j <- 0 until 8) {
+      for (i <- 0 until 2) {
+        poke(s"io_withDecode_ibufferEntries_${i}_ready", 1)
+      }
+      step(1)
+      for (i <- 0 until 2) {
+        poke(s"io_withDecode_ibufferEntries_${i}_ready", 0)
+      }
+      displayReadPort()
+    }
+
+    step(1)
+
+    displayReadPort()
+
+    t.report()
   }
 
-  "Fetch instructions travelling test" in {
-    test(new FetchTestTop("test_data/fetch_icache_test.in")) { c =>
-      val dp = c.io.withDecode
-      dp.instNum.expect(0.U)
-      dp.willProcess.poke(0.U)
-      c.io.state.expect(0.U)
-      c.clock.step()
-      c.io.feedbackFromExec.branchAddr.valid.poke(0.B)
-      c.io.feedbackFromExec.branchAddr.bits.poke(0.U)
-      dp.insts(0).inst.expect(0x380200f0.BM.U)
-      dp.insts(1).inst.expect(0x380200f1.BM.U)
-      dp.insts(2).inst.expect(0x380200f2.BM.U)
-      dp.insts(3).inst.expect(0x380200f3.BM.U)
-      dp.insts(4).inst.expect(0x380200f4.BM.U)
-      dp.insts(5).inst.expect(0x380200f5.BM.U)
-      dp.insts(6).inst.expect(0x380200f6.BM.U)
-      dp.insts(7).inst.expect(0x380200f7.BM.U)
-      dp.instNum.expect(8.U)
-      dp.willProcess.poke(8.U)
-      c.io.state.expect(0.U)
-      c.clock.step()
-      dp.instNum.expect(0.U)
-      dp.willProcess.poke(0.U)
-      c.clock.step()
-      c.io.state.expect(0.U)
-      dp.instNum.expect(8.U)
-      dp.insts(0).inst.expect(0x380200f8.BM.U)
-      dp.insts(1).inst.expect(0x380200f9.BM.U)
-      dp.insts(2).inst.expect(0x380200fa.BM.U)
-      dp.insts(3).inst.expect(0x380200fb.BM.U)
-      dp.insts(4).inst.expect(0x380200fc.BM.U)
-      dp.insts(5).inst.expect(0x380200fd.BM.U)
-      dp.insts(6).inst.expect(0x380200fe.BM.U)
-      dp.insts(7).inst.expect(0x380200ff.BM.U)
-    }
-  }
-/*
-  "Fetch With Branch Travel Test" in {
-    test(new FetchTestTop("target/clang/bubble_fetch_test.hex")) { c =>
-      val clock = c.clock
-      val instNum = c.io.withDecode.instNum
-      val insts = c.io.withDecode.insts
-      val willProcess = c.io.withDecode.willProcess
-      val state = c.io.state
-      val branchAddr = c.io.feedbackFromExec.branchAddr
-      ///
-      instNum.expect(0.U)
-      state.expect(0.U)
-      clock.step()
-      instNum.expect(8.U)
-      state.expect(State.FirstAndBlock)
-      willProcess.poke(2.U)
-      clock.step(2)
-      willProcess.poke(0.U)
-      instNum.expect(5.U)
-      state.expect(State.Blocked)
-      branchAddr.bits.poke(40.U)
-      branchAddr.valid.poke(1.B)
-      clock.step()
-      branchAddr.bits.poke(0.U)
-      branchAddr.valid.poke(0.B)
-      instNum.expect(5.U)
-      state.expect(State.Free)
-      clock.step(3)
-      insts(6).inst.expect(0x20010003.BM.U)
-      state.expect(State.Free)
-      instNum.expect(8.U)
-    }
-  }
-*/
+  "beq bne" in {
+    println("=================== beq bne ===================")
 
-  "beq_bne test" in {
-    test(new FetchTestTop("target/clang/beq_bne.hexS")) { c =>
-      val clock = c.clock
-      val instNum = c.io.withDecode.instNum
-      val insts = c.io.withDecode.insts
-      val willProcess = c.io.withDecode.willProcess
-      val state = c.io.state
-      val branchAddr = c.io.feedbackFromExec.branchAddr
+    val firrtlAnno = (new ChiselStage).execute(
+      Array(),
+      Seq(
+        TargetDirAnnotation("target"),
+        ChiselGeneratorAnnotation(() => new FetchTestTop("beq_bne"))
+      )
+    )
 
-      instNum.expect(0.U)
-      state.expect(State.Free)
-      clock.step()
-      instNum.expect(4.U)
-      state.expect(State.FirstAndBlock)
-      clock.step()
-      state.expect(State.Blocked)
-      instNum.expect(5.U)
-      branchAddr.valid.poke(1.B)
-      branchAddr.bits.poke(20.U)
-      clock.step()
-      branchAddr.valid.poke(0.B)
-      state.expect(State.Free)
-      
+    val t     = TreadleTester(firrtlAnno)
+    val poke  = t.poke _
+    val peek  = t.peek _
+    var clock = 0
+    def step(n: Int = 1) = {
+      t.step(n)
+      clock += n
+      println(s">>>>>>>>>>>>>>>>>> Total clock steped: ${clock} ")
     }
+    def displayReadPort() = {
+      for (i <- 0 until 2) {
+        val instruction = peek(s"io_withDecode_ibufferEntries_${i}_bits_inst")
+        val address     = peek(s"io_withDecode_ibufferEntries_${i}_bits_addr")
+        val valid       = peek(s"io_withDecode_ibufferEntries_${i}_valid")
+        println(s"inst #$i: ${"%08x".format(instruction)}")
+        println(s"addr #$i: ${"%08x".format(address)}")
+        println(s"valid #$i: ${valid}")
+      }
+      println("state: " + peek(s"fetch.state"))
+    }
+
+    step()
+    displayReadPort()
+
+    for (i <- 0 until 2) {
+      poke(s"io_withDecode_ibufferEntries_${i}_ready", 1)
+    }
+    step()
+    for (i <- 0 until 2) {
+      poke(s"io_withDecode_ibufferEntries_${i}_ready", 0)
+    }
+    displayReadPort()
+
+    for (i <- 0 until 2) {
+      poke(s"io_withDecode_ibufferEntries_${i}_ready", 1)
+    }
+    step()
+    for (i <- 0 until 2) {
+      poke(s"io_withDecode_ibufferEntries_${i}_ready", 0)
+    }
+    displayReadPort()
+
+    poke(s"io_feedbackFromExec_branchAddr_valid", 1)
+    poke(s"io_feedbackFromExec_branchAddr_bits", 0x14)
+    step(1)
+    poke(s"io_feedbackFromExec_branchAddr_valid", 0)
+    poke(s"io_feedbackFromExec_branchAddr_bits", 0)
+    displayReadPort()
+
+    for (i <- 0 until 2) {
+      poke(s"io_withDecode_ibufferEntries_${i}_ready", 1)
+    }
+    step()
+    for (i <- 0 until 2) {
+      poke(s"io_withDecode_ibufferEntries_${i}_ready", 0)
+    }
+    displayReadPort()
+
+    step()
+
+    displayReadPort()
+
+    for (i <- 0 until 2) {
+      poke(s"io_withDecode_ibufferEntries_${i}_ready", 1)
+    }
+    step()
+    for (i <- 0 until 2) {
+      poke(s"io_withDecode_ibufferEntries_${i}_ready", 0)
+    }
+    displayReadPort()
+
+    poke(s"io_feedbackFromExec_branchAddr_valid", 1)
+    poke(s"io_feedbackFromExec_branchAddr_bits", 0x28)
+    step(1)
+    poke(s"io_feedbackFromExec_branchAddr_valid", 0)
+    poke(s"io_feedbackFromExec_branchAddr_bits", 0)
+    displayReadPort()
+
+    step(2)
+
+    displayReadPort()
+
+    poke(s"io_feedbackFromExec_branchAddr_valid", 1)
+    poke(s"io_feedbackFromExec_branchAddr_bits", 0x30)
+    step(1)
+    poke(s"io_feedbackFromExec_branchAddr_valid", 0)
+    poke(s"io_feedbackFromExec_branchAddr_bits", 0)
+    displayReadPort()
+
+    step(2)
+
+    displayReadPort()
+
+    for (i <- 0 until 2) {
+      poke(s"io_withDecode_ibufferEntries_${i}_ready", 1)
+    }
+    step()
+    for (i <- 0 until 2) {
+      poke(s"io_withDecode_ibufferEntries_${i}_ready", 0)
+    }
+    displayReadPort()
+
+    poke(s"io_feedbackFromExec_branchAddr_valid", 1)
+    poke(s"io_feedbackFromExec_branchAddr_bits", 0x44)
+    step(1)
+    poke(s"io_feedbackFromExec_branchAddr_valid", 0)
+    poke(s"io_feedbackFromExec_branchAddr_bits", 0)
+    displayReadPort()
+
+    step(2)
+
+    displayReadPort()
+
+    for (i <- 0 until 2) {
+      poke(s"io_withDecode_ibufferEntries_${i}_ready", 1)
+    }
+    step()
+    for (i <- 0 until 2) {
+      poke(s"io_withDecode_ibufferEntries_${i}_ready", 0)
+    }
+    displayReadPort()
+  }
+
+  "fetch2_j" in {
+    println("=================== Fetch2: J ===================")
+
+    val firrtlAnno = (new ChiselStage).execute(
+      Array(),
+      Seq(
+        TargetDirAnnotation("target"),
+        ChiselGeneratorAnnotation(() => new FetchTestTop("fetch2_j"))
+      )
+    )
+
+    val t     = TreadleTester(firrtlAnno)
+    val poke  = t.poke _
+    val peek  = t.peek _
+    var clock = 0
+    def step(n: Int = 1) = {
+      t.step(n)
+      clock += n
+      println(s">>>>>>>>>>>>>>>>>> Total clock steped: ${clock} ")
+    }
+    def displayReadPort() = {
+      for (i <- 0 until 2) {
+        val instruction = peek(s"io_withDecode_ibufferEntries_${i}_bits_inst")
+        val address     = peek(s"io_withDecode_ibufferEntries_${i}_bits_addr")
+        val valid       = peek(s"io_withDecode_ibufferEntries_${i}_valid")
+        println(s"inst #$i: ${"%08x".format(instruction)}")
+        println(s"addr #$i: ${"%08x".format(address)}")
+        println(s"valid #$i: ${valid}")
+      }
+      println("state: " + peek(s"fetch.state"))
+    }
+    def take(n: Int) = {
+      for (i <- 0 until n) {
+        poke(s"io_withDecode_ibufferEntries_${i}_ready", 1)
+      }
+      step()
+      for (i <- 0 until n) {
+        poke(s"io_withDecode_ibufferEntries_${i}_ready", 0)
+      }
+    }
+
+    step()
+    displayReadPort()
+
+    take(1)
+    displayReadPort()
+
+    take(1)
+    displayReadPort()
+
+    take(2)
+    displayReadPort()
+
+    take(2)
+    displayReadPort()
+
+    step(1)
+    displayReadPort()
+
+    t.report()
+
   }
 }
 
-class FetchTestTop(file: String = "test_data/fetch_icache_test.in") extends Module {
+class FetchTestTop(file: String = "") extends Module {
   val io = IO(new Bundle {
     val withDecode       = new FetchIO
     val feedbackFromExec = Flipped(new ExecuteFeedbackIO)
-    val state            = Output(UInt(2.W))
   })
-  val iCache = Module(new ICache(file))
+  val iCache = Module(new ICache(s"target/clang/${file}.hexS"))
   val fetch  = Module(new Fetch)
-  io.state := fetch.io.state
   fetch.io.iCache <> iCache.io
   io.withDecode <> fetch.io.withDecode
   fetch.io.feedbackFromExec <> io.feedbackFromExec
