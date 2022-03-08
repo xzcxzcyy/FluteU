@@ -18,17 +18,18 @@ import chisel3.stage.{ChiselGeneratorAnnotation, ChiselStage}
 import java.io.PrintWriter
 import java.io.File
 
-class TestHelper(bench: String) {
+class TestHelper(bench: String, d: String = "zero.in") {
 
   val w = new PrintWriter(new File(s"target/log/$bench.log"))
 
+  println(s"=================== $bench ===================")
   w.println(s"=================== $bench ===================")
 
   val firrtlAnno = (new ChiselStage).execute(
     Array(),
     Seq(
       TargetDirAnnotation("target"),
-      ChiselGeneratorAnnotation(() => new CoreTester(bench))
+      ChiselGeneratorAnnotation(() => new CoreTester(bench, d))
     )
   )
 
@@ -40,6 +41,7 @@ class TestHelper(bench: String) {
     t.step(n)
     clock += n
     w.println(s">>>>>>>>>>>>>>>>>> Total clock steped: ${clock} ")
+    println(s">>>>>>>>>>>>>>>>>> Total clock steped: ${clock} ")
   }
   def printRFs() = {
     w.println("pc=" + "0x%08x".format(peek("core.fetch.pc.io_out")))
@@ -129,19 +131,28 @@ class CoreTest extends AnyFreeSpec with ChiselScalatestTester with Matchers {
 
   "sb" in {
     val tester = new TestHelper("sb")
-    for (i <- 0 until 2048) {
+    for (i <- 0 until 0) {
       tester.step()
       tester.printRFs()
     }
   }
+
+  "sort" in {
+    val helper = new TestHelper("sort", "sort.dcache")
+    for (i <- 0 until 4096) {
+      helper.step()
+      helper.printRFs()
+    }
+  }
+
 }
 
-class CoreTester(memoryFile: String = "") extends Module {
+class CoreTester(i: String = "", d: String = "zero.in") extends Module {
   val io = IO(new Bundle {
     val debug = Output(Vec(regAmount, UInt(dataWidth.W)))
   })
-  val iCache = Module(new ICache(s"target/clang/${memoryFile}.hexS"))
-  val dCache = Module(new DCache("test_data/zero.in")) // TODO: Specify cache file here
+  val iCache = Module(new ICache(s"target/clang/${i}.hexS"))
+  val dCache = Module(new DCache(s"test_data/${d}")) // TODO: Specify cache file here
   val core   = Module(new Core)
 
   io.debug := core.io.debug
