@@ -15,9 +15,14 @@ import firrtl.stage.FirrtlSourceAnnotation
 import firrtl.options.TargetDirAnnotation
 
 import chisel3.stage.{ChiselGeneratorAnnotation, ChiselStage}
+import java.io.PrintWriter
+import java.io.File
 
 class TestHelper(bench: String) {
-  println(s"=================== $bench ===================")
+
+  val w = new PrintWriter(new File(s"target/log/$bench.log"))
+
+  w.println(s"=================== $bench ===================")
 
   val firrtlAnno = (new ChiselStage).execute(
     Array(),
@@ -34,18 +39,18 @@ class TestHelper(bench: String) {
   def step(n: Int = 1) = {
     t.step(n)
     clock += n
-    println(s">>>>>>>>>>>>>>>>>> Total clock steped: ${clock} ")
+    w.println(s">>>>>>>>>>>>>>>>>> Total clock steped: ${clock} ")
   }
   def printRFs() = {
-    println("pc=" + "0x%08x".format(peek("core.fetch.pc.io_out")))
-    println("status=" + "%d".format(peek("core.fetch.state")))
+    w.println("pc=" + "0x%08x".format(peek("core.fetch.pc.io_out")))
+    w.println("status=" + "%d".format(peek("core.fetch.state")))
     val regFileDebug = for (i <- 0 until regAmount) yield {
       peek(s"io_debug_$i")
     }
-    println("RegFile")
+    w.println("RegFile")
     for (i <- 0 until 8) {
       val msg = regFileDebug.slice(i * 4, i * 4 + 4).foldLeft("")(_ + "\t" + "0x%08x".format(_))
-      println(msg)
+      w.println(msg)
     }
   }
   def smToString(storeMode: Int) = storeMode match {
@@ -72,9 +77,9 @@ class TestHelper(bench: String) {
       val storeMode = smToString(
         peek(s"core.decode.io_withExecute_microOps_${i}_bits_storeMode").toInt
       )
-      println(s"valid #${i}: ${valid}")
-      println(s"loadMode #${i}: ${loadMode}")
-      println(s"storeMode #${i}: ${storeMode}")
+      w.println(s"valid #${i}: ${valid}")
+      w.println(s"loadMode #${i}: ${loadMode}")
+      w.println(s"storeMode #${i}: ${storeMode}")
     }
   }
   def printDCacheInput() = {
@@ -82,9 +87,9 @@ class TestHelper(bench: String) {
       val storeMode = smToString(peek(s"dCache.io_port_${i}_storeMode").toInt)
       val writeData = "0x%08x".format(peek(s"dCache.io_port_${i}_writeData"))
       val addr      = "0x%08x".format(peek(s"dCache.io_port_${i}_addr"))
-      println(s"dCache storeMode peeked: #${i}: ${storeMode}")
-      println(s"dCache writeData peeked: #${i}: ${writeData}")
-      println(s"dCache addr peeked: #${i}: ${addr}")
+      w.println(s"dCache storeMode peeked: #${i}: ${storeMode}")
+      w.println(s"dCache writeData peeked: #${i}: ${writeData}")
+      w.println(s"dCache addr peeked: #${i}: ${addr}")
     }
   }
 }
@@ -116,9 +121,17 @@ class CoreTest extends AnyFreeSpec with ChiselScalatestTester with Matchers {
 
   "sb_flat" in {
     val helper = new TestHelper("sb_flat")
-    for (i <- 0 until 32) {
+    for (i <- 0 until 0) {
       helper.step()
       helper.printRFs()
+    }
+  }
+
+  "sb" in {
+    val tester = new TestHelper("sb")
+    for (i <- 0 until 2048) {
+      tester.step()
+      tester.printRFs()
     }
   }
 }
