@@ -11,7 +11,7 @@ class QueryWBIO extends Bundle {
 
 object WBconfig {
   val width = 3
-  val queryPort = 4
+  val queryPort = 5
 }
 
 class WritingBoard extends Module {
