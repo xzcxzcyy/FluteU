@@ -14,40 +14,81 @@ import chisel3.stage.{ChiselGeneratorAnnotation, ChiselStage}
 
 class CoreTreadleTester extends AnyFreeSpec with ChiselScalatestTester with Matchers {
   "s1_base" in {
-    val firrtlAnno = (new ChiselStage).execute(
-        Array(),
-        Seq(
-            TargetDirAnnotation("target"),
-            ChiselGeneratorAnnotation(() => new CoreTester("target/clang/s1_base.hexS"))
-        )
+    val tester = new CoreTestHelper("s1_base")
+
+    tester.step(8)
+
+    tester.report()
+  }
+
+  "beq_bne" in {
+    val tester = new CoreTestHelper("beq_bne")
+
+    tester.step(64)
+
+    for(i <- 1 to 4) {
+      tester.expect(s"io_rFdebug_${i + 15}", i)
+    }
+
+    tester.report()
+  }
+}
+
+class CoreTestHelper(hexCode:String) {
+  val firrtlAnno = (new ChiselStage).execute(
+    Array(),
+    Seq(
+      TargetDirAnnotation("target"),
+      ChiselGeneratorAnnotation(() => new CoreTester(s"target/clang/${hexCode}.hexS"))
     )
+  )
 
-    val tester = TreadleTester(firrtlAnno)
-    var clock = 1
+  val tester = TreadleTester(firrtlAnno)
+  var clock = 0
 
-    def displayReadPort() = {
-      for (i <- 0 until 2) {
-        val instruction = tester.peek(s"core.fetch.io_withDecode_ibufferEntries_${i}_bits_inst")
-        val address     = tester.peek(s"core.fetch.io_withDecode_ibufferEntries_${i}_bits_addr")
-        val valid       = tester.peek(s"core.fetch.io_withDecode_ibufferEntries_${i}_valid")
-        println(s"inst #$i: ${"%08x".format(instruction)}")
-        println(s"addr #$i: ${"%08x".format(address)}")
-        println(s"valid #$i: ${valid}")
-      }
-      println("state: " + tester.peek(s"core.fetch.state"))
+  def printClock() = {
+    println(s"================ clock $clock ================")
+  }
+
+  def peek(port:String, format:String = "") = {
+    val value = tester.peek(port)
+    if(format.length > 0) {
+      println(s"$port: ${format.format(value)}")
+    } else {
+      println(s"$port: ${value}")
     }
+  }
 
-    for(tick <- 1 to 5) {
-        tester.step()
-        println(s"================ clock $clock ================")
-        val pc = tester.peek("core.fetch.pc.io_out")
-        println(s"pc: ${pc}")
-
-        displayReadPort()
-
-        clock += 1
+  def displayPorts() = {
+    printClock()
+    for (i <- 0 until 2) {
+      peek(s"core.fetch.io_withDecode_ibufferEntries_${i}_bits_inst", "0x%08x")
+      peek(s"core.fetch.io_withDecode_ibufferEntries_${i}_bits_addr", "0x%08x")
+      peek(s"core.fetch.io_withDecode_ibufferEntries_${i}_valid")
     }
+    peek("core.fetch.state")
+    for (i <- 0 until 32) {
+      peek(s"io_rFdebug_${i}", "0x%08x")
+    }
+  }
 
+  def expect(port:String, value:BigInt) = {
+    tester.expect(port, value)
+  }
+
+  def step(tick:Int = 1) = {
+    tester.step(tick)
+    clock += tick
+  }
+
+  def stepAndDisplay(tick:Int) = {
+    for(i <- 0 until tick) {
+      step()
+      displayPorts()
+    }
+  }
+
+  def report() = {
     tester.report()
   }
 }
