@@ -13,12 +13,12 @@ addi $s3,$zero,253
 
 Next1:
 
- bne $s1, $s1, Next2
- bne $s1, $s2, Next2
+bne $s1, $s1, Next2
+bne $s1, $s2, Next2
 
- addi $s1,$zero,254    # can not execute
- addi $s2,$zero,255
- addi $s3,$zero,256
+addi $s1,$zero,254    # can not execute
+addi $s2,$zero,255
+addi $s3,$zero,256
 
 Next2:
- nop
+nop

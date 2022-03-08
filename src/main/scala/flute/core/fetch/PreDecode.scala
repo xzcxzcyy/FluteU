@@ -6,12 +6,10 @@ import chisel3.util._
 import flute.config.CPUConfig._
 import flute.config.BasicInstructions
 import flute.util.BitPatCombine
+import flute.util.ValidBundle
 
-class PreDecodeOutput extends Bundle {
-  val targetAddr = new Bundle {
-    val valid = Bool()
-    val bits  = UInt(addrWidth.W)
-  }
+class PreDecoderOutput extends Bundle {
+  val targetAddr = ValidBundle(UInt(addrWidth.W))
   val isBranch = Bool()
 }
 
@@ -38,7 +36,7 @@ class PreDecode extends Module {
   val io = IO(new Bundle {
     val instruction = Flipped(ValidIO(UInt(instrWidth.W)))
     val pc          = Input(UInt(addrWidth.W))
-    val out         = Output(new PreDecodeOutput)
+    val out         = Output(new PreDecoderOutput)
     // val stallReq    = Output(Bool())
   })
 
