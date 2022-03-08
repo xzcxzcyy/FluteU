@@ -20,6 +20,7 @@ class ExMemBundle extends Bundle {
   val writeRegAddr = UInt(regAddrWidth.W)
   val branchValid  = Bool()
   val branchAddr   = UInt(addrWidth.W)
+  val memAddr      = UInt(addrWidth.W)
 }
 
 class ExMemStage extends StageReg(new ExMemBundle) {}

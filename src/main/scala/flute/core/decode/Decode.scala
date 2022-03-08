@@ -21,7 +21,7 @@ class Decode extends Module {
     val feedback     = new DecodeFeedbackIO()
     val regFileWrite = Vec(superscalar, new RegFileWriteIO())
 
-    // val debug = Output(Vec(regAmount, UInt(dataWidth.W)))
+    val debug = Output(Vec(regAmount, UInt(dataWidth.W)))
   })
 
   val decoders = for (i <- 0 until 2) yield Module(new Decoder)
@@ -29,6 +29,8 @@ class Decode extends Module {
   val issueQueue = Module(new FIFOQueue(new MicroOp, 16, superscalar, decodeWay))
 
   val issuer = Module(new Issue)
+
+  io.debug := issuer.io.debug
 
   for (i <- 0 until decodeWay) {
     decoders(i).io.instr        := io.withFetch.ibufferEntries(i).bits

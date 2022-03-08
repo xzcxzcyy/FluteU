@@ -85,10 +85,11 @@ class ALUExecutor extends Module {
   exMem.io.in.control.storeMode  := idEx.io.data.storeMode
   exMem.io.in.branchAddr         := branchAddr
   exMem.io.in.branchValid        := branchValid
+  exMem.io.in.memAddr            := idEx.io.data.immediate + idEx.io.data.op1.op
 
   io.feedback.branchAddr.bits  := exMem.io.data.branchAddr
   io.feedback.branchAddr.valid := exMem.io.data.branchValid
-  io.dCache.addr               := exMem.io.data.aluResult
+  io.dCache.addr               := exMem.io.data.memAddr
   io.dCache.writeData          := exMem.io.data.memWriteData
   io.dCache.storeMode          := exMem.io.data.control.storeMode
 
