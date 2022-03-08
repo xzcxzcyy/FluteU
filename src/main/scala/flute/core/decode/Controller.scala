@@ -116,7 +116,6 @@ object LoadMode {
   val halfword = 3.U(width.W)
 }
 
-
 object StoreMode {
   val width  = 2
 
@@ -163,7 +162,7 @@ object BJCond {
   val ltz  = 12.U(width.W)
   val ltu  = 13.U(width.W)
   val ne   = 14.U(width.W)
-  val jr   = 15.U(width.W)  // 包含 jr, jalr
+  val jr   = 15.U(width.W)  // 包含 jr, jalr (disabled)
   val all  = 16.U(width.W)  // 包含 j, jal
 }
 

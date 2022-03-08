@@ -40,14 +40,28 @@ class Decoder extends Module {
     // val withRegfile = Flipped(new RegFileReadIO)
     val microOp = Output(new MicroOp)
   })
+  val controller = Module(new Controller())
 
   // 解开 Fetch 传来的 IBEntry 结构
   val instruction = Wire(UInt(instrWidth.W))
   instruction   := io.instr.inst
   io.microOp.pc := io.instr.addr
 
+  // Immediate ////////////////////////////////////////////////////
+  val extendedImm = WireInit(0.U(dataWidth.W))
+  extendedImm := MuxLookup(
+    key = controller.io.immRecipe,
+    default = 0.U(dataWidth.W),
+    mapping = Seq(
+      ImmRecipe.sExt -> Cat(Fill(16, instruction(15)), instruction(15, 0)),
+      ImmRecipe.uExt -> Cat(0.U(16.W), instruction(15, 0)),
+      ImmRecipe.lui  -> Cat(instruction(15, 0), 0.U(16.W))
+    )
+  )
+  io.microOp.immediate := extendedImm
+  /////////////////////////////////////////////////////////////////
+
   // Controller //////////////////////////////////////////////////////
-  val controller = Module(new Controller())
   controller.io.instruction := io.instr.inst
   io.microOp.regWriteEn := controller.io.regWriteEn
   io.microOp.loadMode   := controller.io.loadMode
@@ -92,17 +106,4 @@ class Decoder extends Module {
   io.microOp.rtAddr := instruction(20, 16)
   /////////////////////////////////////////////////////////////////
 
-  // Immediate ////////////////////////////////////////////////////
-  val extendedImm = Wire(UInt(dataWidth.W))
-  extendedImm := MuxLookup(
-    key = controller.io.immRecipe,
-    default = 0.U(dataWidth.W),
-    mapping = Seq(
-      ImmRecipe.sExt -> Cat(Fill(16, instruction(15)), instruction(15, 0)),
-      ImmRecipe.uExt -> Cat(0.U(16.W), instruction(15, 0)),
-      ImmRecipe.lui  -> Cat(instruction(15, 0), 0.U(16.W))
-    )
-  )
-  io.microOp.immediate := extendedImm
-  /////////////////////////////////////////////////////////////////
 }

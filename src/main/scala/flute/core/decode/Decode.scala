@@ -21,7 +21,7 @@ class Decode extends Module {
     val feedback     = new DecodeFeedbackIO()
     val regFileWrite = Vec(superscalar, new RegFileWriteIO())
 
-    val debug = Output(Vec(regAmount, UInt(dataWidth.W)))
+    // val debug = Output(Vec(regAmount, UInt(dataWidth.W)))
   })
 
   val decoders = for (i <- 0 until 2) yield Module(new Decoder)

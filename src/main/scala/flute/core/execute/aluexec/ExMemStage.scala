@@ -4,12 +4,13 @@ import chisel3._
 import flute.config.CPUConfig._
 import flute.core.decode.StoreMode
 import flute.core.components.StageReg
+import flute.core.decode.LoadMode
 
 class ExMemBundle extends Bundle {
 
   class ControlBundle extends Bundle {
     val regWriteEn = Bool()
-    val loadMode   = Bool()
+    val loadMode   = UInt(LoadMode.width.W)
     val storeMode  = UInt(StoreMode.width.W)
   }
 

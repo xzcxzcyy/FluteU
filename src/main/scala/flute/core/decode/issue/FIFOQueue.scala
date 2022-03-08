@@ -59,10 +59,10 @@ class FIFOQueue[T <: Data](gen: T, numEntries: Int, numRead: Int, numWrite: Int)
   for (i <- 0 until numRead) {
     val offset = i.U
 
-    when(offset < numDeq) {
+    when(offset < deqEntries) {
       io.read(i).bits := data((head_ptr + offset)(log2Up(numEntries) - 1, 0))
     }.otherwise {
-      io.read(i).bits := DontCare
+      io.read(i).bits := 0.U.asTypeOf(gen)
     }
 
     io.read(i).valid := offset < deqEntries
