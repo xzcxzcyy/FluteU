@@ -71,10 +71,10 @@ class Controller extends Module {
     /* LWL */
     /* LWR */
     /* PREF */
-    SB     -> List(false.B, LoadMode.disable,  StoreMode.byte,      ALUOp.add,  Op1Recipe.rs,      Op2Recipe.imm,  BJCond.none, RegDst.rd,    ImmRecipe.sExt),
+    SB     -> List(false.B, LoadMode.disable,  StoreMode.byte,      ALUOp.none,  Op1Recipe.rs,      Op2Recipe.rt,  BJCond.none, RegDst.rd,    ImmRecipe.sExt),
     /* SC */
     /* SD */
-    SW     -> List(false.B, LoadMode.disable,  StoreMode.word,      ALUOp.add,  Op1Recipe.rs,      Op2Recipe.imm,  BJCond.none, RegDst.rd,    ImmRecipe.sExt),
+    SW     -> List(false.B, LoadMode.disable,  StoreMode.word,      ALUOp.none,  Op1Recipe.rs,      Op2Recipe.rt,  BJCond.none, RegDst.rd,    ImmRecipe.sExt),
     /* SWL */
     /* SWR */
     /* SYNC */

@@ -18,9 +18,9 @@ class Issue extends Module {
   val writingBoard = Module(new WritingBoard)
   val regFile      = Module(new RegFile(superscalar, superscalar))
 
-  io.debug := regFile.io.debug
-
   val uOps = for (i <- 0 until 2) yield io.fromId(i).bits
+
+  io.debug := regFile.io.debug
 
   // hazardChcek IO connection
   io.fromId <> hazardCheck.io.in

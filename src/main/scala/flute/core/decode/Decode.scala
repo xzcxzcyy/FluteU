@@ -30,6 +30,8 @@ class Decode extends Module {
 
   val issuer = Module(new Issue)
 
+  io.debug := issuer.io.debug
+
   for (i <- 0 until decodeWay) {
     decoders(i).io.instr        := io.withFetch.ibufferEntries(i).bits
     issueQueue.io.write(i).bits := decoders(i).io.microOp
@@ -44,5 +46,4 @@ class Decode extends Module {
   io.withExecute.microOps <> issuer.io.toEx
 
   issuer.io.regFileWrite := io.regFileWrite
-  io.debug := issuer.io.debug
 }

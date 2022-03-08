@@ -14,81 +14,37 @@ import chisel3.stage.{ChiselGeneratorAnnotation, ChiselStage}
 
 class CoreTreadleTester extends AnyFreeSpec with ChiselScalatestTester with Matchers {
   "s1_base" in {
-    val tester = new CoreTestHelper("s1_base")
-
-    tester.step(8)
-
-    tester.report()
-  }
-
-  "beq_bne" in {
-    val tester = new CoreTestHelper("beq_bne")
-
-    tester.step(64)
-
-    for(i <- 1 to 4) {
-      tester.expect(s"io_rFdebug_${i + 15}", i)
-    }
-
-    tester.report()
-  }
-}
-
-class CoreTestHelper(hexCode:String) {
-  val firrtlAnno = (new ChiselStage).execute(
-    Array(),
-    Seq(
-      TargetDirAnnotation("target"),
-      ChiselGeneratorAnnotation(() => new CoreTester(s"target/clang/${hexCode}.hexS"))
+    val firrtlAnno = (new ChiselStage).execute(
+        Array(),
+        Seq(
+            TargetDirAnnotation("target"),
+            ChiselGeneratorAnnotation(() => new CoreTester("s1_base"))
+        )
     )
-  )
 
-  val tester = TreadleTester(firrtlAnno)
-  var clock = 0
+    val tester = TreadleTester(firrtlAnno)
+    var clock = 1
 
-  def printClock() = {
-    println(s"================ clock $clock ================")
-  }
+    for(tick <- 1 to 5) {
+        tester.step()
+        println(s"================ clock $clock ================")
+        val pc = tester.peek("core.fetch.pc.io_out")
+        println(s"pc: ${pc}")
+        for(i <- 0 to 7) {
+            val inst = tester.peek(s"iCache.io_data_bits_$i")
+            println(s"fetch_$i: ${"%08x".format(inst)}")
+        }
 
-  def peek(port:String, format:String = "") = {
-    val value = tester.peek(port)
-    if(format.length > 0) {
-      println(s"$port: ${format.format(value)}")
-    } else {
-      println(s"$port: ${value}")
+        val willProcess = tester.peek(s"core.fetch.io_withDecode_willProcess")
+        println(s"willProcess: $willProcess")
+
+        for(i <- 0 to 1) {
+            val inst = tester.peek(s"core.decode.io_withFetch_insts_${i}_inst")
+            println(s"decode_$i: ${"%08x".format(inst)}")
+        }
+        clock += 1
     }
-  }
 
-  def displayPorts() = {
-    printClock()
-    for (i <- 0 until 2) {
-      peek(s"core.fetch.io_withDecode_ibufferEntries_${i}_bits_inst", "0x%08x")
-      peek(s"core.fetch.io_withDecode_ibufferEntries_${i}_bits_addr", "0x%08x")
-      peek(s"core.fetch.io_withDecode_ibufferEntries_${i}_valid")
-    }
-    peek("core.fetch.state")
-    for (i <- 0 until 32) {
-      peek(s"io_rFdebug_${i}", "0x%08x")
-    }
-  }
-
-  def expect(port:String, value:BigInt) = {
-    tester.expect(port, value)
-  }
-
-  def step(tick:Int = 1) = {
-    tester.step(tick)
-    clock += tick
-  }
-
-  def stepAndDisplay(tick:Int) = {
-    for(i <- 0 until tick) {
-      step()
-      displayPorts()
-    }
-  }
-
-  def report() = {
     tester.report()
   }
 }
