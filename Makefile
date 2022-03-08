@@ -11,7 +11,9 @@ TARGET=xor.hexS xor.hex xori.hexS xor_load.hex \
 		sort.hexS pipe.hexS datarace.hexS \
 		lb.hexS lbu.hexS lh.hexS lhu.hexS lui.hexS \
 		sb.hexS sh.hexS srav.hexS srlv.hexS subu.hexS \
-		multu.hexS mul.hexS divu.hexS benchmark.hexS
+		multu.hexS mul.hexS divu.hexS benchmark.hexS \
+		sb_flat.hexS sw_flat.hexS \
+		s1_base.hexS s2_swap.hexS s3_loadstore.hexS s4_loadstore.hexS
 
 SRC=src/test/clang
 DIR=target/clang
@@ -45,11 +47,11 @@ ${DIR}/%.hex: ${DIR}/%.bin
 	hexdump -ve '4/1 "%02x"' -e '"\n"' $^ > $@
 
 # debug
-${DIR}/%.debug: ${DIR}/%.bin
+%.debug: ${DIR}/%.bin
 	mips-linux-gnu-objdump -d ${DIR}/$*.o
 	hexdump -C $^
 
-${DIR}/%.debugS: ${DIR}/%.binS
+%.debugS: ${DIR}/%.binS
 	mips-linux-gnu-objdump -d ${DIR}/$*.oS
 	hexdump -C $^
 
