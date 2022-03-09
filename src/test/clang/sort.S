@@ -16,14 +16,15 @@ sort_next:
  addi $s1, $s1, -4   
  bne $s0, $s1, sort_loop  
  
- add    $a0,$0,$s0       #display $s0
- addi   $v0,$0,34         # display hex
- syscall                 # we are out of here.  DISP: disp $r0, 0
- 
  addi $s0,$s0,4
  addi $s1,$zero,60
  bne $s0, $s1, sort_loop
 
- addi   $v0,$zero,10         # system call for exit
- syscall                  # we are out of here.   
+ ori $t8,$zero,0
+ ori $t9,$zero,64
+loop:
+ lw $a0,($t8)
+ addi $t8,$t8,4
+ bne $t8, $t9, loop
+nop
  #MIPS处理器实现中请用停机指令实现syscall

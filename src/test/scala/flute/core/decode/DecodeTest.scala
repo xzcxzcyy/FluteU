@@ -51,19 +51,19 @@ class DecodeTest extends AnyFreeSpec with ChiselScalatestTester with Matchers {
 //     }
 //   }
 
-	"test2" in {
-		test(new Decode) { c=>
-			c.io.regFileWrite(0).writeEnable.poke(1.B)
-			c.io.regFileWrite(0).writeAddr.poke(2.U)
-			c.io.regFileWrite(0).writeData.poke(0xff.U)
+	// "test2" in {
+	// 	test(new Decode) { c=>
+	// 		c.io.regFileWrite(0).writeEnable.poke(1.B)
+	// 		c.io.regFileWrite(0).writeAddr.poke(2.U)
+	// 		c.io.regFileWrite(0).writeData.poke(0xff.U)
 
-			c.io.debug(1).expect(0.U)
+	// 		c.io.debug(1).expect(0.U)
 
-			c.clock.step()
+	// 		c.clock.step()
 
-			c.io.debug(2).expect(0xff.U)
-		}
-	}
+	// 		c.io.debug(2).expect(0xff.U)
+	// 	}
+	// }
 }
 
 class IFIDTop extends Module {

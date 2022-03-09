@@ -24,7 +24,7 @@ class BitPatCombineTest extends AnyFreeSpec with ChiselScalatestTester with Matc
 class BitPatCombineTester extends Module {
 
   private object instrs extends BasicInstructions {
-    def isJOp = BitPatCombine(Seq(J, JAL, JALR, JR))
+    def isJOp = BitPatCombine(Seq(J, JAL, JR))
   }
 
   val io = IO(new Bundle {

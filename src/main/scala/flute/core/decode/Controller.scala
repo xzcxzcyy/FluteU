@@ -59,8 +59,8 @@ class Controller extends Module {
     BNE    -> List(false.B, LoadMode.disable,  StoreMode.disable,   ALUOp.none, Op1Recipe.rs,      Op2Recipe.rt,   BJCond.ne,   RegDst.rd,    ImmRecipe.sExt),
     J      -> List(false.B, LoadMode.disable,  StoreMode.disable,   ALUOp.none, Op1Recipe.rs,      Op2Recipe.rt,   BJCond.all,  RegDst.rd,    ImmRecipe.sExt),
     JAL    -> List(true.B,  LoadMode.disable,  StoreMode.disable,   ALUOp.add,  Op1Recipe.pcPlus8, Op2Recipe.zero, BJCond.all,  RegDst.GPR31, ImmRecipe.sExt),
-    JALR   -> List(true.B,  LoadMode.disable,  StoreMode.disable,   ALUOp.add,  Op1Recipe.pcPlus8, Op2Recipe.zero, BJCond.jr,   RegDst.rd,    ImmRecipe.sExt),
-    JR     -> List(false.B, LoadMode.disable,  StoreMode.disable,   ALUOp.none, Op1Recipe.rs,      Op2Recipe.rt,   BJCond.jr,   RegDst.rd,    ImmRecipe.sExt),
+    // JALR   -> List(true.B,  LoadMode.disable,  StoreMode.disable,   ALUOp.add,  Op1Recipe.pcPlus8, Op2Recipe.zero, BJCond.jr,   RegDst.rd,    ImmRecipe.sExt),
+    JR     -> List(false.B, LoadMode.disable,  StoreMode.disable,   ALUOp.none, Op1Recipe.rs,      Op2Recipe.zero, BJCond.jr,   RegDst.rd,    ImmRecipe.sExt),
     /** Load, Store, and Memory Control Instructions **/
     /* LB */
     /* LBU */
@@ -71,10 +71,10 @@ class Controller extends Module {
     /* LWL */
     /* LWR */
     /* PREF */
-    SB     -> List(false.B, LoadMode.disable,  StoreMode.byte,      ALUOp.add,  Op1Recipe.rs,      Op2Recipe.imm,  BJCond.none, RegDst.rd,    ImmRecipe.sExt),
+    SB     -> List(false.B, LoadMode.disable,  StoreMode.byte,      ALUOp.none,  Op1Recipe.rs,      Op2Recipe.rt,  BJCond.none, RegDst.rd,    ImmRecipe.sExt),
     /* SC */
     /* SD */
-    SW     -> List(false.B, LoadMode.disable,  StoreMode.word,      ALUOp.add,  Op1Recipe.rs,      Op2Recipe.imm,  BJCond.none, RegDst.rd,    ImmRecipe.sExt),
+    SW     -> List(false.B, LoadMode.disable,  StoreMode.word,      ALUOp.none,  Op1Recipe.rs,      Op2Recipe.rt,  BJCond.none, RegDst.rd,    ImmRecipe.sExt),
     /* SWL */
     /* SWR */
     /* SYNC */
@@ -115,7 +115,6 @@ object LoadMode {
   val byte     = 2.U(width.W)
   val halfword = 3.U(width.W)
 }
-
 
 object StoreMode {
   val width  = 2
@@ -163,7 +162,7 @@ object BJCond {
   val ltz  = 12.U(width.W)
   val ltu  = 13.U(width.W)
   val ne   = 14.U(width.W)
-  val jr   = 15.U(width.W)  // 包含 jr, jalr
+  val jr   = 15.U(width.W)  // 包含 jr, jalr (disabled)
   val all  = 16.U(width.W)  // 包含 j, jal
 }
 

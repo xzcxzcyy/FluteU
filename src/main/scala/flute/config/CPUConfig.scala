@@ -12,6 +12,7 @@ object CPUConfig {
   // val branchCondAmount = 16
 
   val superscalar = 2
+  val decodeWay   = 2
 
   val fetchGroupSize   = 8
   val fetchGroupWidth  = log2Up(fetchGroupSize)
