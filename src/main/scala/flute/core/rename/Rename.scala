@@ -14,7 +14,7 @@ class RenameIO extends Bundle {
   val robidx   = Vec(superscalar, DecoupledIO(UInt(PhyRegIdxWidth.W)))
 }
 
-class RenameFeedbackIO extends Bundle{
+class RenameFeedbackIO extends Bundle {
   val stall = Bool()
 }
 
@@ -93,7 +93,7 @@ class Rename extends Module {
         // the instruction has rt
         rat.io.ReadPorts(i)(1).ready := 1.B
         rat.io.ReadPorts(i)(1).bits.addr := microOp.bits.rtAddr
-        when(rat.io.ReadPorts(i)(1).valid){
+        when(rat.io.ReadPorts(i)(1).valid) {
           uops(i).rtAddr := rat.io.ReadPorts(i)(1).bits.data
         }
       }.otherwise{
