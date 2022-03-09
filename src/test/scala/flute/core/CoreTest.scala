@@ -13,8 +13,8 @@ import chiseltest.ChiselScalatestTester
 
 import firrtl.stage.FirrtlSourceAnnotation
 import firrtl.options.TargetDirAnnotation
-
 import chisel3.stage.{ChiselGeneratorAnnotation, ChiselStage}
+
 import java.io.PrintWriter
 import java.io.File
 
@@ -69,7 +69,6 @@ class TestHelper(bench: String, d: String = "zero.in") {
     case 3 => "halfword"
     case _ => "illegal"
   }
-
   def printDecodeOut() = {
     for (i <- 0 until decodeWay) yield {
       val valid = peek(s"core.decode.io_withExecute_microOps_${i}_valid")
@@ -94,15 +93,20 @@ class TestHelper(bench: String, d: String = "zero.in") {
       w.println(s"dCache addr peeked: #${i}: ${addr}")
     }
   }
+
+  def close() = {
+    w.close()
+  }
 }
 
 class CoreTest extends AnyFreeSpec with ChiselScalatestTester with Matchers {
   "beq_bne" in {
     val tester = new TestHelper("beq_bne")
-    for (i <- 0 until 0) {
+    for (i <- 0 until 32) {
       tester.step()
       tester.printRFs()
     }
+    tester.close()
   }
 
   "s1_base" in {
@@ -111,6 +115,7 @@ class CoreTest extends AnyFreeSpec with ChiselScalatestTester with Matchers {
       tester.step()
       tester.printRFs()
     }
+    tester.close()
   }
 
   "s4_loadstore" in {
@@ -119,14 +124,16 @@ class CoreTest extends AnyFreeSpec with ChiselScalatestTester with Matchers {
       tester.step()
       tester.printRFs()
     }
+    tester.close()
   }
 
   "sb_flat" in {
-    val helper = new TestHelper("sb_flat")
+    val tester = new TestHelper("sb_flat")
     for (i <- 0 until 0) {
-      helper.step()
-      helper.printRFs()
+      tester.step()
+      tester.printRFs()
     }
+    tester.close()
   }
 
   "sb" in {
@@ -135,14 +142,16 @@ class CoreTest extends AnyFreeSpec with ChiselScalatestTester with Matchers {
       tester.step()
       tester.printRFs()
     }
+    tester.close()
   }
 
   "sort" in {
-    val helper = new TestHelper("sort", "sort.dcache")
-    for (i <- 0 until 4096) {
-      helper.step()
-      helper.printRFs()
+    val tester = new TestHelper("sort", "sort.dcache")
+    for (i <- 0 until 0) {
+      tester.step()
+      tester.printRFs()
     }
+    tester.close()
   }
 
 }
