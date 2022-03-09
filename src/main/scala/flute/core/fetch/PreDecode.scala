@@ -29,6 +29,7 @@ class PreDecode extends Module {
         BNE,
         // JALR,
         JR,
+        SYSCALL,
       )
     )
   }
