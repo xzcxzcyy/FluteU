@@ -20,7 +20,9 @@ import java.io.File
 
 class TestHelper(bench: String, d: String = "zero.in") {
 
-  val w = new PrintWriter(new File(s"target/log/$bench.log"))
+  val f = new File(s"target/log/$bench.log")
+  f.getParentFile().mkdirs();
+  val w = new PrintWriter(f)
 
   println(s"=================== $bench ===================")
   w.println(s"=================== $bench ===================")
