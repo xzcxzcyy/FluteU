@@ -20,7 +20,7 @@ class DCache(memoryFile: String = "test_data/dmem.in") extends Module {
     val port = Vec(superscalar, new DCacheIO())
   })
 
-  val mem = Mem(1024*4, UInt(byteWidth.W))
+  val mem = Mem(32 * 4, UInt(byteWidth.W))
 
   if (memoryFile.trim().nonEmpty) {
     loadMemoryFromFileInline(mem, memoryFile)

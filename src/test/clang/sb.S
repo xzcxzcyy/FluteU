@@ -30,6 +30,7 @@ add $a0,$0,$s1
 addi $t1,$t1,4    
 addi $t3,$t3, -1    
 bne $t3,$zero,sb_branch
-
+syscall
+nop
 # addi   $v0,$zero,10      # system call for exit
 # syscall                  # we are out of here.   

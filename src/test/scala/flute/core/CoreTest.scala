@@ -104,7 +104,7 @@ class TestHelper(bench: String, d: String = "zero.in") {
 class CoreTest extends AnyFreeSpec with ChiselScalatestTester with Matchers {
   "beq_bne" in {
     val tester = new TestHelper("beq_bne")
-    for (i <- 0 until 32) {
+    for (i <- 0 until 0) {
       tester.step()
       tester.printRFs()
     }
@@ -140,7 +140,7 @@ class CoreTest extends AnyFreeSpec with ChiselScalatestTester with Matchers {
 
   "sb" in {
     val tester = new TestHelper("sb")
-    for (i <- 0 until 0) {
+    for (i <- 0 until 520) {
       tester.step()
       tester.printRFs()
     }
