@@ -17,6 +17,7 @@ import chisel3.stage.{ChiselGeneratorAnnotation, ChiselStage}
 
 import java.io.PrintWriter
 import java.io.File
+import flute.util.FIFOTest
 
 class TestHelper(bench: String, d: String = "zero.in") {
 
@@ -161,6 +162,7 @@ class CoreTest extends AnyFreeSpec with ChiselScalatestTester with Matchers {
 class CoreTester(i: String = "", d: String = "zero.in") extends Module {
   val io = IO(new Bundle {
     val debug = Output(Vec(regAmount, UInt(dataWidth.W)))
+    val pc    = Output(UInt(addrWidth.W))
   })
   val iCache = Module(new ICache(s"target/clang/${i}.hexS"))
   val dCache = Module(new DCache(s"test_data/${d}")) // TODO: Specify cache file here
@@ -170,4 +172,6 @@ class CoreTester(i: String = "", d: String = "zero.in") extends Module {
 
   core.io.dCache <> dCache.io.port
   core.io.iCache <> iCache.io
+
+  io.pc := core.io.pc
 }
