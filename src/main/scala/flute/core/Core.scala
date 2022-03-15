@@ -13,6 +13,7 @@ class Core extends Module {
     val iCache = Flipped(new ICacheIO)
     val dCache = Flipped(Vec(superscalar,new DCacheIO))
     val debug = Output(Vec(regAmount, UInt(dataWidth.W)))
+    val pc = Output(UInt(addrWidth.W))
   })
 
   val fetch   = Module(new Fetch())
@@ -28,4 +29,6 @@ class Core extends Module {
   fetch.io.iCache <> io.iCache
   fetch.io.feedbackFromDecode <> decode.io.feedback
   fetch.io.feedbackFromExec <> execute.io.feedback
+
+  io.pc := fetch.io.pc
 }
