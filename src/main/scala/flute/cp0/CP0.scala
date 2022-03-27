@@ -20,8 +20,10 @@ class CP0Write extends Bundle {
 }
 
 class CP0WithCommit extends Bundle {
-  val pc     = Input(UInt(addrWidth.W))
-  val inSlot = Input(Bool()) // whether the instruction in pc is delay slot
+  val pc         = Input(UInt(addrWidth.W))
+  val inSlot     = Input(Bool()) // whether the instruction in pc is delay slot
+  val exceptions = Input(new ExceptionBundle)
+  val completed  = Input(Bool())
 }
 
 class CP0 extends Module {
@@ -38,11 +40,8 @@ class CP0 extends Module {
   val status   = new CP0Status
   val cause    = new CP0Cause
   val epc      = new CP0EPC
+  val compare  = new CP0Compare
   val countInc = RegInit(0.B)
-
-  def wReq(r: CP0BaseReg): Bool = {
-    io.write.enable && io.write.addr === r.addr.U && io.write.sel === r.sel.U
-  }
 
   val regs = Seq(
     badvaddr,
@@ -50,9 +49,10 @@ class CP0 extends Module {
     status,
     cause,
     epc,
+    compare,
   )
   val readRes = WireInit(0.U(dataWidth.W))
-  regs.foreach( r =>
+  regs.foreach(r =>
     when(io.read.addr === r.addr.U && io.read.sel === r.sel.U) {
       readRes := r.reg.asUInt
     }
@@ -60,6 +60,42 @@ class CP0 extends Module {
   io.read.data := readRes
 
   countInc := !countInc
+
+  val commitWire = io.commit
+  // val completedWire = io.commit.completed
+  val excVector = VecInit(io.commit.exceptions.asUInt.asBools.map(_ && io.commit.completed))
+    .asTypeOf(new ExceptionBundle)
+
+  val hasExc = excVector.asUInt.orR
+  val intReqs = for (i <- 0 until 8) yield {
+    cause.reg.ip(i) && status.reg.im(i)
+  }
+  val hasInt = intReqs.foldLeft(0.B)((z, a) => z || a) && status.reg.ie && !status.reg.exl
+  val exceptionReqestsNext = 0.B // TODO: 不同类型的异常应当要求从本指令/下一条指令执行
+  when(hasInt || hasExc) {
+    when(!commitWire.completed) {
+      epc.reg := Mux(commitWire.inSlot, commitWire.pc - 4.U, commitWire.pc)
+    }.otherwise {
+      cause.reg.bd := commitWire.inSlot
+      when(hasInt) {
+        epc.reg := Mux(commitWire.inSlot, commitWire.pc - 4.U, commitWire.pc)
+      }.otherwise {
+        when(commitWire.inSlot) {
+          epc.reg := commitWire.pc - 4.U
+        }.elsewhen(exceptionReqestsNext) {
+          epc.reg := commitWire.pc + 4.U
+        }.otherwise {
+          epc.reg := commitWire.pc
+        }
+      }
+    }
+  }
+
+  io.intrReq := hasExc || hasInt
+
+  def wReq(r: CP0BaseReg): Bool = {
+    io.write.enable && io.write.addr === r.addr.U && io.write.sel === r.sel.U && !hasInt && !hasExc
+  }
 
   // badvaddr
 
@@ -84,6 +120,19 @@ class CP0 extends Module {
     for (i <- 0 to 1) yield {
       cause.reg.ip(i) := writeCauseWire.ip(i)
     }
+  }
+  for (i <- 2 to 6) yield {
+    cause.reg.ip(i) := io.hwIntr(i - 2)
+  }
+  when((wReq(count) || wReq(compare)) && !io.hwIntr(5)) {
+    cause.reg.ip(7) := 0.B
+  }.elsewhen(io.hwIntr(5) || (count.reg === compare.reg)) {
+    cause.reg.ip(7) := 1.B
+  }
+  when(wReq(count) || wReq(compare)) {
+    cause.reg.ti := 0.B
+  }.elsewhen(count.reg === compare.reg) {
+    cause.reg.ti := 1.B
   }
 
   // epc

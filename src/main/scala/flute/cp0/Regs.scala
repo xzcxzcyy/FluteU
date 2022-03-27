@@ -64,3 +64,12 @@ class CP0EPC extends CP0BaseReg {
   override val addr: Int = 14
   override val sel: Int  = 0
 }
+
+class CP0Compare extends CP0BaseReg {
+  override val reg = RegInit(UInt(dataWidth.W))
+  
+  override val addr: Int = 11
+  
+  override val sel: Int = 0
+  
+}
