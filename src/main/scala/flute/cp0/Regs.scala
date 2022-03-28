@@ -66,7 +66,7 @@ class CP0EPC extends CP0BaseReg {
 }
 
 class CP0Compare extends CP0BaseReg {
-  override val reg = RegInit(UInt(dataWidth.W))
+  override val reg = RegInit(0.U(dataWidth.W))
   
   override val addr: Int = 11
   

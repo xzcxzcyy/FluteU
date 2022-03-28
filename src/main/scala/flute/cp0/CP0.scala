@@ -24,6 +24,7 @@ class CP0WithCommit extends Bundle {
   val inSlot     = Input(Bool()) // whether the instruction in pc is delay slot
   val exceptions = Input(new ExceptionBundle)
   val completed  = Input(Bool())
+  val eret       = Input(Bool())
 }
 
 class CP0 extends Module {
@@ -72,23 +73,25 @@ class CP0 extends Module {
   }
   val hasInt = intReqs.foldLeft(0.B)((z, a) => z || a) && status.reg.ie && !status.reg.exl
   val exceptionReqestsNext = 0.B // TODO: 不同类型的异常应当要求从本指令/下一条指令执行
-  when(hasInt || hasExc) {
-    when(!commitWire.completed) {
-      epc.reg := Mux(commitWire.inSlot, commitWire.pc - 4.U, commitWire.pc)
-    }.otherwise {
+  when(hasInt) {
+    epc.reg        := Mux(commitWire.inSlot, commitWire.pc - 4.U, commitWire.pc)
+    cause.reg.bd   := commitWire.inSlot && commitWire.completed
+    status.reg.exl := 1.B
+  }.elsewhen(hasExc) {
+    status.reg.exl := 1.B
+    when(!status.reg.exl) {
       cause.reg.bd := commitWire.inSlot
-      when(hasInt) {
-        epc.reg := Mux(commitWire.inSlot, commitWire.pc - 4.U, commitWire.pc)
+      when(commitWire.inSlot) {
+        epc.reg := commitWire.pc - 4.U
+      }.elsewhen(exceptionReqestsNext) {
+        epc.reg := commitWire.pc + 4.U
       }.otherwise {
-        when(commitWire.inSlot) {
-          epc.reg := commitWire.pc - 4.U
-        }.elsewhen(exceptionReqestsNext) {
-          epc.reg := commitWire.pc + 4.U
-        }.otherwise {
-          epc.reg := commitWire.pc
-        }
+        epc.reg := commitWire.pc
       }
     }
+  }
+  when(commitWire.eret) {
+    status.reg.exl := 0.B
   }
 
   io.intrReq := hasExc || hasInt
@@ -126,7 +129,7 @@ class CP0 extends Module {
   }
   when((wReq(count) || wReq(compare)) && !io.hwIntr(5)) {
     cause.reg.ip(7) := 0.B
-  }.elsewhen(io.hwIntr(5) || (count.reg === compare.reg)) {
+  }.elsewhen(io.hwIntr(5) || ((count.reg === compare.reg) && (compare.reg =/= 0.U))) {
     cause.reg.ip(7) := 1.B
   }
   when(wReq(count) || wReq(compare)) {
