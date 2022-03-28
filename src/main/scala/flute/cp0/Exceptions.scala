@@ -3,12 +3,13 @@ package flute.cp0
 import chisel3._
 
 class ExceptionBundle extends Bundle {
-  val adEL = Bool() // addr error load
-  val adES = Bool() // addr error store
-  val sys  = Bool() // syscall
-  val bp   = Bool() // breakpoint
-  val ri   = Bool() // reserved instruction
-  val ov   = Bool() // overflow
+  val adELi = Bool() // addr error load Instruction
+  val adELd = Bool() // addr error load Data
+  val adES  = Bool() // addr error store
+  val sys   = Bool() // syscall
+  val bp    = Bool() // breakpoint
+  val ri    = Bool() // reserved instruction
+  val ov    = Bool() // overflow
 }
 
 object ExceptionCode {

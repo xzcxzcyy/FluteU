@@ -34,6 +34,7 @@ class CP0 extends Module {
     val commit  = new CP0WithCommit
     val hwIntr  = Input(UInt(6.W))
     val intrReq = Output(Bool()) // 例外输出信号
+    val epc     = Output(UInt(dataWidth.W))
   })
 
   val badvaddr = new CP0BadVAddr
@@ -74,9 +75,10 @@ class CP0 extends Module {
   val hasInt = intReqs.foldLeft(0.B)((z, a) => z || a) && status.reg.ie && !status.reg.exl
   val exceptionReqestsNext = 0.B // TODO: 不同类型的异常应当要求从本指令/下一条指令执行
   when(hasInt) {
-    epc.reg        := Mux(commitWire.inSlot, commitWire.pc - 4.U, commitWire.pc)
-    cause.reg.bd   := commitWire.inSlot && commitWire.completed
-    status.reg.exl := 1.B
+    epc.reg           := Mux(commitWire.inSlot, commitWire.pc - 4.U, commitWire.pc)
+    cause.reg.bd      := commitWire.inSlot && commitWire.completed
+    cause.reg.excCode := ExceptionCode.int
+    status.reg.exl    := 1.B
   }.elsewhen(hasExc) {
     status.reg.exl := 1.B
     when(!status.reg.exl) {
@@ -89,6 +91,16 @@ class CP0 extends Module {
         epc.reg := commitWire.pc
       }
     }
+    cause.reg.excCode := PriorityMux(
+      Seq(
+        excVector.adELi -> ExceptionCode.adEL,
+        excVector.ri    -> ExceptionCode.ri,
+        excVector.ov    -> ExceptionCode.ov,
+        excVector.sys   -> ExceptionCode.sys,
+        excVector.adELd -> ExceptionCode.adEL,
+        excVector.adES  -> ExceptionCode.adEs,
+      )
+    )
   }
   when(commitWire.eret) {
     status.reg.exl := 0.B
@@ -142,6 +154,8 @@ class CP0 extends Module {
   when(wReq(epc)) {
     epc.reg := io.write.data
   }
+
+  io.epc := epc.reg
 }
 
 object CP0Main extends App {
