@@ -25,4 +25,7 @@ object CPUConfig {
   val opcodeWidth   = 6
   val shamtWidth    = 5
   val iTypeImmWidth = 16
+
+  /// cache ///
+  val iCacheConfig = CacheConfig(numOfSets = 64, numOfWays = 2) // 2路组相连 2 * 2KB
 }
