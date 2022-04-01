@@ -19,6 +19,15 @@ class CP0Write extends Bundle {
   val enable = Input(Bool())
 }
 
+class CP0DebugIO extends Bundle {
+  val badvaddr = Output(UInt(dataWidth.W))
+  val count    = Output(UInt(dataWidth.W))
+  val status   = Output(UInt(dataWidth.W))
+  val cause    = Output(UInt(dataWidth.W))
+  val epc      = Output(UInt(dataWidth.W))
+  val compare  = Output(UInt(dataWidth.W))
+}
+
 class CP0WithCommit extends Bundle {
   val pc         = Input(UInt(addrWidth.W))
   val inSlot     = Input(Bool()) // whether the instruction in pc is delay slot
@@ -35,6 +44,8 @@ class CP0 extends Module {
     val hwIntr  = Input(UInt(6.W))
     val intrReq = Output(Bool()) // 例外输出信号
     val epc     = Output(UInt(dataWidth.W))
+    // debug
+    val debug = new CP0DebugIO
   })
 
   val badvaddr = new CP0BadVAddr
@@ -44,6 +55,13 @@ class CP0 extends Module {
   val epc      = new CP0EPC
   val compare  = new CP0Compare
   val countInc = RegInit(0.B)
+
+  io.debug.badvaddr := badvaddr.reg
+  io.debug.count    := count.reg
+  io.debug.status   := status.reg.asUInt
+  io.debug.cause    := cause.reg.asUInt
+  io.debug.epc      := epc.reg
+  io.debug.compare  := compare.reg
 
   val regs = Seq(
     badvaddr,
