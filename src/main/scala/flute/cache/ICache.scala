@@ -15,6 +15,7 @@ class ICacheIO extends Bundle {
   val addr = Flipped(DecoupledIO(UInt(addrWidth.W)))
   val data = DecoupledIO(Vec(fetchGroupSize, UInt(dataWidth.W)))
 }
+
 /**
   * for now ICache is a default miss Cache wraped by axi interface
   *
@@ -31,10 +32,10 @@ class ICacheWithAXI(cacheConfig: CacheConfig) extends Module {
   // default behavior is miss!
   val axi = Module(new AXIReadPort(addrReqWidth = addrWidth, AXIID = 0.U)) // 0 INSTR_ID
 
-  val addrBuffer      = RegInit(0.U(addrWidth.W))
-  val addrValid       = WireDefault(0.B)
-  val refillBuffer    = Module(new ReFillBuffer)
-  val refillDataValid = WireDefault(0.B)
+  val addrBuffer   = RegInit(0.U(addrWidth.W))
+  val addrValid    = WireDefault(0.B)
+  val refillBuffer = Module(new ReFillBuffer)
+  val refillFinal  = WireDefault(0.B)
 
   val idle :: refilling :: waiting :: Nil = Enum(3)
   val state                               = RegInit(idle)
@@ -47,7 +48,7 @@ class ICacheWithAXI(cacheConfig: CacheConfig) extends Module {
       }
     }
     is(refilling) {
-      when(axi.io.finishTransfer) {
+      when(refillFinal) {
         state := Mux(io.request.data.fire, idle, waiting)
       }
     }
@@ -58,12 +59,13 @@ class ICacheWithAXI(cacheConfig: CacheConfig) extends Module {
     }
   }
 
+  // inner signal
+  addrValid   := (state === refilling) || (io.request.addr.fire && state === idle)
+  refillFinal := refillBuffer.io.dataOut.valid
+
   // io ready & valid
   io.request.addr.ready := (state === idle)
-  io.request.data.valid := (axi.io.finishTransfer && state === refilling) || (state === waiting)
-
-  // inner valid
-  addrValid := (state === refilling) || (io.request.addr.fire && state === idle)
+  io.request.data.valid := (refillFinal && state === refilling) || (state === waiting)
 
   // connection
   axi.io.addrReq.valid := addrValid
@@ -71,14 +73,16 @@ class ICacheWithAXI(cacheConfig: CacheConfig) extends Module {
   axi.io.axi <> io.axi
 
   refillBuffer.io.beginBankIndex.valid := addrValid
-  val bankIndex = addrBuffer(config.bankOffsetLen + config.bankIndexLen ,config.bankOffsetLen + 1) // (5, 3) usually
+  val bankIndex = addrBuffer(
+    config.bankOffsetLen + config.bankIndexLen,
+    config.bankOffsetLen + 1
+  ) // (5, 3) usually
   refillBuffer.io.beginBankIndex.bits := bankIndex
   refillBuffer.io.dataIn <> axi.io.transferData
   refillBuffer.io.dataLast := axi.io.finishTransfer
-  
-  io.request.data.bits := refillBuffer.io.dataOut
-}
 
+  io.request.data.bits := refillBuffer.io.dataOut.bits
+}
 
 /**
   * Currently, ICache does not check addr.valid, data.ready.
