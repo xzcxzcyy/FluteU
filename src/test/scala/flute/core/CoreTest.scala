@@ -17,7 +17,6 @@ import chisel3.stage.{ChiselGeneratorAnnotation, ChiselStage}
 
 import java.io.PrintWriter
 import java.io.File
-import flute.util.FIFOTest
 
 class TestHelper(bench: String, d: String = "zero.in") {
 
