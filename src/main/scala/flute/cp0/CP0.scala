@@ -173,6 +173,11 @@ class CP0 extends Module {
     epc.reg := io.write.data
   }
 
+  // compare
+  when(wReq(compare)) {
+    compare.reg := io.write.data
+  }
+
   io.epc := epc.reg
 }
 
