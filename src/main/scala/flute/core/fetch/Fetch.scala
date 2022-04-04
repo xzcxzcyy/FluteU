@@ -25,6 +25,8 @@ class Fetch extends Module {
     val feedbackFromDecode = Flipped(new DecodeFeedbackIO())
     val feedbackFromExec   = Flipped(new ExecuteFeedbackIO())
     val iCache             = Flipped(new ICacheIO())
+    val pc                 = Output(UInt(addrWidth.W))
+    val state              = Output(UInt(State.width.W))
   })
 
   private object State {
@@ -38,7 +40,7 @@ class Fetch extends Module {
   val pc          = Module(new PC)
   val ibuffer     = Module(new Ibuffer(new IBEntry, 16, decodeWay, fetchGroupSize))
   val preDecoders = for (i <- 0 until fetchGroupSize) yield Module(new PreDecode)
-  val branchAddr  = RegInit(ValidBundle(UInt(addrWidth.W)).Lit())
+  val branchAddr  = RegInit(0.U.asTypeOf(ValidBundle(UInt(addrWidth.W))))
   val state       = RegInit(State.Free)
 
   val nextState = Wire(UInt(State.width.W))
@@ -150,6 +152,10 @@ class Fetch extends Module {
   io.iCache.data.ready := 1.B
 
   io.withDecode.ibufferEntries <> ibuffer.io.read
+
+  // debug in verilog
+  io.pc    := pc.io.out
+  io.state := state
 }
 
 class PC extends Module {

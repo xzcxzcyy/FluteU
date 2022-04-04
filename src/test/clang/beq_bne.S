@@ -21,4 +21,5 @@ addi $s2,$zero,255
 addi $s3,$zero,256
 
 Next2:
+syscall
 nop

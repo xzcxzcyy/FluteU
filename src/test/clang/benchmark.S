@@ -42,8 +42,6 @@ sll $s1, $s1, 31   #逻辑左移31位 $s1=0x80000000
 LogicalRightShift:            #逻辑右移测试，将最高位1逐位向右右移直至结果为零
 
 add    $a0,$0,$s1       #display $s1    #逻辑右移测试，将最高位1逐位向右右移直至结果为零
-addi   $v0,$0,34        # display hex
-syscall                 # we are out of here.  
      
 srl $s1, $s1, 2   
 beq $s1, $zero, shift_next1
@@ -52,9 +50,6 @@ j LogicalRightShift
 shift_next1:
 
 add    $a0,$0,$s1       #display $s1
-addi   $v0,$0,34         # display hex
-syscall                 # we are out of here.  
-
 
 ###################################################################
 #                逻辑左移测试 
@@ -66,8 +61,6 @@ LogicalLeftShift:         #逻辑左移测试，将最低位1逐位向左移直�
 sll $s1, $s1, 2  
 
 add    $a0,$0,$s1       #display $s1
-addi   $v0,$0,34         # display hex
-syscall                 # we are out of here.  
       
 beq $s1, $zero, ArithRightShift
 j LogicalLeftShift
@@ -83,62 +76,50 @@ addi $s1,$zero,1     #                算术右移测试
 sll $s1, $s1, 31   #逻辑左移31位 $s1=0x80000000
 
 add    $a0,$0,$s1       #display $s1
-addi   $v0,$0,34         # display hex
-syscall                 # we are out of here.  
 
 sra $s1, $s1, 3    #$s1=0X80000000-->0XF0000000
 
 add    $a0,$0,$s1       #display $s1
-addi   $v0,$0,34         # display hex
-syscall                 # we are out of here.  
 
 
 sra $s1, $s1, 4    #0XF0000000-->0XFF000000
 
 add    $a0,$0,$s1       #display $s1
-addi   $v0,$0,34         # display hex
-syscall                 # we are out of here.  
 
 
 sra $s1, $s1, 4    #0XFF000000-->0XFFF00000
 
 add    $a0,$0,$s1       #display $s1
-addi   $v0,$0,34         # display hex
-syscall                 # we are out of here.  
-
-sra $s1, $s1, 4    
-
-add    $a0,$0,$s1       #display $s1
-addi   $v0,$0,34         # display hex
-syscall                 # we are out of here.  
-
-sra $s1, $s1, 4    
-
-add    $a0,$0,$s1       #display $s1
-addi   $v0,$0,34         # display hex
-syscall                 # we are out of here.  
 
 
 sra $s1, $s1, 4    
 
 add    $a0,$0,$s1       #display $s1
-addi   $v0,$0,34         # display hex
-syscall                 # we are out of here.  
 
 
 sra $s1, $s1, 4    
 
 add    $a0,$0,$s1       #display $s1
-addi   $v0,$0,34         # display hex
-syscall                 # we are out of here.  
+
+
+
+sra $s1, $s1, 4    
+
+add    $a0,$0,$s1       #display $s1
+
+
+
+sra $s1, $s1, 4    
+
+add    $a0,$0,$s1       #display $s1
+
 
 
 sra $s1, $s1, 4    
 
 
 add    $a0,$0,$s1       #display $s1
-addi   $v0,$0,34         # display hex
-syscall                 # we are out of here.  
+
 
 #############################################################
 #走马灯测试,测试addi,andi,sll,srl,sra,or,ori,nor,syscall  LED按走马灯方式来回显示数据
@@ -166,8 +147,7 @@ sll $s3, $s3, 4   #走马灯左移
 or $s3, $s3, $s0
 
 add    $a0,$0,$s3       # display $s3
-addi   $v0,$0,34         # system call for LED display 
-syscall                 # display 
+
 
 sub $t0,$t0,$t1
 bne $t0,$0,left
@@ -187,8 +167,7 @@ srl $s3, $s3, 4  #走马灯右移
 or $s3, $s3, $s0
 
 addu    $a0,$0,$s3       # display $s3
-addi   $v0,$0,34         # system call for LED display 
-syscall                 # display 
+
 
 sub $t0,$t0,$t1
 bne $t0,$0,zmd_right
@@ -207,8 +186,7 @@ sll $t0,$t0,16
 ori $t0,$t0,0xffff
 
 addu   $a0,$0,$t0       # display $t0
-addi   $v0,$0,34         # system call for LED display 
-syscall                 # display 
+
 #################################################################################
 #本程序实现0-15号字单元的降序排序,此程序可在mars mips仿真器中运行
 #运行时请将Mars Setting中的Memory Configuration设置为Compact，data at address 0
@@ -284,58 +262,57 @@ sort_next:
  bne $s0, $s1, sort_loop  
  
  add    $a0,$0,$s0       #display $s0
- addi   $v0,$0,34         # display hex
- syscall                 # we are out of here.  DISP: disp $r0, 0
  
  addi $s0,$s0,4
  addi $s1,$zero,60
  bne $s0, $s1, sort_loop
 
- addi   $v0,$zero,50         # system call for exit
- syscall                  # we are out of here.   
+ ori $t8,$zero,0
+ ori $t9,$zero,64
+loop:
+ lw $a0,($t8)
+ addi $t8,$t8,4
+ bne $t8, $t9, loop
+nop
+
+ syscall
+ nop
  #MIPS处理器实现中请用停机指令实现syscall
 
 jmp_count: addi $s0,$zero, 0
        addi $s0,$s0, 1
        add    $a0,$0,$s0      
-       addi   $v0,$0,34         # display hex
-       syscall                 # we are out of here.  
+       
        
        addi $s0,$s0, 2
        add    $a0,$0,$s0      
-       addi   $v0,$0,34         # display hex
-       syscall                 # we are out of here.  
+       
        
        addi $s0,$s0, 3
        add    $a0,$0,$s0      
-       addi   $v0,$0,34         # display hex
-       syscall                 # we are out of here.  
+       
        
        addi $s0,$s0, 4       
        add    $a0,$0,$s0      
-       addi   $v0,$0,34         # display hex
-       syscall                 # we are out of here.  
+       
        
        addi $s0,$s0, 5              
        add    $a0,$0,$s0      
-       addi   $v0,$0,34         # display hex
-       syscall                 # we are out of here.  
+       
        
        addi $s0,$s0, 6              
        add    $a0,$0,$s0      
-       addi   $v0,$0,34         # display hex
-       syscall                 # we are out of here.  
+       
 
        addi $s0,$s0, 7              
        add    $a0,$0,$s0      
-       addi   $v0,$0,34         # display hex
-       syscall                 # we are out of here.  
+       
 
        addi $s0,$s0, 8              
-       add    $a0,$0,$s0      
-       addi   $v0,$0,34         # display hex
-       addi   $v0,$0,34         # display hex       
-       syscall                 # we are out of here.  
+       add    $a0,$0,$s0
 
        
        jr $31
+nop
+nop
+nop

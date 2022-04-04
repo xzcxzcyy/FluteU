@@ -93,6 +93,8 @@ class Controller extends Module {
     SRL    -> List(true.B,  LoadMode.disable, StoreMode.disable,   ALUOp.srl,   Op1Recipe.shamt,   Op2Recipe.rt,   BJCond.none, RegDst.rd,    ImmRecipe.sExt),
     SRLV   -> List(true.B,  LoadMode.disable, StoreMode.disable,   ALUOp.srl,   Op1Recipe.rs,      Op2Recipe.rt,   BJCond.none, RegDst.rd,    ImmRecipe.sExt),
     /** Trap Instructions **/
+    /** Syscall, currently Halt **/
+    SYSCALL -> List(false.B, LoadMode.disable, StoreMode.disable, ALUOp.none, Op1Recipe.zero,      Op2Recipe.zero, BJCond.none, RegDst.rd,    ImmRecipe.sExt),
     )
   )
 

@@ -13,14 +13,16 @@ import chiseltest.ChiselScalatestTester
 
 import firrtl.stage.FirrtlSourceAnnotation
 import firrtl.options.TargetDirAnnotation
-
 import chisel3.stage.{ChiselGeneratorAnnotation, ChiselStage}
+
 import java.io.PrintWriter
 import java.io.File
 
 class TestHelper(bench: String, d: String = "zero.in") {
 
-  val w = new PrintWriter(new File(s"target/log/$bench.log"))
+  val f = new File(s"target/log/$bench.log")
+  f.getParentFile().mkdirs();
+  val w = new PrintWriter(f)
 
   println(s"=================== $bench ===================")
   w.println(s"=================== $bench ===================")
@@ -69,7 +71,6 @@ class TestHelper(bench: String, d: String = "zero.in") {
     case 3 => "halfword"
     case _ => "illegal"
   }
-
   def printDecodeOut() = {
     for (i <- 0 until decodeWay) yield {
       val valid = peek(s"core.decode.io_withExecute_microOps_${i}_valid")
@@ -94,6 +95,10 @@ class TestHelper(bench: String, d: String = "zero.in") {
       w.println(s"dCache addr peeked: #${i}: ${addr}")
     }
   }
+
+  def close() = {
+    w.close()
+  }
 }
 
 class CoreTest extends AnyFreeSpec with ChiselScalatestTester with Matchers {
@@ -103,6 +108,7 @@ class CoreTest extends AnyFreeSpec with ChiselScalatestTester with Matchers {
       tester.step()
       tester.printRFs()
     }
+    tester.close()
   }
 
   "s1_base" in {
@@ -111,6 +117,7 @@ class CoreTest extends AnyFreeSpec with ChiselScalatestTester with Matchers {
       tester.step()
       tester.printRFs()
     }
+    tester.close()
   }
 
   "s4_loadstore" in {
@@ -119,30 +126,34 @@ class CoreTest extends AnyFreeSpec with ChiselScalatestTester with Matchers {
       tester.step()
       tester.printRFs()
     }
+    tester.close()
   }
 
   "sb_flat" in {
-    val helper = new TestHelper("sb_flat")
-    for (i <- 0 until 0) {
-      helper.step()
-      helper.printRFs()
-    }
-  }
-
-  "sb" in {
-    val tester = new TestHelper("sb")
+    val tester = new TestHelper("sb_flat")
     for (i <- 0 until 0) {
       tester.step()
       tester.printRFs()
     }
+    tester.close()
+  }
+
+  "sb" in {
+    val tester = new TestHelper("sb")
+    for (i <- 0 until 520) {
+      tester.step()
+      tester.printRFs()
+    }
+    tester.close()
   }
 
   "sort" in {
-    val helper = new TestHelper("sort", "sort.dcache")
-    for (i <- 0 until 4096) {
-      helper.step()
-      helper.printRFs()
+    val tester = new TestHelper("sort", "sort.dcache")
+    for (i <- 0 until 0) {
+      tester.step()
+      tester.printRFs()
     }
+    tester.close()
   }
 
 }
@@ -150,6 +161,7 @@ class CoreTest extends AnyFreeSpec with ChiselScalatestTester with Matchers {
 class CoreTester(i: String = "", d: String = "zero.in") extends Module {
   val io = IO(new Bundle {
     val debug = Output(Vec(regAmount, UInt(dataWidth.W)))
+    val pc    = Output(UInt(addrWidth.W))
   })
   val iCache = Module(new ICache(s"target/clang/${i}.hexS"))
   val dCache = Module(new DCache(s"test_data/${d}")) // TODO: Specify cache file here
@@ -159,4 +171,6 @@ class CoreTester(i: String = "", d: String = "zero.in") extends Module {
 
   core.io.dCache <> dCache.io.port
   core.io.iCache <> iCache.io
+
+  io.pc := core.io.pc
 }
