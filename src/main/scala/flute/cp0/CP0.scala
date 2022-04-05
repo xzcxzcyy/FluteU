@@ -164,7 +164,7 @@ class CP0 extends Module {
   }
   when(wReq(count) || wReq(compare)) {
     cause.reg.ti := 0.B
-  }.elsewhen(count.reg === compare.reg) {
+  }.elsewhen(count.reg === compare.reg && compare.reg =/= 0.U) {
     cause.reg.ti := 1.B
   }
 

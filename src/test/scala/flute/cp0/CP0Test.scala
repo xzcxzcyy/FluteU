@@ -15,7 +15,7 @@ import java.io.PrintWriter
 import java.io.File
 import flute.util.BaseTestHelper
 
-class TestHelper(logName: String) extends BaseTestHelper(logName) {
+class TestHelper(logName: String) extends BaseTestHelper(s"cp0/${logName}") {
 
   override val firrtlAnno = (new ChiselStage).execute(
     Array(),
@@ -37,7 +37,7 @@ class TestHelper(logName: String) extends BaseTestHelper(logName) {
     fprintln(s"BadVAddr: ${"0x%08x".format(badvaddr)}")
     fprintln(s"Count: ${"0x%08x".format(count)}")
     fprintln(s"Status: ${bigIntToBitmode(status)}")
-    fprintln(s"Cause: ${bigIntToBitmode(cause)}")
+    fprintln(s"Cause : ${bigIntToBitmode(cause)}")
     fprintln(s"Epc: ${"0x%08x".format(epc)}")
     fprintln(s"Compare: ${"0x%08x".format(compare)}")
   }
@@ -75,17 +75,36 @@ class TestHelper(logName: String) extends BaseTestHelper(logName) {
 }
 
 class CP0Test extends AnyFreeSpec with ChiselScalatestTester with Matchers {
-  "general test" in {
-    val t = new TestHelper(logName = "cp0general")
-    t.pokeWrite(11, 0, 10, true)
+  "timing test" in {
+    val t = new TestHelper("Timing")
+    t.pokeWrite(CP0Compare.addr, CP0Compare.sel, 10, true)
     t.step(1)
     t.pokeWrite(false)
-    t.pokeWrite(12, 0, Integer.parseInt("00000000010000001000000000000001", 2))
+    t.pokeWrite(CP0Status.addr, CP0Status.sel, Integer.parseInt("00000000010000001000000000000001", 2))
     t.step()
     t.pokeWrite(false)
     for (i <- 0 until 64) yield {
       t.step()
       t.printStatusAll()
+    }
+    t.close()
+  }
+
+  "hw4 test" in {
+    val t = new TestHelper("HW4")
+    t.pokeWrite(CP0Status.addr, CP0Status.sel, Integer.parseInt("00000000010000000100000000000001", 2))
+    t.printStatusAll()
+    t.step()
+    t.pokeWrite(false)
+    t.poke("io_hwIntr", BigInt.apply("010000", 2))
+    t.printStatusAll()
+    t.step()
+    t.printStatusAll()
+    // t.poke("io_hwIntr", 0)
+    t.step()
+    for (i <- 0 until 16) {
+      t.printStatusAll()
+      t.step()
     }
     t.close()
   }
