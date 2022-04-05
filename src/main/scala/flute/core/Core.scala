@@ -7,9 +7,11 @@ import flute.cache._
 import flute.core.fetch._
 import flute.core.decode._
 import flute.core.execute._
+import flute.cp0.CP0WithCore
 
 class Core extends Module {
   val io = IO(new Bundle {
+    val cp0 = Flipped(new CP0WithCore)
     val iCache = Flipped(new ICacheIO)
     val dCache = Flipped(Vec(superscalar,new DCacheIO))
     val debug = Output(Vec(regAmount, UInt(dataWidth.W)))

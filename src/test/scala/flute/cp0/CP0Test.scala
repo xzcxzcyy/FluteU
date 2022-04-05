@@ -53,7 +53,7 @@ class TestHelper(logName: String) extends BaseTestHelper(s"cp0/${logName}") {
   }
 
   def printIntrReq() = {
-    val intrReq = t.peek("io_intrReq")
+    val intrReq = t.peek("io_core_intrReq")
     fprintln(s"IntrReqOut: ${intrReq == 1}")
   }
 
@@ -63,14 +63,14 @@ class TestHelper(logName: String) extends BaseTestHelper(s"cp0/${logName}") {
   }
 
   def pokeWrite(addr: Int, sel: Int, data: Int, enable: Boolean = true) = {
-    t.poke("io_write_addr", BigInt(addr))
-    t.poke("io_write_sel", BigInt(sel))
-    t.poke("io_write_enable", if (enable) BigInt(1) else BigInt(0))
-    t.poke("io_write_data", BigInt(data))
+    t.poke("io_core_write_addr", BigInt(addr))
+    t.poke("io_core_write_sel", BigInt(sel))
+    t.poke("io_core_write_enable", if (enable) BigInt(1) else BigInt(0))
+    t.poke("io_core_write_data", BigInt(data))
   }
 
   def pokeWrite(enable: Boolean) = {
-    t.poke("io_write_enable", if (enable) BigInt(1) else BigInt(0))
+    t.poke("io_core_write_enable", if (enable) BigInt(1) else BigInt(0))
   }
 }
 
