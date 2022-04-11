@@ -21,6 +21,8 @@ class MicroOp extends Bundle {
   val op1        = new OpBundle()
   val op2        = new OpBundle()
   val bjCond     = UInt(BJCond.width.W)
+  val instrType  = UInt(InstrType.width.W)
+  val delay      = UInt(delayWidth.W)
 
   val writeRegAddr = UInt(regAddrWidth.W)
   val immediate    = UInt(dataWidth.W)
@@ -88,7 +90,9 @@ class Decoder extends Module {
     )
   )
   io.microOp.op2.valid := Mux(controller.io.op2Recipe === Op2Recipe.rt, 0.B, 1.B)
-  io.microOp.bjCond     := controller.io.bjCond
+  io.microOp.bjCond    := controller.io.bjCond
+  io.microOp.instrType := controller.io.instrType
+  io.microOp.delay     := controller.io.delay
   ////////////////////////////////////////////////////////////////////
 
   // RegFile /////////////////////////////////////////////////////////
