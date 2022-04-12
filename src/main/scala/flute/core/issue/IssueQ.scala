@@ -9,14 +9,12 @@ import flute.util.ValidBundle
 
 class IQEntry extends Bundle {
   val microOp = new MicroOp
-  val awake      = Bool()
+  val awake      = Bool()  // 书里的issued
   val selected   = Bool()
-  val op1Ready   = Bool()
   val op1ShiftEn = Bool()
-  val op1Shift   = UInt(delayWidth.W)
-  val op2Ready   = Bool()
+  val op1Shift   = SInt((delayMaxAmount+1).W)  // op1Shift(0)即op1Ready
   val op2ShiftEn = Bool()
-  val op2Shift   = UInt(delayWidth.W)
+  val op2Shift   = SInt((delayMaxAmount+1).W)  // op2Shift(0)即op2Ready
 }
 
 class SelectUnit extends Module {
@@ -146,8 +144,8 @@ class IssueQ extends Module {
 
   for(i <- 0 to issueQEntryMaxAmount) {
 
-    request(i) := (entries(i).microOp.op1.valid | entries(i).op1Ready) &
-      (entries(i).microOp.op2.valid | entries(i).op2Ready) &
+    request(i) := (entries(i).microOp.op1.valid | entries(i).op1Shift(0)) &
+      (entries(i).microOp.op2.valid | entries(i).op2Shift(0)) &
       entries(i).awake
 
     when(entries(i).microOp.instrType === InstrType.alu) {
@@ -200,7 +198,7 @@ class IssueQ extends Module {
   val alu0Grant = Wire(Vec(issueQEntryMaxAmount, Bool()))
   val alu1Grant = Wire(Vec(issueQEntryMaxAmount, Bool()))
   val dstBus    = Wire(Vec(2, ValidBundle(UInt(regAddrWidth.W))))
-  val delayBus  = Wire(Vec(2, UInt(delayWidth.W)))  // delayBus也用dstBus的valid
+  val delayBus  = Wire(Vec(2, UInt((delayMaxAmount+1).W)))  // delayBus也用dstBus的valid
 
   // TODO: Add MDU/LSU Support Here
   for(i <- 0 to issueQEntryMaxAmount) {
@@ -212,10 +210,45 @@ class IssueQ extends Module {
   // TODO: Add MDU/LSU Support Here
   dstBus(0).valid := ALU0SelectUnit.io.selectedOp.valid
   dstBus(0).bits  := entries(ALU0SelectUnit.io.selectedIdx).microOp.writeRegAddr
-  delayBus(0)     := entries(ALU0SelectUnit.io.selectedIdx).microOp.delay
+  delayBus(0)     := 1.U << entries(ALU0SelectUnit.io.selectedIdx).microOp.delay
   dstBus(1).valid := ALU1SelectUnit.io.selectedOp.valid
   dstBus(1).bits  := entries(ALU1SelectUnit.io.selectedIdx).microOp.writeRegAddr
-  delayBus(1)     := entries(ALU1SelectUnit.io.selectedIdx).microOp.delay
+  delayBus(1)     := 1.U << entries(ALU1SelectUnit.io.selectedIdx).microOp.delay
+
+  // TODO: Add MDU/LSU Support Here
+  val busMatchOp1 = Wire(Vec(issueQEntryMaxAmount, UInt(2.W)))
+  val busMatchOp2 = Wire(Vec(issueQEntryMaxAmount, UInt(2.W)))
+  for(i <- 0 to issueQEntryMaxAmount) {
+    for(j <- 0 to 2) {
+      busMatchOp1(i)(j) := dstBus(j).valid & (dstBus(j).bits === entries(i).microOp.op1.op)
+      busMatchOp2(i)(j) := dstBus(j).valid & (dstBus(j).bits === entries(i).microOp.op2.op)
+    }
+
+    entries(i).op1ShiftEn := busMatchOp1(i) =/= 0.U
+    entries(i).op2ShiftEn := busMatchOp2(i) =/= 0.U
+
+    entries(i).op1Shift := MuxLookup(
+      key = busMatchOp1(i),
+      default = 0.U,
+      mapping = Seq(
+        "b00".U -> 0.U,
+        "b01".U -> delayBus(0),
+        "b10".U -> delayBus(1)
+      )
+    )
+    entries(i).op2Shift := MuxLookup(
+      key = busMatchOp2(i),
+      default = 0.U,
+      mapping = Seq(
+        "b00".U -> 0.U,
+        "b01".U -> delayBus(0),
+        "b10".U -> delayBus(1)
+      )
+    )
+
+    when(entries(i).op1ShiftEn === true.B) {entries(i).op1Shift := entries(i).op1Shift >> 1}
+  }
+
 
   ////////////////////////////////////////////////////////////////
 }
