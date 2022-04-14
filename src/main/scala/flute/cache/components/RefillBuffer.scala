@@ -10,15 +10,42 @@ class ReFillBuffer(implicit cacheConfig: CacheConfig) extends Module {
     ///  in ///
     val dataIn         = Flipped(ValidIO(UInt(32.W)))
     val dataLast       = Input(Bool())
+    // valid指示refillBuffer状态机进入refilling态
     val beginBankIndex = Flipped(ValidIO(UInt(cacheConfig.bankIndexLen.W)))
 
     /// out ///
-    val dataOut = ValidIO(Vec(fetchGroupSize, UInt(32.W)))
+    // fire信号给出refillBuffer的数据被成功锁存, 用于指示refillBuffer的状态机进入idle态
+    val dataOut = DecoupledIO(Vec(fetchGroupSize, UInt(32.W)))
   })
   val buffer = RegInit(
     VecInit(Seq.fill(cacheConfig.numOfBanks)(0.U(cacheConfig.bankWidth.W)))
   )
-  // TODO fulfill
-  io.dataOut.valid := 0.B
+  val index = RegInit(0.U(cacheConfig.bankIndexLen.W))
+
+  val idle :: refilling :: holding :: Nil = Enum(3)
+  val state = RegInit(idle)
+
+  switch(state) {
+    is(idle) {
+      when(io.beginBankIndex.valid) {
+        state := refilling
+        index := io.beginBankIndex.bits
+      }
+    }
+    is(refilling) {
+      when(io.dataIn.valid) {
+        buffer(index) := io.dataIn.bits
+        index := index + 1.U
+        state := Mux(io.dataLast, holding, refilling)
+      }
+    }
+    is(holding) {
+      when(io.dataOut.fire) {
+        state := idle
+      }
+    }
+  }
+
+  io.dataOut.valid := state === holding
   io.dataOut.bits  := buffer
 }

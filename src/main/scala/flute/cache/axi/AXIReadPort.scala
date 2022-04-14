@@ -20,6 +20,8 @@ class AXIReadPort(addrReqWidth: Int = 32, AXIID: UInt)(implicit cacheConfig: Cac
 
     /** when request request is valid, try to start a read transaction.
       * a read transaction is started successfully when there is a successful handshake*/
+    /** This Unit DOES NOT buffer addr. 
+      * So the addrReq.bits must consist the same before finishTransfer is high */
     val addrReq = Flipped(Valid(UInt(addrReqWidth.W)))
 
     /** when transfer data is valid, the data carried is valid in this cycle */
@@ -74,5 +76,6 @@ class AXIReadPort(addrReqWidth: Int = 32, AXIID: UInt)(implicit cacheConfig: Cac
         readState := readIdle
       }
     }
+    
   }
 }

@@ -33,7 +33,7 @@ class ICacheWithAXI(cacheConfig: CacheConfig) extends Module {
   val axi = Module(new AXIReadPort(addrReqWidth = addrWidth, AXIID = 0.U)) // 0 INSTR_ID
 
   val addrBuffer   = RegInit(0.U(addrWidth.W))
-  val addrValid    = WireDefault(0.B)
+  val booting      = WireDefault(0.B) // 用于启动axi和refillBuffer组件
   val refillBuffer = Module(new ReFillBuffer)
   val refillFinal  = WireDefault(0.B)
 
@@ -60,7 +60,7 @@ class ICacheWithAXI(cacheConfig: CacheConfig) extends Module {
   }
 
   // inner signal
-  addrValid   := (state === refilling) || (io.request.addr.fire && state === idle)
+  booting     := (io.request.addr.fire && state === idle)
   refillFinal := refillBuffer.io.dataOut.valid
 
   // io ready & valid
@@ -68,20 +68,21 @@ class ICacheWithAXI(cacheConfig: CacheConfig) extends Module {
   io.request.data.valid := (refillFinal && state === refilling) || (state === waiting)
 
   // connection
-  axi.io.addrReq.valid := addrValid
+  axi.io.addrReq.valid := booting
   axi.io.addrReq.bits  := addrBuffer
   axi.io.axi <> io.axi
 
-  refillBuffer.io.beginBankIndex.valid := addrValid
   val bankIndex = addrBuffer(
     config.bankOffsetLen + config.bankIndexLen,
     config.bankOffsetLen + 1
   ) // (5, 3) usually
-  refillBuffer.io.beginBankIndex.bits := bankIndex
+  refillBuffer.io.beginBankIndex.valid := booting
+  refillBuffer.io.beginBankIndex.bits  := bankIndex
   refillBuffer.io.dataIn <> axi.io.transferData
-  refillBuffer.io.dataLast := axi.io.finishTransfer
+  refillBuffer.io.dataLast      := axi.io.finishTransfer
+  refillBuffer.io.dataOut.ready := io.request.data.fire // tmp for now TODO
 
-  io.request.data.bits := refillBuffer.io.dataOut.bits
+  io.request.data.bits := refillBuffer.io.dataOut.bits // tmp for now TODO
 }
 
 /**
