@@ -11,11 +11,11 @@ import flute.cp0.CP0WithCore
 
 class Core extends Module {
   val io = IO(new Bundle {
-    val cp0 = Flipped(new CP0WithCore)
+    val cp0    = Flipped(new CP0WithCore)
     val iCache = Flipped(new ICacheIO)
-    val dCache = Flipped(Vec(superscalar,new DCacheIO))
-    val debug = Output(Vec(regAmount, UInt(dataWidth.W)))
-    val pc = Output(UInt(addrWidth.W))
+    val dCache = Flipped(Vec(superscalar, new DCacheIO))
+    val debug  = Output(Vec(regAmount, UInt(dataWidth.W)))
+    val pc     = Output(UInt(addrWidth.W))
   })
 
   val fetch   = Module(new Fetch())
@@ -33,4 +33,11 @@ class Core extends Module {
   fetch.io.feedbackFromExec <> execute.io.feedback
 
   io.pc := fetch.io.pc
+
+  io.cp0.write.enable := 0.B
+  io.cp0.write.addr   := 0.U
+  io.cp0.write.sel    := 0.U
+  io.cp0.write.data   := 0.U
+  io.cp0.read.addr    := 0.U
+  io.cp0.read.sel     := 0.U
 }
