@@ -28,7 +28,7 @@ class AXIReadPort(addrReqWidth: Int = 32, AXIID: UInt)(implicit cacheConfig: Cac
     val transferData = Valid(UInt(32.W))
 
     /** indicate when a read transaction finishes (rlast carry through) */
-    val finishTransfer = Output(Bool())
+    val lastBeat = Output(Bool())
   })
 
   require(addrReqWidth <= 32, "request should be less than 32 bits wide")
@@ -51,15 +51,6 @@ class AXIReadPort(addrReqWidth: Int = 32, AXIID: UInt)(implicit cacheConfig: Cac
   io.axi.ar.bits.cache := 0.U
   io.axi.ar.bits.prot  := 0.U
 
-  // valid and ready signals
-  io.axi.ar.valid := readState === readWaitForAR
-  io.axi.r.ready  := readState === readTransfer
-
-  io.transferData.valid := readState === readTransfer && io.axi.r.fire
-  io.transferData.bits  := io.axi.r.bits.data
-
-  io.finishTransfer := readState === readTransfer && io.axi.r.fire && io.axi.r.bits.last
-
   switch(readState) {
     is(readIdle) {
       when(io.addrReq.valid) {
@@ -78,4 +69,13 @@ class AXIReadPort(addrReqWidth: Int = 32, AXIID: UInt)(implicit cacheConfig: Cac
     }
     
   }
+
+  // valid and ready signals
+  io.axi.ar.valid := (readState === readWaitForAR) || (io.addrReq.valid && readState === readIdle)
+  io.axi.r.ready  := readState === readTransfer
+
+  io.transferData.valid := readState === readTransfer && io.axi.r.fire
+  io.transferData.bits  := io.axi.r.bits.data
+
+  io.lastBeat := readState === readTransfer && io.axi.r.fire && io.axi.r.bits.last
 }
