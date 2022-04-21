@@ -14,7 +14,6 @@ object CPUConfig {
   val robEntryAmount   = 64
   ////////////////////////
   val issueQEntryMaxAmount = 16
-  val delayMaxAmount = 4  // TODO: to be configured
 
   val superscalar = 2
   val decodeWay   = 2
@@ -36,5 +35,4 @@ object CPUConfig {
   val exceptionIdxWidth = log2Up(exceptionAmount)
   val instrTypeWidth    = log2Up(instrTypeAmount)
   val robEntryNumWidth  = log2Up(robEntryAmount)
-  val delayWidth        = log2Up(delayMaxAmount)
 }
