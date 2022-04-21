@@ -20,8 +20,8 @@ class AXIReadPort(addrReqWidth: Int = 32, AXIID: UInt)(implicit cacheConfig: Cac
 
     /** when request request is valid, try to start a read transaction.
       * a read transaction is started successfully when there is a successful handshake*/
-    /** This Unit DOES NOT buffer addr. 
-      * So the addrReq.bits must consist the same before finishTransfer is high */
+    /** This Unit DOES ~NOT~ buffer addr. 
+      * So the addrReq.bits allow may not consist the same before finishTransfer is high */
     val addrReq = Flipped(Valid(UInt(addrReqWidth.W)))
 
     /** when transfer data is valid, the data carried is valid in this cycle */
@@ -35,13 +35,14 @@ class AXIReadPort(addrReqWidth: Int = 32, AXIID: UInt)(implicit cacheConfig: Cac
 
   val readIdle :: readWaitForAR :: readTransfer :: Nil = Enum(3)
   val readState                                        = RegInit(readIdle)
+  val addrBuffer = RegInit(0.U(addrReqWidth.W))
 
   io.axi.aw := DontCare
   io.axi.w  := DontCare
   io.axi.b  := DontCare
   // axi signals
   io.axi.ar.bits.id    := AXIID
-  io.axi.ar.bits.addr  := io.addrReq.bits
+  io.axi.ar.bits.addr  := Mux(readState === readWaitForAR, addrBuffer, io.addrReq.bits)
   io.axi.ar.bits.len := (cacheConfig.numOfBanks - 1).U(4.W)
   
   io.axi.ar.bits.size  := "b010".U(3.W) // always 4 bytes
@@ -55,6 +56,7 @@ class AXIReadPort(addrReqWidth: Int = 32, AXIID: UInt)(implicit cacheConfig: Cac
     is(readIdle) {
       when(io.addrReq.valid) {
         readState := Mux(io.axi.ar.fire, readTransfer, readWaitForAR)
+        addrBuffer := io.addrReq.bits
       }
     }
     is(readWaitForAR) {
