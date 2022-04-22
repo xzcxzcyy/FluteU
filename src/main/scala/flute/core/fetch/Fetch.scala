@@ -49,7 +49,7 @@ class Fetch extends Module {
   val branchAddr  = RegInit(0.U.asTypeOf(ValidBundle(UInt(addrWidth.W))))
   val state       = RegInit(State.Free)
 
-  ibuffer.io.flush := io.flush
+  ibuffer.io.flush := io.cp0.intrReq
 
   val nextState = Wire(UInt(State.width.W))
   val nextPc    = Wire(UInt(addrWidth.W))

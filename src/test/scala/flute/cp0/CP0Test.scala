@@ -15,17 +15,7 @@ import java.io.PrintWriter
 import java.io.File
 import flute.util.BaseTestHelper
 
-class TestHelper(logName: String) extends BaseTestHelper(s"cp0/${logName}") {
-
-  override val firrtlAnno = (new ChiselStage).execute(
-    Array(),
-    Seq(
-      TargetDirAnnotation("target"),
-      ChiselGeneratorAnnotation(() => new CP0)
-    )
-  )
-
-  override val t = TreadleTester(firrtlAnno)
+class TestHelper(logName: String) extends BaseTestHelper(s"cp0/${logName}", () => new CP0) {
 
   def printCP0Regs() = {
     val badvaddr = t.peek("io_debug_badvaddr")
