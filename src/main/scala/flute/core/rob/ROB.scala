@@ -3,44 +3,40 @@ package flute.core.rob
 import chisel3._
 import chisel3.util._
 import flute.config.CPUConfig._
-
+import flute.cp0.ExceptionBundle
+import flute.util.ValidBundle
 
 class InstrBank extends Bundle {
-  val complete  = Reg(Bool())
-  val logicReg  = Reg(UInt(LogicRegIdxWidth.W))
-  val physicReg = Reg(UInt(PhyRegIdxWidth.W))
-  val originReg = Reg(UInt(PhyRegIdxWidth.W))
-  val exception = Reg(UInt(exceptionIdxWidth.W))
-  val instrType = Reg(UInt(instrTypeWidth.W))
-}
-class InstrBankData extends Bundle {
   val complete  = Bool()
   val logicReg  = UInt(LogicRegIdxWidth.W)
   val physicReg = UInt(PhyRegIdxWidth.W)
   val originReg = UInt(PhyRegIdxWidth.W)
-  val exception = UInt(exceptionIdxWidth.W)
+  val exception = new ExceptionBundle
   val instrType = UInt(instrTypeWidth.W)
 }
 
 class ROBEntry extends Bundle {
-  val pc         = Reg(UInt(addrWidth.W))  // 一行指令中第一个的PC
-  val instrBanks = Vec(superscalar, new InstrBank)
-}
-class ROBEntryData extends Bundle {
-  val pc         = UInt(addrWidth.W)  // 一行指令中第一个的PC
-  val instrBanks = Vec(superscalar, new InstrBankData)
+  val pc        = UInt(addrWidth.W)
+  val instrBank = new InstrBank
 }
 
-class ROB[T <: Data](numEntries: Int, numRead: Int, numWrite: Int) extends Module {
+class ROBWrite(numEntries: Int) extends Bundle {
+  val bits    = Input(new ROBEntry)
+  val valid   = Input(Bool())
+  val ready   = Output(Bool())
+  val robAddr = Output(UInt(log2Up(numEntries).W))
+}
+
+class ROB(numEntries: Int, numRead: Int, numWrite: Int, numSetComplete: Int) extends Module {
   assert(isPow2(numEntries) && numEntries > 1)
 
-  val io = IO(new Bundle{
-    val read  = Vec(numRead, Decoupled(new ROBEntryData))
-    val write = Flipped(Vec(numWrite, Decoupled(new ROBEntryData)))
-    val stall = Output(Bool())
+  val io = IO(new Bundle {
+    val read        = Vec(numRead, Decoupled(new ROBEntry))
+    val write       = Vec(numWrite, new ROBWrite(numEntries))
+    val setComplete = Vec(numSetComplete, Input(ValidBundle(UInt(log2Up(numEntries).W))))
   })
 
-  val entries = Vec(numEntries, new ROBEntry)
+  val entries = RegInit(VecInit(Seq.fill(numEntries)(0.U.asTypeOf(new ROBEntry))))
 
   // tail是数据入队的位置（该位置目前没数据），head是数据出队的第一个位置（该位置放了最老的数据）
   val head_ptr = RegInit(0.U(log2Up(numEntries).W))
@@ -66,7 +62,8 @@ class ROB[T <: Data](numEntries: Int, numRead: Int, numWrite: Int) extends Modul
         entries((tail_ptr + offset)(log2Up(numEntries) - 1, 0)) := io.write(i).bits
       }
     }
-    io.write(i).ready := offset < enqEntries
+    io.write(i).ready   := offset < enqEntries
+    io.write(i).robAddr := (tail_ptr + offset)(log2Up(numEntries) - 1, 0)
   }
 
   for (i <- 0 until numRead) {
@@ -79,14 +76,12 @@ class ROB[T <: Data](numEntries: Int, numRead: Int, numWrite: Int) extends Modul
     io.read(i).valid := offset < deqEntries
   }
 
-  io.stall := io.read.map(_.valid).reduce((x,y) => x||y)
-
   head_ptr := head_ptr + numDeq
   tail_ptr := tail_ptr + numEnq
 
-  // 判断那些指令可以退休
-  io.read(0).valid := entries(head_ptr).instrBanks(0).complete
-  for(i <- 1 to superscalar) {
-    io.read(i).valid := entries(head_ptr).instrBanks(i).complete & entries(head_ptr).instrBanks(i-1).complete
+  for (i <- 0 until numSetComplete) yield {
+    when(io.setComplete(i).valid) {
+      entries(io.setComplete(i).bits).instrBank.complete := 1.B
+    }
   }
 }
