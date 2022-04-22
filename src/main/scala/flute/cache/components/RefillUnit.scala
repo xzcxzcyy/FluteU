@@ -23,10 +23,7 @@ class RefillUnit(AXIID: UInt)(implicit cacheConfig: CacheConfig) extends Module 
   io.data                              := refillBuffer.io.dataOut
   axiReadPort.io.addrReq               := io.addr
   refillBuffer.io.beginBankIndex.valid := io.addr.valid
-  refillBuffer.io.beginBankIndex.bits := io.addr.bits(
-    cacheConfig.bankOffsetLen + cacheConfig.bankIndexLen,
-    cacheConfig.bankOffsetLen + 1
-  )
+  refillBuffer.io.beginBankIndex.bits  := cacheConfig.getBankIndex(io.addr.bits)
 
   // inner connection
   refillBuffer.io.dataIn   := axiReadPort.io.transferData
