@@ -4,6 +4,7 @@ import chisel3._
 import chisel3.util._
 
 class FIFOBundle[T <: Data](gen: T, numRead: Int, numWrite: Int) extends Bundle {
+  val flush = Input(Bool())
   val read  = Vec(numRead, Decoupled(gen))
   val write = Flipped(Vec(numWrite, Decoupled(gen)))
   // val test  = Output(UInt(32.W))
@@ -68,6 +69,6 @@ class FIFOQueue[T <: Data](gen: T, numEntries: Int, numRead: Int, numWrite: Int)
     io.read(i).valid := offset < deqEntries
   }
 
-  head_ptr := head_ptr + numDeq
-  tail_ptr := tail_ptr + numEnq
+  head_ptr := Mux(io.flush, 0.U, head_ptr + numDeq)
+  tail_ptr := Mux(io.flush, 0.U, tail_ptr + numEnq)
 }

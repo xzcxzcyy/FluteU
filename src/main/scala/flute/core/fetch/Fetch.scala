@@ -19,12 +19,18 @@ class IBEntry extends Bundle {
   val addr = UInt(addrWidth.W)
 }
 
+class FetchWithCP0 extends Bundle {
+  val intrReq = Input(Bool())
+  val epc     = Input(UInt(dataWidth.W))
+}
+
 class Fetch extends Module {
   val io = IO(new Bundle {
     val withDecode         = new FetchIO()
     val feedbackFromDecode = Flipped(new DecodeFeedbackIO())
     val feedbackFromExec   = Flipped(new ExecuteFeedbackIO())
     val iCache             = Flipped(new ICacheIO())
+    val cp0                = new FetchWithCP0
     val pc                 = Output(UInt(addrWidth.W))
     val state              = Output(UInt(State.width.W))
   })
@@ -42,6 +48,8 @@ class Fetch extends Module {
   val preDecoders = for (i <- 0 until fetchGroupSize) yield Module(new PreDecode)
   val branchAddr  = RegInit(0.U.asTypeOf(ValidBundle(UInt(addrWidth.W))))
   val state       = RegInit(State.Free)
+
+  ibuffer.io.flush := io.flush
 
   val nextState = Wire(UInt(State.width.W))
   val nextPc    = Wire(UInt(addrWidth.W))
