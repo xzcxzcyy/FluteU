@@ -37,5 +37,9 @@ abstract class BaseTestHelper(logName: String, gen: () => RawModule) {
   def close() = {
     writer.close()
   }
+  def bool2BigInt(b: Boolean) = b match {
+    case true  => BigInt(1)
+    case false => BigInt(0)
+  }
 
 }

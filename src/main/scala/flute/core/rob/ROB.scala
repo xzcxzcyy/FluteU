@@ -6,18 +6,23 @@ import flute.config.CPUConfig._
 import flute.cp0.ExceptionBundle
 import flute.util.ValidBundle
 
-class InstrBank extends Bundle {
+// class InstrBank extends Bundle {
+//   val complete  = Bool()
+//   val logicReg  = UInt(LogicRegIdxWidth.W)
+//   val physicReg = UInt(PhyRegIdxWidth.W)
+//   val originReg = UInt(PhyRegIdxWidth.W)
+//   val exception = new ExceptionBundle
+//   val instrType = UInt(instrTypeWidth.W)
+// }
+
+class ROBEntry extends Bundle {
+  val pc        = UInt(addrWidth.W)
   val complete  = Bool()
   val logicReg  = UInt(LogicRegIdxWidth.W)
   val physicReg = UInt(PhyRegIdxWidth.W)
   val originReg = UInt(PhyRegIdxWidth.W)
   val exception = new ExceptionBundle
   val instrType = UInt(instrTypeWidth.W)
-}
-
-class ROBEntry extends Bundle {
-  val pc        = UInt(addrWidth.W)
-  val instrBank = new InstrBank
 }
 
 class ROBWrite(numEntries: Int) extends Bundle {
@@ -36,7 +41,8 @@ class ROB(numEntries: Int, numRead: Int, numWrite: Int, numSetComplete: Int) ext
     val setComplete = Vec(numSetComplete, Input(ValidBundle(UInt(log2Up(numEntries).W))))
   })
 
-  val entries = RegInit(VecInit(Seq.fill(numEntries)(0.U.asTypeOf(new ROBEntry))))
+  val entries = Mem(numEntries, new ROBEntry)
+  // val entries = RegInit(VecInit(Seq.fill(numEntries)(0.U.asTypeOf(new ROBEntry))))
 
   // tail是数据入队的位置（该位置目前没数据），head是数据出队的第一个位置（该位置放了最老的数据）
   val head_ptr = RegInit(0.U(log2Up(numEntries).W))
@@ -81,7 +87,7 @@ class ROB(numEntries: Int, numRead: Int, numWrite: Int, numSetComplete: Int) ext
 
   for (i <- 0 until numSetComplete) yield {
     when(io.setComplete(i).valid) {
-      entries(io.setComplete(i).bits).instrBank.complete := 1.B
+      entries(io.setComplete(i).bits).complete := 1.B
     }
   }
 }
