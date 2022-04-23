@@ -47,7 +47,7 @@ class Sbuffer(entryAmount: Int) extends Module {
     val retire = Flipped(ValidIO(UInt(log2Up(entryAmount).W)))
   })
 
-  val entries = Reg(Vec(entryAmount, new SbufferEntry))
+  val entries = RegInit(VecInit(Seq.fill(entryAmount)(0.U.asTypeOf(new SbufferEntry))))
 
   val writeGroupAddr = io.write.memAddr(31, 2)
   val writeOffset    = io.write.memAddr(1, 0)
