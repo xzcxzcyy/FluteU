@@ -10,6 +10,7 @@ class IbufferBundle[T <: Data](gen: T, numRead: Int, numWrite: Int) extends Bund
   val read  = Vec(numRead, Decoupled(gen))
   val write = Flipped(Vec(numWrite, Decoupled(gen)))
   // val test  = Output(UInt(32.W))
+  val flush = Input(Bool())
 }
 
 /**
@@ -84,6 +85,6 @@ class Ibuffer[T <: Data](gen: T, numEntries: Int, numRead: Int, numWrite: Int) e
 
   }
 
-  head_ptr := head_ptr + numDeq
-  tail_ptr := tail_ptr + numEnq
+  head_ptr := Mux(io.flush, 0.U, head_ptr + numDeq)
+  tail_ptr := Mux(io.flush, 0.U, tail_ptr + numEnq)
 }

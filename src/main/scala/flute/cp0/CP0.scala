@@ -36,16 +36,19 @@ class CP0WithCommit extends Bundle {
   val eret       = Input(Bool())
 }
 
+class CP0WithCore extends Bundle {
+  val read    = new CP0Read
+  val write   = new CP0Write
+  val commit  = new CP0WithCommit
+  val intrReq = Output(Bool()) // 例外输出信号
+  val epc     = Output(UInt(dataWidth.W))
+}
+
 class CP0 extends Module {
   val io = IO(new Bundle {
-    val read    = new CP0Read
-    val write   = new CP0Write
-    val commit  = new CP0WithCommit
-    val hwIntr  = Input(UInt(6.W))
-    val intrReq = Output(Bool()) // 例外输出信号
-    val epc     = Output(UInt(dataWidth.W))
-    // debug
-    val debug = new CP0DebugIO
+    val hwIntr = Input(UInt(6.W))
+    val core   = new CP0WithCore
+    val debug  = new CP0DebugIO
   })
 
   val badvaddr = new CP0BadVAddr
@@ -73,18 +76,19 @@ class CP0 extends Module {
   )
   val readRes = WireInit(0.U(dataWidth.W))
   regs.foreach(r =>
-    when(io.read.addr === r.addr.U && io.read.sel === r.sel.U) {
+    when(io.core.read.addr === r.addr.U && io.core.read.sel === r.sel.U) {
       readRes := r.reg.asUInt
     }
   )
-  io.read.data := readRes
+  io.core.read.data := readRes
 
   countInc := !countInc
 
-  val commitWire = io.commit
-  // val completedWire = io.commit.completed
-  val excVector = VecInit(io.commit.exceptions.asUInt.asBools.map(_ && io.commit.completed))
-    .asTypeOf(new ExceptionBundle)
+  val commitWire = io.core.commit
+  // val completedWire = io.core.commit.completed
+  val excVector =
+    VecInit(io.core.commit.exceptions.asUInt.asBools.map(_ && io.core.commit.completed))
+      .asTypeOf(new ExceptionBundle)
 
   val hasExc = excVector.asUInt.orR
   val intReqs = for (i <- 0 until 8) yield {
@@ -124,23 +128,23 @@ class CP0 extends Module {
     status.reg.exl := 0.B
   }
 
-  io.intrReq := hasExc || hasInt
+  io.core.intrReq := hasExc || hasInt
 
   def wReq(r: CP0BaseReg): Bool = {
-    io.write.enable && io.write.addr === r.addr.U && io.write.sel === r.sel.U && !hasInt && !hasExc
+    io.core.write.enable && io.core.write.addr === r.addr.U && io.core.write.sel === r.sel.U && !hasInt && !hasExc
   }
 
   // badvaddr
 
   // count
   when(wReq(count)) {
-    count.reg := io.write.data
+    count.reg := io.core.write.data
   }.otherwise {
     count.reg := count.reg + countInc.asUInt
   }
 
   // status
-  val writeStatusWire = WireInit(io.write.data.asTypeOf(new StatusBundle))
+  val writeStatusWire = WireInit(io.core.write.data.asTypeOf(new StatusBundle))
   when(wReq(status)) {
     status.reg.exl := writeStatusWire.exl
     status.reg.ie  := writeStatusWire.ie
@@ -148,7 +152,7 @@ class CP0 extends Module {
   }
 
   // cause
-  val writeCauseWire = WireInit(io.write.data.asTypeOf(new CauseBundle))
+  val writeCauseWire = WireInit(io.core.write.data.asTypeOf(new CauseBundle))
   when(wReq(cause)) {
     for (i <- 0 to 1) yield {
       cause.reg.ip(i) := writeCauseWire.ip(i)
@@ -164,16 +168,21 @@ class CP0 extends Module {
   }
   when(wReq(count) || wReq(compare)) {
     cause.reg.ti := 0.B
-  }.elsewhen(count.reg === compare.reg) {
+  }.elsewhen(count.reg === compare.reg && compare.reg =/= 0.U) {
     cause.reg.ti := 1.B
   }
 
   // epc
   when(wReq(epc)) {
-    epc.reg := io.write.data
+    epc.reg := io.core.write.data
   }
 
-  io.epc := epc.reg
+  // compare
+  when(wReq(compare)) {
+    compare.reg := io.core.write.data
+  }
+
+  io.core.epc := epc.reg
 }
 
 object CP0Main extends App {
