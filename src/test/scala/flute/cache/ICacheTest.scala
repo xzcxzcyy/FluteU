@@ -20,3 +20,9 @@ class ICacheTest extends AnyFreeSpec with ChiselScalatestTester with Matchers {
     }
   }
 }
+
+class ICacheAXITest extends AnyFreeSpec with ChiselScalatestTester with Matchers {
+  "compile" in {
+    test(new ICacheWithAXI(iCacheConfig)) { c => }
+  }
+}

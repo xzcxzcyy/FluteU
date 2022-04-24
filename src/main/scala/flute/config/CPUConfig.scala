@@ -35,4 +35,7 @@ object CPUConfig {
   val exceptionIdxWidth = log2Up(exceptionAmount)
   val instrTypeWidth    = log2Up(instrTypeAmount)
   val robEntryNumWidth  = log2Up(robEntryAmount)
+
+  val iCacheConfig = CacheConfig(numOfSets = 64, numOfWays = 2) // 2路组相连 2 * 2KB
+  val dCacheConfig = CacheConfig(numOfSets = 128, numOfWays = 2) // 2路组相连 2 * 4KB
 }
