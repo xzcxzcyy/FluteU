@@ -31,6 +31,7 @@ class MicroOp extends Bundle {
   val rtAddr = UInt(regAddrWidth.W)
   // calculate branchAddr in Ex
   val pc = UInt(instrWidth.W)
+  val robAddr = UInt(robEntryNumWidth.W)
 }
 
 

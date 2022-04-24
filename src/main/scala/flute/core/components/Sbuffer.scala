@@ -45,6 +45,7 @@ class Sbuffer(entryAmount: Int) extends Module {
     val write  = new SbufferWrite(entryAmount)
     val read   = new SbufferRead(entryAmount)
     val retire = Flipped(ValidIO(UInt(log2Up(entryAmount).W)))
+    val flush  = Input(Bool())
   })
 
   val entries = RegInit(VecInit(Seq.fill(entryAmount)(0.U.asTypeOf(new SbufferEntry))))
@@ -67,7 +68,7 @@ class Sbuffer(entryAmount: Int) extends Module {
     writeSbEntry.valid(writeOffset) := 1.B
   }
 
-  when(io.write.valid) {
+  when(io.write.valid && !io.flush) {
     entries(io.write.robAddr) := writeSbEntry
   }
   for (i <- 0 until entryAmount) {
@@ -100,5 +101,9 @@ class Sbuffer(entryAmount: Int) extends Module {
 
   when(io.retire.valid) {
     entries(io.retire.bits).valid := VecInit("b0000".U(4.W).asBools)
+  }
+
+  when(io.flush) {
+    entries.foreach(_.valid := VecInit("b0000".U(4.W).asBools))
   }
 }
