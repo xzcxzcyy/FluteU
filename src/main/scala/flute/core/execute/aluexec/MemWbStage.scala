@@ -1,7 +1,6 @@
 package flute.core.execute.aluexec
 
 import chisel3._
-
 import flute.core.components.StageReg
 import flute.config.CPUConfig._
 
