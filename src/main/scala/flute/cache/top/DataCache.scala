@@ -11,8 +11,8 @@ import flute.core.decode.StoreMode
   * @param store 为1代表当前为store类型指令, 0代表load类型指令
   */
 class DCacheReq extends Bundle {
-  val addr = UInt(addrWidth.W)
-  val store = Bool()
+  val addr      = UInt(addrWidth.W)
+  val storeMode = UInt(StoreMode.width.W)
   val writeData = UInt(dataWidth.W)
 }
 
