@@ -5,6 +5,7 @@ import chisel3.util._
 import flute.config.CPUConfig._
 import flute.cp0.ExceptionBundle
 import flute.util.ValidBundle
+import flute.core.decode.StoreMode
 
 // class InstrBank extends Bundle {
 //   val complete  = Bool()
@@ -23,6 +24,11 @@ class ROBEntry extends Bundle {
   val originReg = UInt(PhyRegIdxWidth.W)
   val exception = new ExceptionBundle
   val instrType = UInt(instrTypeWidth.W)
+  val regWEn    = Bool()
+  val regWData  = UInt(dataWidth.W)
+  val memWMode  = UInt(StoreMode.width.W)
+  val memWAddr  = UInt(addrWidth.W)
+  val memWData  = UInt(dataWidth.W)
 }
 
 class ROBWrite(numEntries: Int) extends Bundle {

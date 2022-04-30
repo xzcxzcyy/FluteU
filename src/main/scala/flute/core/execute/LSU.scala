@@ -55,11 +55,13 @@ class LSU extends Module {
   val cacheReqReady = io.dcache.req.ready && !io.hazard
   val queueReady    = queue.io.enq.ready
   val cacheReqValid =
-    s0.io.out.valid && s0.io.out.bits.loadMode =/= LoadMode.disable && queueReady && !io.flush
-  val queueValid = s0.io.out.valid && s0.io.out.bits.loadMode =/= LoadMode.disable && cacheReqReady
+    s0.io.out.valid && (s0.io.out.bits.loadMode =/= LoadMode.disable) && queueReady && !io.flush
+  val queueValid =
+    s0.io.out.valid && ((s0.io.out.bits.loadMode =/= LoadMode.disable && cacheReqReady) ||
+      s0.io.out.bits.storeMode =/= StoreMode.disable)
 
   queue.io.enq.valid         := queueValid
-  queue.io.enq.bits.data     := sbuffer.io.read.data.asUInt // TODO: change sb interface
+  queue.io.enq.bits.data     := sbuffer.io.read.data
   queue.io.enq.bits.loadMode := s0.io.out.bits.loadMode
   queue.io.enq.bits.valid    := sbuffer.io.read.valid
 
