@@ -53,6 +53,8 @@ class LSU extends Module {
   val microOpWire = io.instr
   val memAddr     = microOpWire.bits.op1.op + microOpWire.bits.immediate
 
+  sbuffer.io.retire.valid      := 0.B
+  sbuffer.io.retire.bits       := 0.B
   sbuffer.io.read.memGroupAddr := memAddr(31, 2)
   sbuffer.io.write.memAddr     := memAddr
   sbuffer.io.write.memData     := s0.io.out.bits.op2.op
@@ -81,6 +83,7 @@ class LSU extends Module {
   queue.io.enq.bits.storeMode := s0.io.out.bits.storeMode
   queue.io.enq.bits.robAddr   := s0.io.out.bits.robAddr
   queue.io.enq.bits.valid     := sbuffer.io.read.valid
+  queue.io.flush.get          := io.flush
 
   io.dcache.req.valid          := cacheReqValid
   io.dcache.req.bits.storeMode := s0.io.out.bits.storeMode // TODO: 这里易错

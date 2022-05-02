@@ -7,15 +7,6 @@ import flute.cp0.ExceptionBundle
 import flute.util.ValidBundle
 import flute.core.decode.StoreMode
 
-// class InstrBank extends Bundle {
-//   val complete  = Bool()
-//   val logicReg  = UInt(LogicRegIdxWidth.W)
-//   val physicReg = UInt(PhyRegIdxWidth.W)
-//   val originReg = UInt(PhyRegIdxWidth.W)
-//   val exception = new ExceptionBundle
-//   val instrType = UInt(instrTypeWidth.W)
-// }
-
 class ROBEntry extends Bundle {
   val pc        = UInt(addrWidth.W)
   val complete  = Bool()
@@ -37,6 +28,17 @@ class ROBWrite(numEntries: Int) extends Bundle {
   val ready   = Output(Bool())
   val robAddr = Output(UInt(log2Up(numEntries).W))
 }
+/// once complete bundle valid, complete shall be set automatically
+class ROBCompleteBundle(robAddrWidth: Int) extends Bundle {
+  val valid     = Bool()
+  val robAddr   = UInt(robAddrWidth.W)
+  val exception = new ExceptionBundle
+  val regWEn    = Bool()
+  val regWData  = UInt(dataWidth.W)
+  val memWMode  = UInt(StoreMode.width.W)
+  val memWAddr  = UInt(addrWidth.W)
+  val memWData  = UInt(dataWidth.W)
+}
 
 class ROB(numEntries: Int, numRead: Int, numWrite: Int, numSetComplete: Int) extends Module {
   assert(isPow2(numEntries) && numEntries > 1)
@@ -44,7 +46,7 @@ class ROB(numEntries: Int, numRead: Int, numWrite: Int, numSetComplete: Int) ext
   val io = IO(new Bundle {
     val read        = Vec(numRead, Decoupled(new ROBEntry))
     val write       = Vec(numWrite, new ROBWrite(numEntries))
-    val setComplete = Vec(numSetComplete, Input(ValidBundle(UInt(log2Up(numEntries).W))))
+    val setComplete = Vec(numSetComplete, Input(new ROBCompleteBundle(log2Up(numEntries))))
   })
 
   val entries = Mem(numEntries, new ROBEntry)
@@ -91,9 +93,15 @@ class ROB(numEntries: Int, numRead: Int, numWrite: Int, numSetComplete: Int) ext
   head_ptr := head_ptr + numDeq
   tail_ptr := tail_ptr + numEnq
 
-  for (i <- 0 until numSetComplete) yield {
-    when(io.setComplete(i).valid) {
-      entries(io.setComplete(i).bits).complete := 1.B
+  for (port <- io.setComplete) {
+    when(port.valid) {
+      entries(port.robAddr).complete  := 1.B
+      entries(port.robAddr).exception := port.exception
+      entries(port.robAddr).regWEn    := port.regWEn
+      entries(port.robAddr).regWData  := port.regWData
+      entries(port.robAddr).memWAddr  := port.memWAddr
+      entries(port.robAddr).memWData  := port.memWData
+      entries(port.robAddr).memWMode  := port.memWMode
     }
   }
 }
