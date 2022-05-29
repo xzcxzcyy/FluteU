@@ -11,15 +11,15 @@ class RefillUnit(AXIID: UInt)(implicit cacheConfig: CacheConfig) extends Module 
   val io = IO(new Bundle {
     val addr = Flipped(ValidIO(UInt(addrWidth.W)))
 
-    /** fire信号用来标识外部信号是否成功锁存data */
-    val data = DecoupledIO(Vec(cacheConfig.numOfBanks, UInt(32.W)))
+    /** valid信号用来标记数据可用（持续1周期），用于Cache状态机转换 */
+    val data = ValidIO(Vec(cacheConfig.numOfBanks, UInt(32.W)))
 
     val axi = AXIIO.master()
   })
   val axiReadPort  = Module(new AXIReadPort(addrWidth, AXIID)) // TODO AXIID
   val refillBuffer = Module(new ReFillBuffer)
   // outer connection
-  io.axi                               := axiReadPort.io.axi
+  io.axi                               <> axiReadPort.io.axi
   io.data                              := refillBuffer.io.dataOut
   axiReadPort.io.addrReq               := io.addr
   refillBuffer.io.beginBankIndex.valid := io.addr.valid
@@ -28,4 +28,9 @@ class RefillUnit(AXIID: UInt)(implicit cacheConfig: CacheConfig) extends Module 
   // inner connection
   refillBuffer.io.dataIn   := axiReadPort.io.transferData
   refillBuffer.io.dataLast := axiReadPort.io.lastBeat
+}
+
+
+object RefillUnitGen extends App {
+  (new chisel3.stage.ChiselStage).emitVerilog(new RefillUnit(0.U)(iCacheConfig), Array("--target-dir", "target/verilog/axi", "--target:fpga"))
 }

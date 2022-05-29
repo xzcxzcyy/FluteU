@@ -80,7 +80,7 @@ class ICacheWithAXI(cacheConfig: CacheConfig) extends Module {
   refillBuffer.io.beginBankIndex.bits  := bankIndex
   refillBuffer.io.dataIn <> axi.io.transferData
   refillBuffer.io.dataLast      := axi.io.lastBeat
-  refillBuffer.io.dataOut.ready := io.request.data.fire // tmp for now TODO
+  // refillBuffer.io.dataOut.ready := io.request.data.fire // tmp for now TODO
 
   io.request.data.bits := refillBuffer.io.dataOut.bits // tmp for now TODO
 }

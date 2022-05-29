@@ -8,6 +8,7 @@ import flute.cache.ram._
 import flute.cache.components.TagValidBundle
 import flute.cache.lru.LRU
 import flute.cache.components.RefillUnit
+import flute.axi.AXIIO
 
 class ICacheReq extends Bundle {
   val addr = UInt(addrWidth.W)
@@ -26,6 +27,7 @@ class InstrCache(cacheConfig: CacheConfig) extends Module {
   val io = IO(new Bundle {
     val req  = Flipped(Decoupled(new ICacheReq))
     val resp = Valid(new ICacheResp)
+    val axi  = AXIIO.master()
   })
 
   val tagValid =
@@ -121,7 +123,7 @@ class InstrCache(cacheConfig: CacheConfig) extends Module {
 
   s1Stall := !(state === piplining)
 
-  refillUnit.io.data.ready := (state === writing)
+  // refillUnit.io.data.ready := (state === writing)
 
   val refillWay = lruUnit.getLRU(config.getIndex(missAddrBuffer))
 
@@ -159,4 +161,6 @@ class InstrCache(cacheConfig: CacheConfig) extends Module {
     )
   )
 
+
+  io.axi <> refillUnit.io.axi
 }

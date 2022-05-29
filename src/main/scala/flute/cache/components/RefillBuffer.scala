@@ -14,11 +14,11 @@ class ReFillBuffer(implicit cacheConfig: CacheConfig) extends Module {
     val beginBankIndex = Flipped(ValidIO(UInt(cacheConfig.bankIndexLen.W)))
 
     /// out ///
-    // fire信号给出refillBuffer的数据被成功锁存, 用于指示refillBuffer的状态机进入idle态
-    val dataOut = DecoupledIO(Vec(fetchGroupSize, UInt(32.W)))
+    // 当整个Cacheline有效时，valid为高，持续一周期
+    val dataOut = ValidIO(Vec(fetchGroupSize, UInt(32.W)))
   })
   val buffer = RegInit(
-    VecInit(Seq.fill(cacheConfig.numOfBanks)(0.U(cacheConfig.bankWidth.W)))
+    VecInit(Seq.fill(cacheConfig.numOfBanks)(0.U(32.W)))
   )
   val index = RegInit(0.U(cacheConfig.bankIndexLen.W))
 
@@ -40,9 +40,7 @@ class ReFillBuffer(implicit cacheConfig: CacheConfig) extends Module {
       }
     }
     is(holding) {
-      when(io.dataOut.fire) {
-        state := idle
-      }
+      state := idle
     }
   }
 
