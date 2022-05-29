@@ -48,7 +48,8 @@ class LSU extends Module {
 
   val sbuffer = Module(new Sbuffer(robEntryAmount))
   val s0      = Module(new MuxStageReg(ValidBundle(new MicroOp)))
-  val queue   = Module(new Queue(new MemReq, 8, hasFlush = true))
+  val opQ   = Module(new Queue(new MemReq, 8, hasFlush = true))
+  val respQ = Module(new Queue(new DCacheResp, 8, hasFlush = true))
 
   val microOpWire = io.instr
   val memAddr     = microOpWire.bits.op1.op + microOpWire.bits.immediate
@@ -64,33 +65,36 @@ class LSU extends Module {
   sbuffer.io.flush := io.flush
   // val intoQFire = queue.io.enq.fire
   val cacheReqReady = io.dcache.req.ready && !io.hazard
-  val queueReady    = queue.io.enq.ready
+  val queueReady    = opQ.io.enq.ready
   val cacheReqValid =
     s0.io.out.valid && (s0.io.out.bits.loadMode =/= LoadMode.disable) && queueReady && !io.flush
   val queueValid =
     s0.io.out.valid && ((s0.io.out.bits.loadMode =/= LoadMode.disable && cacheReqReady) ||
       s0.io.out.bits.storeMode =/= StoreMode.disable)
 
-  queue.io.enq.valid := queueValid
+  opQ.io.enq.valid := queueValid
   // queue.io.enq.bits.data     := sbuffer.io.read.data
-  queue.io.enq.bits.data := Mux(
+  opQ.io.enq.bits.data := Mux(
     s0.io.out.bits.loadMode =/= LoadMode.disable,
     sbuffer.io.read.data,
     s0.io.out.bits.op2.op
   )
-  queue.io.enq.bits.addr      := s0.io.out.bits.op1.op + s0.io.out.bits.immediate
-  queue.io.enq.bits.loadMode  := s0.io.out.bits.loadMode
-  queue.io.enq.bits.storeMode := s0.io.out.bits.storeMode
-  queue.io.enq.bits.robAddr   := s0.io.out.bits.robAddr
-  queue.io.enq.bits.valid     := sbuffer.io.read.valid
-  queue.io.flush.get          := io.flush
+  opQ.io.enq.bits.addr      := s0.io.out.bits.op1.op + s0.io.out.bits.immediate
+  opQ.io.enq.bits.loadMode  := s0.io.out.bits.loadMode
+  opQ.io.enq.bits.storeMode := s0.io.out.bits.storeMode
+  opQ.io.enq.bits.robAddr   := s0.io.out.bits.robAddr
+  opQ.io.enq.bits.valid     := sbuffer.io.read.valid
+  opQ.io.flush.get          := io.flush
 
   io.dcache.req.valid          := cacheReqValid
   io.dcache.req.bits.storeMode := s0.io.out.bits.storeMode // TODO: 这里易错
   io.dcache.req.bits.addr      := memAddr
   io.dcache.req.bits.writeData := 0.U
 
-  val reqFires = queue.io.enq.fire
+  respQ.io.enq.valid := io.dcache.resp.valid
+  respQ.io.enq.bits  := io.dcache.resp.bits
+
+  val reqFires = opQ.io.enq.fire
 
   when(io.flush || (reqFires && !io.instr.valid)) {
     s0.io.mode := MuxStageRegMode.flush
@@ -107,31 +111,31 @@ class LSU extends Module {
   val toRob = WireInit(0.U.asTypeOf(new MemReq))
   val replacedData = for (i <- 0 until 4) yield {
     Mux(
-      queue.io.deq.bits.valid(i),
-      queue.io.deq.bits.data(i * 8 + 7, i * 8),
-      io.dcache.resp.bits.loadData(i * 8 + 7, i * 8),
+      opQ.io.deq.bits.valid(i),
+      opQ.io.deq.bits.data(i * 8 + 7, i * 8),
+      respQ.io.deq.bits.loadData(i * 8 + 7, i * 8),
     )
   }
-  queue.io.deq.ready := (queue.io.deq.bits.storeMode =/= StoreMode.disable) ||
-    (queue.io.deq.bits.loadMode =/= LoadMode.disable && io.dcache.resp.valid)
-  when(queue.io.deq.valid) {
-    when(queue.io.deq.bits.storeMode =/= StoreMode.disable) {
-      toRob := queue.io.deq.bits
+  opQ.io.deq.ready := (opQ.io.deq.bits.storeMode =/= StoreMode.disable) ||
+    (opQ.io.deq.bits.loadMode =/= LoadMode.disable && respQ.io.deq.valid)
+  respQ.io.deq.ready := (opQ.io.deq.bits.loadMode =/= LoadMode.disable) && opQ.io.deq.valid
+  when(opQ.io.deq.fire) {
+    when(opQ.io.deq.bits.storeMode =/= StoreMode.disable) {
+      toRob := opQ.io.deq.bits
     }.elsewhen(
-      queue.io.deq.bits.loadMode =/= LoadMode.disable &&
-        io.dcache.resp.valid
+      opQ.io.deq.bits.loadMode =/= LoadMode.disable
     ) {
-      toRob.addr      := queue.io.deq.bits.addr
-      toRob.loadMode  := queue.io.deq.bits.loadMode
-      toRob.robAddr   := queue.io.deq.bits.robAddr
-      toRob.storeMode := queue.io.deq.bits.storeMode
-      toRob.valid     := queue.io.deq.bits.valid
+      toRob.addr      := opQ.io.deq.bits.addr
+      toRob.loadMode  := opQ.io.deq.bits.loadMode
+      toRob.robAddr   := opQ.io.deq.bits.robAddr
+      toRob.storeMode := opQ.io.deq.bits.storeMode
+      toRob.valid     := opQ.io.deq.bits.valid
       toRob.data      := Cat(replacedData(3), replacedData(2), replacedData(1), replacedData(0))
     }
   }.otherwise {
     toRob := 0.U.asTypeOf(new MemReq)
   }
 
-  io.toRob.valid := queue.io.deq.fire
+  io.toRob.valid := opQ.io.deq.fire
   io.toRob.bits  := toRob
 }
