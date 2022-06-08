@@ -10,9 +10,9 @@ import flute.core.decode.StoreMode
 class ROBEntry extends Bundle {
   val pc        = UInt(addrWidth.W)
   val complete  = Bool()
-  val logicReg  = UInt(LogicRegIdxWidth.W)
-  val physicReg = UInt(PhyRegIdxWidth.W)
-  val originReg = UInt(PhyRegIdxWidth.W)
+  val logicReg  = UInt(archRegAddrWidth.W)
+  val physicReg = UInt(phyRegAddrWidth.W)
+  val originReg = UInt(phyRegAddrWidth.W)
   val exception = new ExceptionBundle
   val instrType = UInt(instrTypeWidth.W)
   val regWEn    = Bool()
