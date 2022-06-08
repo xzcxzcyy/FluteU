@@ -5,13 +5,13 @@ import chisel3.util.log2Up
 
 object CPUConfig {
   /// amount ///
-  val regAmount = 32 // TODO: to be refractored 
-  val LogicRegAmount  = 32
-  val PhyRegsAmout    = 64
+  val regAmount     = 32 // TODO: to be refractored
+  val archRegAmount = 32
+  val phyRegAmount  = 128
   // ROB /////////////////
   val exceptionAmount = 16
   val instrTypeAmount = 8
-  val robEntryAmount   = 64
+  val robEntryAmount  = 64
   ////////////////////////
   val issueQEntryMaxAmount = 16
 
@@ -30,12 +30,12 @@ object CPUConfig {
   val regAddrWidth      = 5
   val shamtWidth        = 5
   val iTypeImmWidth     = 16
-  val LogicRegIdxWidth  = log2Up(LogicRegAmount)
-  val PhyRegIdxWidth    = log2Up(PhyRegsAmout)
+  val archRegAddrWidth  = log2Up(archRegAmount)
+  val phyRegAddrWidth   = log2Up(phyRegAmount)
   val exceptionIdxWidth = log2Up(exceptionAmount)
   val instrTypeWidth    = log2Up(instrTypeAmount)
   val robEntryNumWidth  = log2Up(robEntryAmount)
 
-  val iCacheConfig = CacheConfig(numOfSets = 64, numOfWays = 2) // 2路组相连 2 * 2KB
+  val iCacheConfig = CacheConfig(numOfSets = 64, numOfWays = 2)  // 2路组相连 2 * 2KB
   val dCacheConfig = CacheConfig(numOfSets = 128, numOfWays = 2) // 2路组相连 2 * 4KB
 }
