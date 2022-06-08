@@ -10,15 +10,25 @@ abstract class CP0BaseReg {
 }
 
 class CP0BadVAddr extends CP0BaseReg {
-  override val reg = RegInit(0.U(dataWidth.W))
+  override val reg       = RegInit(0.U(dataWidth.W))
   override val addr: Int = 8
   override val sel: Int  = 0
 }
 
+object CP0BadVAddr {
+  val addr = 8
+  val sel  = 0
+}
+
 class CP0Count extends CP0BaseReg {
-  override val reg = RegInit(0.U(dataWidth.W))
+  override val reg       = RegInit(0.U(dataWidth.W))
   override val addr: Int = 9
   override val sel: Int  = 0
+}
+
+object CP0Count {
+  val addr = 9
+  val sel  = 0
 }
 
 class StatusBundle extends Bundle {
@@ -42,6 +52,11 @@ class CP0Status extends CP0BaseReg {
   override val sel: Int  = 0
 }
 
+object CP0Status {
+  val addr = 12
+  val sel  = 0
+}
+
 class CauseBundle extends Bundle {
   val bd         = Bool()
   val ti         = Bool()
@@ -59,17 +74,29 @@ class CP0Cause extends CP0BaseReg {
   override val sel: Int  = 0
 }
 
+object CP0Cause {
+  val addr = 13
+  val sel  = 0
+}
+
 class CP0EPC extends CP0BaseReg {
-  override val reg = RegInit(0.U(dataWidth.W))
+  override val reg       = RegInit(0.U(dataWidth.W))
   override val addr: Int = 14
   override val sel: Int  = 0
 }
 
+object CP0EPC {
+  val addr = 14
+  val sel  = 0
+}
+
 class CP0Compare extends CP0BaseReg {
-  override val reg = RegInit(0.U(dataWidth.W))
-  
+  override val reg       = RegInit(0.U(dataWidth.W))
   override val addr: Int = 11
-  
-  override val sel: Int = 0
-  
+  override val sel: Int  = 0
+}
+
+object CP0Compare {
+  val addr = 11
+  val sel  = 0
 }

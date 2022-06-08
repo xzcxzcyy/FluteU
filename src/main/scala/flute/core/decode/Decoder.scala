@@ -21,6 +21,7 @@ class MicroOp extends Bundle {
   val op1        = new OpBundle()
   val op2        = new OpBundle()
   val bjCond     = UInt(BJCond.width.W)
+  val instrType  = UInt(InstrType.width.W)
 
   val writeRegAddr = UInt(regAddrWidth.W)
   val immediate    = UInt(dataWidth.W)
@@ -30,6 +31,7 @@ class MicroOp extends Bundle {
   val rtAddr = UInt(regAddrWidth.W)
   // calculate branchAddr in Ex
   val pc = UInt(instrWidth.W)
+  val robAddr = UInt(robEntryNumWidth.W)
 }
 
 
@@ -88,7 +90,8 @@ class Decoder extends Module {
     )
   )
   io.microOp.op2.valid := Mux(controller.io.op2Recipe === Op2Recipe.rt, 0.B, 1.B)
-  io.microOp.bjCond     := controller.io.bjCond
+  io.microOp.bjCond    := controller.io.bjCond
+  io.microOp.instrType := controller.io.instrType
   ////////////////////////////////////////////////////////////////////
 
   // RegFile /////////////////////////////////////////////////////////

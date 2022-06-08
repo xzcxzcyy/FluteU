@@ -1,13 +1,12 @@
-package flute.core.decode.issue
+package flute.core.rename.freelist
 
 import chisel3._
 import chisel3.util._
 
 class FIFOBundle[T <: Data](gen: T, numRead: Int, numWrite: Int) extends Bundle {
-  val flush = Input(Bool())
   val read  = Vec(numRead, Decoupled(gen))
   val write = Flipped(Vec(numWrite, Decoupled(gen)))
-  // val test  = Output(UInt(32.W))
+  val stall = Output(Bool())
 }
 
 /**
@@ -60,15 +59,17 @@ class FIFOQueue[T <: Data](gen: T, numEntries: Int, numRead: Int, numWrite: Int)
   for (i <- 0 until numRead) {
     val offset = i.U
 
-    when(offset < deqEntries) {
+    when(offset < numDeq) {
       io.read(i).bits := data((head_ptr + offset)(log2Up(numEntries) - 1, 0))
     }.otherwise {
-      io.read(i).bits := 0.U.asTypeOf(gen)
+      io.read(i).bits := DontCare
     }
 
     io.read(i).valid := offset < deqEntries
   }
 
-  head_ptr := Mux(io.flush, 0.U, head_ptr + numDeq)
-  tail_ptr := Mux(io.flush, 0.U, tail_ptr + numEnq)
+  io.stall := io.read.map(_.valid).reduce((x,y) => x||y)
+
+  head_ptr := head_ptr + numDeq
+  tail_ptr := tail_ptr + numEnq
 }
