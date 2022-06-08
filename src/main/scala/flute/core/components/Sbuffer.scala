@@ -27,7 +27,7 @@ class SbufferWrite(entryAmount: Int) extends Bundle {
   */
 class SbufferRead(entryAmount: Int) extends Bundle {
   val memGroupAddr = Input(UInt(30.W))
-  val data         = Output(Vec(4, UInt(8.W)))
+  val data         = Output(UInt(32.W))
   val valid        = Output(Vec(4, Bool()))
 }
 
@@ -55,7 +55,26 @@ class Sbuffer(entryAmount: Int) extends Module {
   val writeSbEntry   = WireInit(0.U.asTypeOf(new SbufferEntry))
 
   writeSbEntry.addr := writeGroupAddr
-  writeSbEntry.data := io.write.memData
+  when(io.write.storeMode === StoreMode.word) {
+    writeSbEntry.data := io.write.memData
+  }.elsewhen(io.write.storeMode === StoreMode.halfword) {
+    when(writeOffset(1)) {
+      writeSbEntry.data := Cat(io.write.memData(15, 0), 0.U(16.W))
+    }.otherwise {
+      writeSbEntry.data := Cat(0.U(16.W), io.write.memData(15, 0))
+    }
+  }.elsewhen(io.write.storeMode === StoreMode.byte) {
+    writeSbEntry.data := MuxLookup(
+      key = writeOffset,
+      default = 0.U,
+      mapping = Seq(
+        0.U -> Cat(0.U(24.W), io.write.memData(7, 0)),
+        1.U -> Cat(0.U(16.W), io.write.memData(7, 0), 0.U(8.W)),
+        2.U -> Cat(0.U(8.W), io.write.memData(7, 0), 0.U(16.W)),
+        3.U -> Cat(io.write.memData(7, 0), 0.U(24.W))
+      )
+    )
+  }
   when(io.write.storeMode === StoreMode.word) {
     writeSbEntry.valid := VecInit("b1111".U(4.W).asBools)
   }.elsewhen(io.write.storeMode === StoreMode.halfword) {
@@ -97,7 +116,7 @@ class Sbuffer(entryAmount: Int) extends Module {
     }
   }
   io.read.valid := sbReadValid
-  io.read.data  := sbReadData
+  io.read.data  := Cat(sbReadData(3), sbReadData(2), sbReadData(1), sbReadData(0))
 
   when(io.retire.valid) {
     entries(io.retire.bits).valid := VecInit("b0000".U(4.W).asBools)
