@@ -3,7 +3,7 @@ package flute.util
 import java.io.PrintWriter
 import java.io.File
 import firrtl.AnnotationSeq
-import treadle.TreadleTester
+import treadle.{TreadleTester,CallResetAtStartupAnnotation}
 import chisel3.RawModule
 import chisel3.stage.ChiselStage
 import firrtl.options.TargetDirAnnotation
@@ -20,7 +20,8 @@ abstract class BaseTestHelper(logName: String, gen: () => RawModule) {
     Array(),
     Seq(
       TargetDirAnnotation("target"),
-      ChiselGeneratorAnnotation(gen)
+      ChiselGeneratorAnnotation(gen),
+      CallResetAtStartupAnnotation
     )
   )
   val t: TreadleTester = TreadleTester(firrtlAnno)
