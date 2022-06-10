@@ -4,20 +4,27 @@ import chisel3._
 import chisel3.util._
 import flute.config.CPUConfig._
 import flute.core.decode.{InstrType, MicroOp}
+import flute.core.issue.AluDelayConfig.delayAmount
 import flute.util.ValidBundle
 
 
+object AluDelayConfig {
+  val delayAmount = 1
+}
+
 class IQEntry extends Bundle {
   val microOp = new MicroOp
-  val awake    = Bool()  // 书里的issued
-  val selected = Bool()
-  val op1Ready = Bool()
-  val op2Ready = Bool()
+  val awake      = Bool()  // 书里的issued
+  val selected   = Bool()
+  val op1ShiftEn = Bool()
+  val op1Shift   = SInt((delayAmount+1).W)  // op1Shift(0)即op1Ready
+  val op2ShiftEn = Bool()
+  val op2Shift   = SInt((delayAmount+1).W)  // op2Shift(0)即op2Ready
 }
 
 class SelectUnit extends Module {
   val io = IO(new Bundle{
-    val request      = Input(Vec(issueQEntryMaxAmount, Bool()))
+    val request      = Input(UInt(log2Up(issueQEntryMaxAmount).W))
     val tobeSelected = Input(Vec(issueQEntryMaxAmount, new MicroOp))
     val selectedOp   = DecoupledIO(new MicroOp)
     val selectedIdx  = Output(UInt(log2Up(issueQEntryMaxAmount).W))
@@ -25,7 +32,7 @@ class SelectUnit extends Module {
   val selectedIdx = Wire(UInt(log2Up(issueQEntryMaxAmount).W))
   selectedIdx := PriorityEncoder(io.request)
 
-  io.selectedOp.valid := io.request.asUInt =/= 0.U
+  io.selectedOp.valid := io.request =/= 0.U
   io.selectedOp.bits  := io.tobeSelected(selectedIdx)
 }
 
@@ -129,12 +136,12 @@ class IssueQ extends Module {
   for (i <- 0 until issueQEntryMaxAmount) {
     io.dataOut(i) := entries.read(i.U)
   }
-  
+
   // Select //////////////////////////////////////////////////////
   val ALU0SelectUnit = new SelectUnit
   val ALU1SelectUnit = new SelectUnit
-  val BRUSelectUnit  = new SelectUnit
-  val AGUSelectUnit  = new SelectUnit
+  val MDUSelectUnit  = new SelectUnit
+  val LSUSelectUnit  = new SelectUnit
 
   val aluFlag = RegInit(0.B)
   aluFlag := ~aluFlag
@@ -142,8 +149,8 @@ class IssueQ extends Module {
 
   for(i <- 0 to issueQEntryMaxAmount) {
 
-    request(i) := (entries(i).microOp.op1.valid | entries(i).op1Ready) &
-      (entries(i).microOp.op2.valid | entries(i).op2Ready) &
+    request(i) := (entries(i).microOp.op1.valid | entries(i).op1Shift(0)) &
+      (entries(i).microOp.op2.valid | entries(i).op2Shift(0)) &
       entries(i).awake
 
     when(entries(i).microOp.instrType === InstrType.alu) {
@@ -151,27 +158,27 @@ class IssueQ extends Module {
         ALU0SelectUnit.io.request(i)      := request(i)
         ALU0SelectUnit.io.tobeSelected(i) := entries(i).microOp
         ALU1SelectUnit.io.request(i)      := 0.B
-        BRUSelectUnit.io.request(i)       := 0.B
-        AGUSelectUnit.io.request(i)       := 0.B
+        MDUSelectUnit.io.request(i)       := 0.B
+        LSUSelectUnit.io.request(i)       := 0.B
       }.otherwise {
         ALU0SelectUnit.io.request(i)      := 0.B
         ALU1SelectUnit.io.request(i)      := request(i)
         ALU1SelectUnit.io.tobeSelected(i) := entries(i).microOp
-        BRUSelectUnit.io.request(i)       := 0.B
-        AGUSelectUnit.io.request(i)       := 0.B
+        MDUSelectUnit.io.request(i)       := 0.B
+        LSUSelectUnit.io.request(i)       := 0.B
       }
     }.elsewhen(entries(i).microOp.instrType === InstrType.mulDiv) {
       ALU0SelectUnit.io.request(i)     := 0.B
       ALU1SelectUnit.io.request(i)     := 0.B
-      BRUSelectUnit.io.request(i)      := request(i)
-      BRUSelectUnit.io.tobeSelected(i) := entries(i).microOp
-      AGUSelectUnit.io.request(i)      := 0.B
+      MDUSelectUnit.io.request(i)      := request(i)
+      MDUSelectUnit.io.tobeSelected(i) := entries(i).microOp
+      LSUSelectUnit.io.request(i)      := 0.B
     }.elsewhen(entries(i).microOp.instrType === InstrType.loadStore) {
       ALU0SelectUnit.io.request(i)     := 0.B
       ALU1SelectUnit.io.request(i)     := 0.B
-      BRUSelectUnit.io.request(i)      := 0.B
-      AGUSelectUnit.io.request(i)      := request(i)
-      AGUSelectUnit.io.tobeSelected(i) := entries(i).microOp
+      MDUSelectUnit.io.request(i)      := 0.B
+      LSUSelectUnit.io.request(i)      := request(i)
+      LSUSelectUnit.io.tobeSelected(i) := entries(i).microOp
     }
 
   }
@@ -184,33 +191,28 @@ class IssueQ extends Module {
   issueAddrBundle(1).bits  := ALU1SelectUnit.io.selectedIdx
   issueAddrBundle(1).valid := ALU1SelectUnit.io.selectedOp.valid
 
-  // TODO: Add BRU/AGU Support Here
-  //io.toBRU  <> BRUSelectUnit.io.selectedOp  // 乘除法单元
-  //io.toAGU  <> AGUSelectUnit.io.selectedOp  // 读写单元
-
   ////////////////////////////////////////////////////////////////
 
   // Wakeup //////////////////////////////////////////////////////
 
-  // TODO: Add BRU/AGU Support Here
   val alu0Grant = Wire(Vec(issueQEntryMaxAmount, Bool()))
   val alu1Grant = Wire(Vec(issueQEntryMaxAmount, Bool()))
   val dstBus    = Wire(Vec(2, ValidBundle(UInt(regAddrWidth.W))))
+  val delayBus  = Wire(Vec(2, UInt((delayAmount+1).W)))  // delayBus也用dstBus的valid
 
-  // TODO: Add BRU/AGU Support Here
   for(i <- 0 to issueQEntryMaxAmount) {
     alu0Grant(i) := (ALU0SelectUnit.io.selectedIdx === i.U) & ALU0SelectUnit.io.selectedOp.valid
     alu1Grant(i) := (ALU1SelectUnit.io.selectedIdx === i.U) & ALU1SelectUnit.io.selectedOp.valid
     entries(i).awake := alu0Grant(i) | alu1Grant(i)
   }
 
-  // TODO: Add BRU/AGU Support Here, 改为算出结果后唤醒
   dstBus(0).valid := ALU0SelectUnit.io.selectedOp.valid
   dstBus(0).bits  := entries(ALU0SelectUnit.io.selectedIdx).microOp.writeRegAddr
+  delayBus(0)     := 1.U << delayAmount
   dstBus(1).valid := ALU1SelectUnit.io.selectedOp.valid
   dstBus(1).bits  := entries(ALU1SelectUnit.io.selectedIdx).microOp.writeRegAddr
+  delayBus(1)     := 1.U << delayAmount
 
-  // TODO: Add BRU/AGU Support Here
   val busMatchOp1 = Wire(Vec(issueQEntryMaxAmount, UInt(2.W)))
   val busMatchOp2 = Wire(Vec(issueQEntryMaxAmount, UInt(2.W)))
   for(i <- 0 to issueQEntryMaxAmount) {
@@ -219,9 +221,31 @@ class IssueQ extends Module {
       busMatchOp2(i)(j) := dstBus(j).valid & (dstBus(j).bits === entries(i).microOp.op2.op)
     }
 
-    when(busMatchOp1(i) =/= 0.U) {entries(i).op1Ready := true.B}
-    when(busMatchOp2(i) =/= 0.U) {entries(i).op2Ready := true.B}
+    entries(i).op1ShiftEn := busMatchOp1(i) =/= 0.U
+    entries(i).op2ShiftEn := busMatchOp2(i) =/= 0.U
+
+    entries(i).op1Shift := MuxLookup(
+      key = busMatchOp1(i),
+      default = 0.U,
+      mapping = Seq(
+        "b00".U -> 0.U,
+        "b01".U -> delayBus(0),
+        "b10".U -> delayBus(1)
+      )
+    )
+    entries(i).op2Shift := MuxLookup(
+      key = busMatchOp2(i),
+      default = 0.U,
+      mapping = Seq(
+        "b00".U -> 0.U,
+        "b01".U -> delayBus(0),
+        "b10".U -> delayBus(1)
+      )
+    )
+
+    when(entries(i).op1ShiftEn === true.B) {entries(i).op1Shift := entries(i).op1Shift >> 1}
   }
+
 
   ////////////////////////////////////////////////////////////////
 }
