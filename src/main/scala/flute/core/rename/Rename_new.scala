@@ -4,27 +4,30 @@ import chisel3._
 import chisel3.util._
 import flute.core.decode.MicroOp
 import flute.config.CPUConfig._
+import flute.core.rob._
+
+class RenameEntry extends Bundle {
+  val srcL      = UInt(phyRegAddrWidth.W)
+  val srcR      = UInt(phyRegAddrWidth.W)
+  val originReg = UInt(phyRegAddrWidth.W)
+  val writeReg  = UInt(phyRegAddrWidth.W)
+}
 
 class Rename_new(nWays: Int, nCommit: Int) extends Module {
   val io = IO(new Bundle {
     val decode = Vec(nWays, Flipped(ValidIO(new MicroOp)))
+    
     // commit
 
-    // TODO ROB check for stall
+    val dispatch = Vec(nWays, ValidIO(new MicroOp(rename = true)))
+    val rob      = Vec(nWays, Flipped(new ROBWrite(robEntryAmount)))
+
     val stall    = Input(Bool())
     val stallReq = Output(Bool())
   })
 
   val freelist = Module(new Freelist(nWays, phyRegAmount))
   val rat      = Module(new RMT(nWays, nCommit))
-
-  class RenameEntry extends Bundle {
-    val srcL      = UInt(phyRegAddrWidth.W)
-    val srcR      = UInt(phyRegAddrWidth.W)
-    val originReg = UInt(phyRegAddrWidth.W)
-    val writeReg  = UInt(phyRegAddrWidth.W)
-    val writeEn   = Bool()
-  }
 
   val ideal = Wire(Vec(nWays, new RenameEntry))
   val real  = Wire(Vec(nWays, new RenameEntry))
@@ -43,7 +46,6 @@ class Rename_new(nWays: Int, nCommit: Int) extends Module {
     ideal(i).srcR      := rat.io.read(i)(2).data
     ideal(i).originReg := rat.io.read(i)(0).data
     ideal(i).writeReg  := freelist.io.allocPregs(i).bits
-    ideal(i).writeEn   := io.decode(i).bits.regWriteEn
   }
 
   // RAW Check
@@ -55,8 +57,8 @@ class Rename_new(nWays: Int, nCommit: Int) extends Module {
     val fireR    = Wire(Vec(i, Bool()))
     val writeReg = Wire(Vec(i, UInt(phyRegAddrWidth.W)))
     for (j <- 0 until i) {
-      fireL(j)    := ideal(j).writeEn && ideal(j).writeReg === ideal(i).srcL
-      fireR(j)    := ideal(j).writeEn && ideal(j).writeReg === ideal(i).srcR
+      fireL(j)    := uops(j).regWriteEn && ideal(j).writeReg === ideal(i).srcL
+      fireR(j)    := uops(j).regWriteEn && ideal(j).writeReg === ideal(i).srcR
       writeReg(j) := ideal(j).writeReg
     }
     // 注意倒序 match case
@@ -103,30 +105,62 @@ class Rename_new(nWays: Int, nCommit: Int) extends Module {
 
   for (i <- 0 until nWays) {
     real(i).writeReg := ideal(i).writeReg
-    real(i).writeEn  := ideal(i).writeEn
   }
 
-  // 重要的信号: freelist.io.requests, rat.io.write.en 均会改变机器状态（推测态）
+  // 重要的信号: freelist.io.requests, rat.io.write.en 均会改变机器状态（推测态; io.stallReq 会影响流水其他部分
+  // 因此这些信号的生成要注意正确结合流水线上下行的 valid/ready 信号
 
   // check if enough to allocate
 
-  val needStall = Wire(Vec(nWays, Bool()))
+  val freeStall = Wire(Vec(nWays, Bool()))
+  val robStall  = Wire(Vec(nWays, Bool()))
   for (i <- 0 until nWays) {
-    needStall(i) := uops(i).regWriteEn && !freelist.io.allocPregs(i).valid
+    freeStall(i) := io.decode(i).valid && uops(i).regWriteEn && !freelist.io.allocPregs(i).valid
+    robStall(i)  := io.decode(i).valid && !io.rob(i).ready // can't get the free rob space
   }
-  val stallReq = needStall.reduce(_ | _)
+  val stallReq = freeStall.reduce(_ | _) || robStall.reduce(_ | _)
 
   for (i <- 0 until nWays) {
     // 当且仅当 来源数据有效 且 能够分配一组资源 且 外部无暂停信号，正式进行请求
     val valid = io.decode(i).valid && !stallReq && !io.stall
+
+    io.dispatch(i).valid := valid
 
     freelist.io.requests(i) := valid && uops(i).regWriteEn
     rat.io.write(i).en      := valid && wRATen(i)
 
     rat.io.write(i).addr := uops(i).writeRegAddr
     rat.io.write(i).data := real(i).writeReg
+
+    io.rob(i).valid := valid
   }
 
   io.stallReq := stallReq
+
+  val dispatchData = Wire(Vec(nWays, new MicroOp(rename = true)))
+  for (i <- 0 until nWays) {
+    dispatchData(i)              := uops(i)
+    dispatchData(i).rsAddr       := real(i).srcL
+    dispatchData(i).rtAddr       := real(i).srcR
+    dispatchData(i).writeRegAddr := real(i).writeReg
+    dispatchData(i).robAddr      := io.rob(i).robAddr
+
+    io.dispatch(i).bits := dispatchData(i)
+  }
+
+  for (i <- 0 until nWays) {
+    io.rob(i).bits           := DontCare
+    freelist.io.commit       := DontCare
+    freelist.io.deallocPregs := DontCare
+    rat.io.commit            := DontCare
+    freelist.io.chToArch     := DontCare
+    rat.io.chToArch          := DontCare
+  }
+  // Write ROB
+
+}
+
+object RemameUtil {
+  def uOP2ROBEntry(uop: MicroOp, re: RenameEntry) = {}
 
 }

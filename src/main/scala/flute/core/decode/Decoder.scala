@@ -13,7 +13,9 @@ class OpBundle extends Bundle {
   val valid = Bool()
 }
 
-class MicroOp extends Bundle {
+class MicroOp(rename: Boolean = false) extends Bundle {
+  private val regWidth = if (rename) phyRegAddrWidth else regAddrWidth
+
   val regWriteEn = Bool()
   val loadMode   = UInt(LoadMode.width.W)
   val storeMode  = UInt(StoreMode.width.W)
@@ -23,21 +25,20 @@ class MicroOp extends Bundle {
   val bjCond     = UInt(BJCond.width.W)
   val instrType  = UInt(InstrType.width.W)
 
-  val writeRegAddr = UInt(regAddrWidth.W)
+  val writeRegAddr = UInt(regWidth.W)
   val immediate    = UInt(dataWidth.W)
 
   // for issue wake up
-  val rsAddr = UInt(regAddrWidth.W)
-  val rtAddr = UInt(regAddrWidth.W)
+  val rsAddr = UInt(regWidth.W)
+  val rtAddr = UInt(regWidth.W)
   // calculate branchAddr in Ex
-  val pc = UInt(instrWidth.W)
+  val pc      = UInt(instrWidth.W)
   val robAddr = UInt(robEntryNumWidth.W)
 }
 
-
 class Decoder extends Module {
   val io = IO(new Bundle {
-    val instr   = Input(new IBEntry)
+    val instr = Input(new IBEntry)
     // 气泡流水 decoder不读regfile
     // val withRegfile = Flipped(new RegFileReadIO)
     val microOp = Output(new MicroOp)
@@ -65,11 +66,11 @@ class Decoder extends Module {
 
   // Controller //////////////////////////////////////////////////////
   controller.io.instruction := io.instr.inst
-  io.microOp.regWriteEn := controller.io.regWriteEn
-  io.microOp.loadMode   := controller.io.loadMode
-  io.microOp.storeMode  := controller.io.storeMode
-  io.microOp.aluOp      := controller.io.aluOp
-  io.microOp.op1.op     := MuxLookup(
+  io.microOp.regWriteEn     := controller.io.regWriteEn
+  io.microOp.loadMode       := controller.io.loadMode
+  io.microOp.storeMode      := controller.io.storeMode
+  io.microOp.aluOp          := controller.io.aluOp
+  io.microOp.op1.op := MuxLookup(
     key = controller.io.op1Recipe,
     default = 0.U,
     mapping = Seq(
@@ -79,14 +80,14 @@ class Decoder extends Module {
       Op1Recipe.zero    -> 0.U
     )
   )
-  io.microOp.op1.valid  := Mux(controller.io.op1Recipe === Op1Recipe.rs, 0.B, 1.B)
-  io.microOp.op2.op     := MuxLookup(
+  io.microOp.op1.valid := Mux(controller.io.op1Recipe === Op1Recipe.rs, 0.B, 1.B)
+  io.microOp.op2.op := MuxLookup(
     key = controller.io.op2Recipe,
     default = 0.U,
     mapping = Seq(
-      Op2Recipe.rt      -> 0.U,
-      Op2Recipe.imm     -> extendedImm,
-      Op2Recipe.zero    -> 0.U
+      Op2Recipe.rt   -> 0.U,
+      Op2Recipe.imm  -> extendedImm,
+      Op2Recipe.zero -> 0.U
     )
   )
   io.microOp.op2.valid := Mux(controller.io.op2Recipe === Op2Recipe.rt, 0.B, 1.B)
