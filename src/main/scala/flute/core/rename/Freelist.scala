@@ -4,7 +4,7 @@ import chisel3._
 import chisel3.util._
 import flute.config.CPUConfig._
 
-class Freelist(val nWays: Int, val nPregs: Int, val nLregs: Int) extends Module {
+class Freelist(val nWays: Int, val nPregs: Int) extends Module {
   // physical Regs Index Width
   private val pregsIW = log2Ceil(nPregs)
 

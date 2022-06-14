@@ -24,6 +24,12 @@ class Experiment extends AnyFreeSpec with ChiselScalatestTester with Matchers {
       c.io.out.expect(0xfffffffeL.U)
     }
   }
+
+  "MuxCase test" in {
+    test(new MuxCaseTester) { c =>
+      c.io.out.expect(3.U)
+    }
+  }
 }
 
 class EncoderTester extends Module {
@@ -42,4 +48,18 @@ class SExtTester extends Module {
   })
   
   io.out := Cat(Fill(16, io.in(15)), io.in(15, 0))
+}
+
+class MuxCaseTester extends Module {
+  val io = IO(new Bundle {
+    val out = Output(UInt(5.W))
+
+  })
+  io.out := MuxCase(0.U, Seq(
+    0.B -> 1.U,
+    0.B -> 2.U,
+    1.B -> 3.U,
+    1.B -> 4.U,
+  ))
+
 }
