@@ -13,26 +13,29 @@ class RenameEntry extends Bundle {
   val writeReg  = UInt(phyRegAddrWidth.W)
 }
 
-class RenameCommit(nCommit: Int, nPregs : Int = phyRegAmount) extends Bundle {
-  val freelist = new FreelistCommit(nCommit, nPregs)
+class RenameCommit(nCommit: Int) extends Bundle {
+  val freelist = new FreelistCommit(nCommit)
   val rmt      = new RMTCommit(nCommit)
   val chToArch = Input(Bool())
 }
 
-class Rename(nWays: Int, nCommit: Int, nPregs : Int = phyRegAmount) extends Module {
+class Rename(nWays: Int, nCommit: Int) extends Module {
   val io = IO(new Bundle {
     val decode   = Vec(nWays, Flipped(ValidIO(new MicroOp)))
     val dispatch = Vec(nWays, ValidIO(new MicroOp(rename = true)))
     val rob      = Vec(nWays, Flipped(new ROBWrite(robEntryAmount)))
 
     // commit
-    val commit = new RenameCommit(nCommit, nPregs)
+    val commit = new RenameCommit(nCommit)
+
+    // to busyTable
+    val checkIn = Output(Vec(nWays, Valid(UInt(phyRegAddrWidth.W))))
 
     val stall    = Input(Bool())
     val stallReq = Output(Bool())
   })
 
-  val freelist = Module(new Freelist(nWays, nCommit, nPregs))
+  val freelist = Module(new Freelist(nWays, nCommit))
   val rat      = Module(new RMT(nWays, nCommit))
 
   val ideal = Wire(Vec(nWays, new RenameEntry))
@@ -139,6 +142,10 @@ class Rename(nWays: Int, nCommit: Int, nPregs : Int = phyRegAmount) extends Modu
     rat.io.write(i).data := real(i).writeReg
 
     io.rob(i).valid := valid
+
+    // To BusyTable
+    io.checkIn(i).valid := valid && uops(i).regWriteEn
+    io.checkIn(i).bits  := real(i).writeReg
   }
 
   io.stallReq := stallReq
