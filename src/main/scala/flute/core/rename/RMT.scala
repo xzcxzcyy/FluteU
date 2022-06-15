@@ -15,6 +15,9 @@ class RMTWritePort extends Bundle {
   val data = Input(UInt(phyRegAddrWidth.W))
 }
 
+class RMTCommit(numCommit: Int) extends Bundle {
+  val write = Vec(numCommit, new RMTWritePort)
+}
 
 // Map: arch -> phy
 class RMT(numWays: Int, numCommit: Int, release: Boolean = false) extends Module {
@@ -26,9 +29,7 @@ class RMT(numWays: Int, numCommit: Int, release: Boolean = false) extends Module
     val write = Vec(numWays, new RMTWritePort)
 
     // commit to aRAT
-    val commit = new Bundle {
-      val write = Vec(numCommit, new RMTWritePort)
-    }
+    val commit = new RMTCommit(numCommit)
 
     val chToArch = Input(Bool())
 

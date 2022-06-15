@@ -13,20 +13,26 @@ class RenameEntry extends Bundle {
   val writeReg  = UInt(phyRegAddrWidth.W)
 }
 
-class Rename(nWays: Int, nCommit: Int) extends Module {
+class RenameCommit(nCommit: Int, nPregs : Int = phyRegAmount) extends Bundle {
+  val freelist = new FreelistCommit(nCommit, nPregs)
+  val rmt      = new RMTCommit(nCommit)
+  val chToArch = Input(Bool())
+}
+
+class Rename(nWays: Int, nCommit: Int, nPregs : Int = phyRegAmount) extends Module {
   val io = IO(new Bundle {
-    val decode = Vec(nWays, Flipped(ValidIO(new MicroOp)))
+    val decode   = Vec(nWays, Flipped(ValidIO(new MicroOp)))
     val dispatch = Vec(nWays, ValidIO(new MicroOp(rename = true)))
     val rob      = Vec(nWays, Flipped(new ROBWrite(robEntryAmount)))
 
     // commit
-    val commit = new Bundle {}
+    val commit = new RenameCommit(nCommit, nPregs)
 
     val stall    = Input(Bool())
     val stallReq = Output(Bool())
   })
 
-  val freelist = Module(new Freelist(nWays, nCommit, phyRegAmount))
+  val freelist = Module(new Freelist(nWays, nCommit, nPregs))
   val rat      = Module(new RMT(nWays, nCommit))
 
   val ideal = Wire(Vec(nWays, new RenameEntry))
@@ -149,10 +155,10 @@ class Rename(nWays: Int, nCommit: Int) extends Module {
 
   // Commit signals
   for (i <- 0 until nWays) {
-    freelist.io.commit       := DontCare
-    rat.io.commit            := DontCare
-    freelist.io.chToArch     := DontCare
-    rat.io.chToArch          := DontCare
+    freelist.io.commit   := io.commit.freelist
+    rat.io.commit        := io.commit.rmt
+    freelist.io.chToArch := io.commit.chToArch
+    rat.io.chToArch      := io.commit.chToArch
   }
 
 }
