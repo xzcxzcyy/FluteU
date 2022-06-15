@@ -15,6 +15,7 @@ class RMTWritePort extends Bundle {
   val data = Input(UInt(phyRegAddrWidth.W))
 }
 
+
 // Map: arch -> phy
 class RMT(numWays: Int, numCommit: Int, release: Boolean = false) extends Module {
   val io = IO(new Bundle {

@@ -4,24 +4,25 @@ import chisel3._
 import chisel3.util._
 import flute.config.CPUConfig._
 
-class Freelist(val nWays: Int, val nPregs: Int) extends Module {
+class FreelistCommit(val nCommit: Int, val nPregs: Int = phyRegAmount) extends Bundle {
+  // physical Regs Index Width
+  private val pregsIW = log2Ceil(nPregs)
+
+  val alloc = Input(Vec(nCommit, Valid(UInt(pregsIW.W))))
+  val free  = Input(Vec(nCommit, Valid(UInt(pregsIW.W))))
+}
+
+class Freelist(val nWays: Int, val nCommit: Int, val nPregs: Int = phyRegAmount) extends Module {
   // physical Regs Index Width
   private val pregsIW = log2Ceil(nPregs)
 
   val io = IO(new Bundle {
     val requests = Input(Vec(nWays, Bool()))
 
-    val allocPregs = Output(Vec(nWays, ValidIO(UInt(pregsIW.W))))
+    val allocPregs = Output(Vec(nWays, Valid(UInt(pregsIW.W))))
 
-    val deallocPregs = Input(Vec(nWays, ValidIO(UInt(pregsIW.W))))
-
-    val empty = Output(Bool())
-
-    // commit to arch Freelist
-    val commit = new Bundle {
-      val alloc = Input(Vec(nWays, ValidIO(UInt(pregsIW.W))))
-      val free  = Input(Vec(nWays, ValidIO(UInt(pregsIW.W))))
-    }
+    // commit to arch Freelist: alloc for aFreelist; free for both aFreelist & sFreelist
+    val commit = new FreelistCommit(nCommit, nPregs)
 
     val chToArch = Input(Bool())
 
@@ -52,7 +53,7 @@ class Freelist(val nWays: Int, val nPregs: Int) extends Module {
 
   val selMask = (sels zip selFire) map { case (s, f) => s & Fill(nPregs, f) } reduce (_ | _)
   val deallocMask =
-    io.deallocPregs.map(d => UIntToOH(d.bits)(nPregs - 1, 0) & Fill(nPregs, d.valid)).reduce(_ | _)
+    io.commit.free.map(d => UIntToOH(d.bits)(nPregs - 1, 0) & Fill(nPregs, d.valid)).reduce(_ | _)
 
   val nextSFreelist = (sFreelist & ~selMask | deallocMask) & ~(1.U(nPregs.W))
 
@@ -67,8 +68,6 @@ class Freelist(val nWays: Int, val nPregs: Int) extends Module {
   aFreelist := nextAFreelist
 
   sFreelist := Mux(io.chToArch, nextAFreelist, nextSFreelist)
-
-  io.empty := !sFreelist.orR
 
   io.debug.freelist    := sFreelist
   io.debug.selMask     := selMask

@@ -6,7 +6,7 @@ import chiseltest.ChiselScalatestTester
 import org.scalatest.matchers.should.Matchers
 
 private class RenameTestHelper(fileName: String)
-    extends BaseTestHelper(fileName, () => new Rename_new(4, 4)) {
+    extends BaseTestHelper(fileName, () => new Rename(4, 4)) {
 
     
 }

@@ -110,4 +110,5 @@ class Decoder extends Module {
   io.microOp.rtAddr := instruction(20, 16)
   /////////////////////////////////////////////////////////////////
 
+  io.microOp.robAddr := DontCare
 }

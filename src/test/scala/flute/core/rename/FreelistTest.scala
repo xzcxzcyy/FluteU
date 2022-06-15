@@ -15,7 +15,7 @@ import org.scalatest.matchers.should.Matchers
 import flute.config.CPUConfig._
 
 private class TestHelper(fileName: String)
-    extends BaseTestHelper(fileName, () => new Freelist(2, 32)) {
+    extends BaseTestHelper(fileName, () => new Freelist(2, 2 ,32)) {
   def peekPort() = {
     val freelist    = t.peek(s"io_debug_freelist")
     val selMask     = t.peek(s"io_debug_selMask")
@@ -34,7 +34,6 @@ private class TestHelper(fileName: String)
   def defaultPock() = {
     for (i <- 0 until 2) {
       t.poke(s"io_requests_${i}", bool2BigInt(true))
-      t.poke(s"io_deallocPregs_${i}_valid", bool2BigInt(false))
       t.poke(s"io_commit_alloc_${i}_valid", bool2BigInt(false))
       t.poke(s"io_commit_free_${i}_valid", bool2BigInt(false))
     }
@@ -43,8 +42,8 @@ private class TestHelper(fileName: String)
   def dellocPock() = {
     for (i <- 0 until 2) {
       t.poke(s"io_requests_${i}", bool2BigInt(false))
-      t.poke(s"io_deallocPregs_${i}_valid", bool2BigInt(true))
-      t.poke(s"io_deallocPregs_${i}_bits", i + 1)
+      t.poke(s"io_commit_free_${i}_valid", bool2BigInt(true))
+      t.poke(s"io_commit_free_${i}_bits", i + 1)
     }
   }
 }
