@@ -4,16 +4,14 @@ import chisel3._
 import chisel3.util._
 import flute.config.CPUConfig._
 
-class FreelistCommit(val nCommit: Int, val nPregs: Int = phyRegAmount) extends Bundle {
-  // physical Regs Index Width
-  private val pregsIW = log2Ceil(nPregs)
-
-  val alloc = Input(Vec(nCommit, Valid(UInt(pregsIW.W))))
-  val free  = Input(Vec(nCommit, Valid(UInt(pregsIW.W))))
+class FreelistCommit(val nCommit: Int) extends Bundle {
+  val alloc = Input(Vec(nCommit, Valid(UInt(phyRegAddrWidth.W))))
+  val free  = Input(Vec(nCommit, Valid(UInt(phyRegAddrWidth.W))))
 }
 
-class Freelist(val nWays: Int, val nCommit: Int, val nPregs: Int = phyRegAmount) extends Module {
+class Freelist(val nWays: Int, val nCommit: Int) extends Module {
   // physical Regs Index Width
+  private val nPregs = phyRegAmount
   private val pregsIW = log2Ceil(nPregs)
 
   val io = IO(new Bundle {
@@ -22,7 +20,7 @@ class Freelist(val nWays: Int, val nCommit: Int, val nPregs: Int = phyRegAmount)
     val allocPregs = Output(Vec(nWays, Valid(UInt(pregsIW.W))))
 
     // commit to arch Freelist: alloc for aFreelist; free for both aFreelist & sFreelist
-    val commit = new FreelistCommit(nCommit, nPregs)
+    val commit = new FreelistCommit(nCommit)
 
     val chToArch = Input(Bool())
 
