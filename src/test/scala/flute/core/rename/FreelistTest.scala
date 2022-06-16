@@ -15,7 +15,7 @@ import org.scalatest.matchers.should.Matchers
 import flute.config.CPUConfig._
 
 private class TestHelper(fileName: String)
-    extends BaseTestHelper(fileName, () => new Freelist(2, 2 ,32)) {
+    extends BaseTestHelper(fileName, () => new Freelist(2, 2)) {
   def peekPort() = {
     val freelist    = t.peek(s"io_debug_freelist")
     val selMask     = t.peek(s"io_debug_selMask")
