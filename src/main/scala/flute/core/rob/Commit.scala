@@ -4,12 +4,22 @@ import chisel3._
 import chisel3.util._
 import flute.core.decode.StoreMode
 import flute.core.rename.RenameCommit
+import flute.config.CPUConfig._
 
+class StoreCommit  extends Bundle {}
+class BranchCommit extends Bundle {
+  val pc = UInt(addrWidth.W)
+}
 class Commit(nCommit: Int) extends Module {
   val io = IO(new Bundle {
     val rob = Vec(nCommit, Flipped(Decoupled(new ROBEntry)))
 
     val commit = Flipped(new RenameCommit(nCommit))
+
+    val store  = Output(new StoreCommit)
+    val branch = Output(new BranchCommit)
+
+    val recover = Output(Bool())
   })
 
   val robRaw = io.rob.map(r => r.bits)
@@ -55,9 +65,10 @@ class Commit(nCommit: Int) extends Module {
   val hasException = (0 until nCommit).map(i => programException(i) || branchException(i))
 
   val exceptionMask = Wire(Vec(nCommit, Bool()))
-  for (i <- 0 until nCommit) {
+  exceptionMask(0) := 1.B
+  for (i <- 1 until nCommit) {
     var hasNoExcptBefore = 1.B
-    for (j <- 0 until i) {
+    for (j <- 0 to i) { // include itself
       hasNoExcptBefore = hasNoExcptBefore && !hasException(j)
     }
     exceptionMask(i) := hasNoExcptBefore
@@ -71,24 +82,32 @@ class Commit(nCommit: Int) extends Module {
     )
   )
 
+  // Rename Commit
   for (i <- 0 until nCommit) {
     // [[io.commit]]
     // 数据通路
-    io.commit.rmt.write(i).addr := robRaw(i).logicReg
-    io.commit.rmt.write(i).data := robRaw(i).physicReg
-
+    io.commit.rmt.write(i).addr      := robRaw(i).logicReg
+    io.commit.rmt.write(i).data      := robRaw(i).physicReg
     io.commit.freelist.free(i).bits  := robRaw(i).originReg
     io.commit.freelist.alloc(i).bits := robRaw(i).physicReg
-
     // 控制信号
     val wbValid = finalMask(i) && !hasException(i) && robRaw(i).regWEn
-
-    io.commit.rmt.write(i).en := wbValid
-
+    io.commit.rmt.write(i).en         := wbValid
     io.commit.freelist.free(i).valid  := wbValid
     io.commit.freelist.alloc(i).valid := wbValid
+  }
+  io.commit.chToArch := finalMask(0) && hasException(0)
+  io.recover         := finalMask(0) && hasException(0)
 
-    io.commit.chToArch := finalMask(i) && hasException(i)
+
+  for (i <- 0 until nCommit) {
+    when(finalMask(i) && robRaw(i).branch) {
+      // commit to branch predictor
+    }
+
+    when(finalMask(i) && isStore(i)) {
+      // commit to LSU & DCache
+    }
   }
 
 }
