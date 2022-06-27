@@ -39,8 +39,14 @@ private class BusyTableTestHelper(fileName: String)
   def peekDebug() = {
     val table = t.peek(s"io_debug_table")
     writer.println(s"table = ${"0x%x".format(table)}")
-  }
 
+    // peek read
+    for(i <- 0 until 2) {
+      t.poke(s"io_read_${i}_addr", i + 2)
+      val busy = t.peek(s"io_read_${i}_busy")
+      writer.println(s"busy_${i} = ${busy}")
+    }
+  }
 }
 
 class BusyTableTest extends AnyFreeSpec with ChiselScalatestTester with Matchers {

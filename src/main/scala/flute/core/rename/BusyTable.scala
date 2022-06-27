@@ -25,8 +25,13 @@ class BusyTable(nRead: Int, nCheckIn: Int, nCheckOut: Int) extends Module {
 
   val busyTable = RegInit(VecInit(Seq.fill(phyRegAmount)(0.B)))
 
+  // for (i <- 0 until nRead) {
+  //   io.read(i).busy := busyTable(io.read(i).addr)
+  // }
+  
   for (i <- 0 until nRead) {
-    io.read(i).busy := busyTable(io.read(i).addr)
+    val busy = (UIntToOH(io.read(i).addr)(n - 1, 0) & busyTable.asUInt).orR
+    io.read(i).busy := busy
   }
 
   val checkIMask = io.checkIn.map(d => UIntToOH(d.bits)(n - 1, 0) & Fill(n, d.valid)).reduce(_ | _)
