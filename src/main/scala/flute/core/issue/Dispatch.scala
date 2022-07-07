@@ -40,15 +40,15 @@ class Dispatch(nWays: Int = 2, nQueue: Int = 4) extends Module {
   io.out(0).bits := MuxLookup(
     aluSel0,
     io.in(0).bits,
-    (0 until nWays).map(i => (i.U -> io.out(i).bits))
+    (0 until nWays).map(i => (i.U -> io.in(i).bits))
   )
   alu0Valid := isALU(aluSel0)
 
   val aluSel1 = PriorityEncoder(isALU.asUInt & ~UIntToOH(aluSel0))
-   io.out(0).bits := MuxLookup(
+   io.out(1).bits := MuxLookup(
     aluSel1,
     io.in(0).bits,
-    (0 until nWays).map(i => (i.U -> io.out(i).bits))
+    (0 until nWays).map(i => (i.U -> io.in(i).bits))
   )
   alu1Valid := isALU(aluSel1) && aluSel1 =/= aluSel0
 
