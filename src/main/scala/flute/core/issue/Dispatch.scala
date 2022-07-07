@@ -36,11 +36,21 @@ class Dispatch(nWays: Int = 2, nQueue: Int = 4) extends Module {
   }
 
   // alu ops dispatch
-  io.out(0).bits := io.in(0).bits
-  io.out(1).bits := io.in(1).bits
+  val aluSel0 = PriorityEncoder(isALU)
+  io.out(0).bits := MuxLookup(
+    aluSel0,
+    io.in(0).bits,
+    (0 until nWays).map(i => (i.U -> io.out(i).bits))
+  )
+  alu0Valid := isALU(aluSel0)
 
-  alu0Valid := isALU(0)
-  alu1Valid := isALU(1)
+  val aluSel1 = PriorityEncoder(isALU.asUInt & ~UIntToOH(aluSel0))
+   io.out(0).bits := MuxLookup(
+    aluSel1,
+    io.in(0).bits,
+    (0 until nWays).map(i => (i.U -> io.out(i).bits))
+  )
+  alu1Valid := isALU(aluSel1) && aluSel1 =/= aluSel0
 
   // FSM 状态机
   val idle :: dualLSU :: dualMDU :: Nil = Enum(3)
