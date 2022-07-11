@@ -12,7 +12,7 @@ import org.scalatest.matchers.should.Matchers
   */
 class Experiment extends AnyFreeSpec with ChiselScalatestTester with Matchers {
   "Paralized bundle test" in {
-    test(new ParalizeBundleTester) { c => 
+    test(new ParalizeBundleTester) { c =>
       c.io.in.poke(31.U)
 
       c.io.out.a1.expect(7.U)
@@ -48,6 +48,13 @@ class Experiment extends AnyFreeSpec with ChiselScalatestTester with Matchers {
 
       c.io.out.a.expect(1.B)
       c.io.out.b.expect(0.B)
+    }
+  }
+
+  "Wrap Input test" in {
+    test(new InputWrapTest) { c =>
+      c.io.out.a.expect(1.B)
+      c.io.out.b.expect(1.B)
     }
   }
 }
@@ -131,4 +138,17 @@ class ParalizeBundleTester extends Module {
   io.out.a1 := a1.data
   io.out.a2 := a2.data
   io.out.a3 := a3.data
+}
+
+class InputWrapBundle extends Bundle {
+  val a = Input(Bool())
+  val b = Output(Bool())
+}
+
+class InputWrapTest extends Module {
+  val io = IO(new Bundle {
+    val out = Output(new InputWrapBundle)
+  })
+  io.out.a := 1.B
+  io.out.b := 1.B
 }
