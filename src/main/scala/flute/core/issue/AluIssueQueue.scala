@@ -16,15 +16,83 @@ class AluIssueQueue(volume: Int, detectWidth: Int) extends Module {
 
   private val deqNum = 2
 
+  private val entryType = new MicroOp(rename = true)
+
+  private val width = entryType.getWidth
+
   val io = IO(new Bundle {
-    val enq = Vec(enqNum, Flipped(DecoupledIO(new MicroOp)))
-    val deq = Vec(deqNum, DecoupledIO(new MicroOp))
+    val enq   = Vec(enqNum, Flipped(DecoupledIO(entryType)))
+    val data  = Vec(detectWidth, Output(Valid(entryType)))
+    val issue = Vec(deqNum, Input(Valid(UInt(log2Ceil(detectWidth).W))))
+    val flush = Input(Bool())
+  })
+  val queue = Module(new AluCompressIssueQueue(UInt(width.W), volume, detectWidth))
+
+  queue.io.flush := io.flush
+  queue.io.issue := io.issue
+
+  for (i <- 0 until enqNum) {
+    queue.io.enq(i).valid := io.enq(i).valid
+    io.enq(i).ready       := queue.io.enq(i).ready
+    queue.io.enq(i).bits  := io.enq(i).bits.asUInt
+  }
+
+  for (i <- 0 until detectWidth) {
+    io.data(i).valid := queue.io.data(i).valid
+    io.data(i).bits  := queue.io.data(i).bits.asTypeOf(entryType)
+  }
+}
+
+class AluCompressIssueQueue[T <: Data](entryType: T, volume: Int, detectWidth: Int) extends Module {
+  private val enqNum = 2
+
+  private val deqNum = 2
+
+  val io = IO(new Bundle {
+    val enq   = Vec(enqNum, Flipped(DecoupledIO(entryType)))
+    val data  = Vec(detectWidth, Output(Valid(entryType)))
+    val issue = Vec(deqNum, Input(Valid(UInt(log2Ceil(detectWidth).W))))
+
+    val flush = Input(Bool())
   })
 
-  val ram = RegInit(VecInit(Seq.fill(volume)(0.U.asTypeOf(new AluIqEntry))))
+  val ram      = Reg(Vec(volume, entryType))
+  val entryNum = RegInit(0.U(log2Ceil(volume).W))
 
   val ramNext = WireInit(ram)
 
+  val issued = Wire(Vec(deqNum, UInt(log2Ceil(volume + 1).W)))
+  for (i <- 0 until deqNum) issued(i) := Mux(io.issue(i).valid, io.issue(i).bits, volume.U)
+
+  val numDeqed    = PopCount(io.issue.map(_.valid))
+  val numAfterDeq = entryNum - numDeqed
+
+  // valid & ready
+  for (i <- 0 until enqNum) {
+    io.enq(i).ready := (numAfterDeq + i.U) < volume.U
+  }
+  for (i <- 0 until detectWidth) {
+    io.data(i).valid := i.U < entryNum
+    io.data(i).bits  := ram(i)
+  }
+  val numEnqed = PopCount(io.enq.map(_.fire))
+
+  val offset = Wire(Vec(volume, UInt(log2Ceil(volume).W)))
+
+  offset := AluIssueQueueComponents.entryMove(issued, deqNum.U, volume)
+
+  for (i <- 0 until volume) {
+    val nextIdx = i.U + offset(i)
+    when(i.U === numAfterDeq) {
+      ramNext(i) := io.enq(0).bits
+    }.elsewhen(i.U === numAfterDeq + 1.U) {
+      ramNext(i) := io.enq(1).bits
+    }.otherwise {
+      ramNext(i) := ram(nextIdx)
+    }
+  }
+  entryNum := Mux(io.flush, 0.U, entryNum - numDeqed + numEnqed)
+  ram      := ramNext
 }
 
 object AluIssueQueueComponents {
