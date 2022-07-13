@@ -26,8 +26,8 @@ class Backend(nWays: Int = 2) extends Module {
   val decoders  = for (i <- 0 until nWays) yield Module(new Decoder)
   val rename    = Module(new Rename(nWays = nWays, nCommit = nWays))
   val dispatch  = Module(new Dispatch)
-  val rob       = Module(new ROB(numEntries = 128, numRead = 2, numWrite = 2, numSetComplete = 4))
-  val busyTable = Module(new BusyTable(nRead = 8, nCheckIn = 2, nCheckOut = 4))
+  val rob       = Module(new ROB(numEntries = 128, numRead = 2, numWrite = 2, numSetComplete = 2))
+  val busyTable = Module(new BusyTable(nRead = 8, nCheckIn = 2, nCheckOut = 2))
   val commit    = Module(new Commit(nCommit = nWays))
 
   val decodeStage = Module(new StageReg(Vec(nWays, Valid(new MicroOp))))
@@ -64,7 +64,7 @@ class Backend(nWays: Int = 2) extends Module {
   val aluIssueQueue = Module(new AluIssueQueue(30, detectWidth))
   val aluIssue      = Module(new AluIssue(detectWidth))
   val aluPipeline   = for (i <- 0 until nAluPl) yield Module(new AluPipeline)
-  val regfile       = Module(new RegFile(numRead = 4, numWrite = 4))
+  val regfile       = Module(new RegFile(numRead = 2, numWrite = 2))
 
   dispatch.io.out(0) <> aluIssueQueue.io.enq(0)
   dispatch.io.out(1) <> aluIssueQueue.io.enq(1)
@@ -97,5 +97,13 @@ class Backend(nWays: Int = 2) extends Module {
     busyTable.io.checkOut(i)    := aluPipeline(i).io.wb.busyTable
     rob.io.setComplete(i)       := aluPipeline(i).io.wb.rob
   }
+
+  /// other interface
+  decodeStage.io.flush   := 0.B
+  renameStage.io.flush   := 0.B
+  aluIssueStage.io.flush := 0.B
+  aluIssueQueue.io.flush := 0.B
+
+  aluIssueStage.io.valid := 1.B
 
 }

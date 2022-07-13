@@ -45,7 +45,7 @@ class Commit(nCommit: Int) extends Module {
   }
 
   val storeMask = Wire(Vec(nCommit, Bool()))
-  val isStore   = Wire(VecInit(robRaw.map(r => r.memWMode =/= StoreMode.disable)))
+  val isStore   = WireInit(VecInit(robRaw.map(r => r.memWMode =/= StoreMode.disable)))
 
   for (i <- 0 until nCommit) {
     var hasNoStoreBefore = 1.B
@@ -95,6 +95,9 @@ class Commit(nCommit: Int) extends Module {
     io.commit.rmt.write(i).en         := wbValid
     io.commit.freelist.free(i).valid  := wbValid
     io.commit.freelist.alloc(i).valid := wbValid
+
+    // TODO may be only work for ALU INSTR
+    io.rob(i).ready := 1.B
   }
   io.commit.chToArch := finalMask(0) && hasException(0)
   io.recover         := finalMask(0) && hasException(0)
@@ -109,5 +112,8 @@ class Commit(nCommit: Int) extends Module {
       // commit to LSU & DCache
     }
   }
+
+  io.branch := DontCare
+  
 
 }

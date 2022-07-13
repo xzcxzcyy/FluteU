@@ -62,11 +62,12 @@ class AluPipeline extends Module {
   io.bypass.out := alu.io.result
 
   val ex2Wb = Wire(new AluExWbBundle)
-  ex2Wb.valid    := exIn.valid
-  ex2Wb.robAddr  := exIn.bits.robAddr
-  ex2Wb.regWEn   := exIn.bits.regWriteEn
-  ex2Wb.regWData := alu.io.result
-  ex2Wb.regWAddr := exIn.bits.writeRegAddr
+  ex2Wb.valid     := exIn.valid
+  ex2Wb.robAddr   := exIn.bits.robAddr
+  ex2Wb.regWEn    := exIn.bits.regWriteEn
+  ex2Wb.regWData  := alu.io.result
+  ex2Wb.regWAddr  := exIn.bits.writeRegAddr
+  ex2Wb.exception := DontCare
 
   /// stage 3: WriteBack --------------------------------///
   val stage3 = Module(new StageReg(new AluExWbBundle))
@@ -79,6 +80,11 @@ class AluPipeline extends Module {
   io.wb.prf.writeAddr   := wbIn.regWAddr
   io.wb.prf.writeData   := wbIn.regWData
   io.wb.prf.writeEnable := wbIn.regWEn
+
+  stage2.io.flush := 0.B
+  stage3.io.flush := 0.B
+  stage2.io.valid := 1.B
+  stage3.io.valid := 1.B
 
 }
 
@@ -119,6 +125,9 @@ object AluPipelineUtil {
     rob.robAddr   := ex2Wb.robAddr
     rob.regWEn    := ex2Wb.regWEn
     rob.valid     := ex2Wb.valid
+    rob.memWAddr  := DontCare
+    rob.memWData  := DontCare
+    rob.memWMode  := DontCare
 
     rob
   }

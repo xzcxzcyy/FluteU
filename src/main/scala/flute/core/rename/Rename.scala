@@ -186,6 +186,8 @@ object RemameUtil {
     robEntry.memWAddr  := DontCare
     robEntry.memWData  := DontCare
     robEntry.branch    := uop.bjCond =/= 0.U
+    robEntry.predictBT := DontCare
+    robEntry.computeBT := DontCare
 
     robEntry
   }
