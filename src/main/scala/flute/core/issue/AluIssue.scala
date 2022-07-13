@@ -28,7 +28,7 @@ class AluIssue(detectWidth: Int) extends Module {
 
     val bt = Vec(2 * detectWidth, Flipped(new BusyTableReadPort))
 
-    val issue = Output(Vec(numOfAluPipeline, Valid(UInt(detectWidth.W))))
+    val issue = Output(Vec(numOfAluPipeline, Valid(UInt(log2Ceil(detectWidth).W))))
     val out   = Output(Vec(numOfAluPipeline, Valid(new AluEntry)))
   })
 
@@ -38,10 +38,10 @@ class AluIssue(detectWidth: Int) extends Module {
   val op1Awaken = Wire(Vec(detectWidth, new OpAwaken))
   val op2Awaken = Wire(Vec(detectWidth, new OpAwaken))
 
-  val uops = io.detect.map(_.bits)
+  val uops = VecInit(io.detect.map(_.bits))
 
   for (i <- 0 until detectWidth) {
-    // avalible: if op is ready by busytable
+    // avalible 能够发射（包括唤醒的指令）
     val bt = Wire(Vec(2, Bool()))
 
     io.bt(i * 2).addr     := uops(i).rsAddr
@@ -49,8 +49,6 @@ class AluIssue(detectWidth: Int) extends Module {
 
     bt(0) := io.bt(i * 2).busy
     bt(1) := io.bt(i * 2 + 1).busy
-
-    avalible(i) := io.detect(i).valid && AluIssueUtil.opAvalible(uops(i), bt)
 
     // awaken
     val op1AwakenByWho = Wire(Vec(numOfAluPipeline, Bool()))
@@ -67,12 +65,30 @@ class AluIssue(detectWidth: Int) extends Module {
     op2Awaken(i).awaken := op2AwakenByWho.reduce(_ | _)
     op2Awaken(i).sel    := OHToUInt(op2AwakenByWho)
 
-    awaken(i) := op1Awaken(i).awaken || op2Awaken(i).awaken
+    // 计算 avalible 与 awaken
+    val op1Avalible = AluIssueUtil.op1Ready(uops(i), bt) || op1Awaken(i).awaken
+    val op2Avalible = AluIssueUtil.op2Ready(uops(i), bt) || op2Awaken(i).awaken
+
+    avalible(i) := op1Avalible && op2Avalible
+
+    awaken(i) := avalible(i) && (op1Awaken(i).awaken || op2Awaken(i).awaken) // awaken 是 avalible的子集
   }
 
+  // select 可优化为优先发送唤醒的指令，这里简单处理
+  val canIssue = avalible
 
-  // select
-  
+  val issue  = AluIssueUtil.selectFirstN(canIssue.asUInt, numOfAluPipeline)
+  val issueV = issue.map({ case a => canIssue(a) })
+
+  for (i <- 0 until numOfAluPipeline) {
+    io.issue(i).bits  := issue(i)
+    io.issue(i).valid := issueV(i)
+
+    io.out(i).bits.uop       := uops(issue(i))
+    io.out(i).bits.op1Awaken := op1Awaken(issue(i))
+    io.out(i).bits.op2Awaken := op2Awaken(issue(i))
+    io.out(i).valid          := issueV(i)
+  }
 
 }
 
@@ -86,6 +102,18 @@ object AluIssueUtil {
     (r1PrfValid && r2PrfValid)
   }
 
+  def op1Ready(uop: MicroOp, bt: Seq[Bool]) = {
+    assert(bt.length == 2)
+
+    uop.op1.valid || bt(0)
+  }
+
+  def op2Ready(uop: MicroOp, bt: Seq[Bool]) = {
+    assert(bt.length == 2)
+
+    uop.op2.valid || bt(1)
+  }
+
   def awake(wake: MicroOp, uop: MicroOp) = {
     val isOp1Awaken = wake.regWriteEn &&
       wake.writeRegAddr === uop.rsAddr &&
@@ -95,5 +123,17 @@ object AluIssueUtil {
       !uop.op2.valid
 
     (isOp1Awaken, isOp2Awaken)
+  }
+
+  def selectFirstN(in: UInt, n: Int) = {
+    val sels = Wire(Vec(n, UInt(log2Ceil(in.getWidth).W)))
+    var mask = in
+
+    for (i <- 0 until n) {
+      sels(i) := PriorityEncoder(mask)
+      val sel = UIntToOH(sels(i))
+      mask = mask & ~sel
+    }
+    sels
   }
 }
