@@ -20,7 +20,9 @@ import flute.core.rob.Commit
 class Backend(nWays: Int = 2) extends Module {
   require(nWays == 2)
   val io = IO(new Bundle {
-    val ibuffer = Vec(nWays, Flipped(DecoupledIO(new IBEntry)))
+    val ibuffer   = Vec(nWays, Flipped(DecoupledIO(new IBEntry)))
+    val prf       = Output(Vec(phyRegAmount, UInt(dataWidth.W)))
+    val busyTable = Output(Vec(phyRegAmount, Bool()))
   })
 
   val decoders  = for (i <- 0 until nWays) yield Module(new Decoder)
@@ -105,5 +107,8 @@ class Backend(nWays: Int = 2) extends Module {
   aluIssueQueue.io.flush := 0.B
 
   aluIssueStage.io.valid := 1.B
+
+  io.prf := regfile.io.debug
+  io.busyTable := VecInit(busyTable.io.debug.table.asBools)
 
 }

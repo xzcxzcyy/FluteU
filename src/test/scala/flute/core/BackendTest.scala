@@ -1,19 +1,17 @@
 package flute.core
 
-import flute.util.BaseTestHelper
-import org.scalatest.freespec.AnyFreeSpec
-import chiseltest.ChiselScalatestTester
+import chisel3._
+import chiseltest._
+import org.scalatest.flatspec.AnyFlatSpec
 import org.scalatest.matchers.should.Matchers
 
-private class BackendTestHelper(fileName: String) extends BaseTestHelper(fileName, () => new Backend(nWays = 2)) {
 
-}
-
-class BackendTest extends AnyFreeSpec with ChiselScalatestTester with Matchers {
-  "compile" in {
-    val t = new BackendTestHelper(s"Backend Test")
-    t.writer.println()
-    t.writer.close()
+class BackendTest extends AnyFlatSpec with ChiselScalatestTester with Matchers {
+  
+  it should "compile" in {
+    test(new Backend).withAnnotations(Seq(WriteVcdAnnotation)) { c =>
+      
+    }
   }
 
 }

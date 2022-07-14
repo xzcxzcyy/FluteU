@@ -96,8 +96,8 @@ object AluIssueUtil {
   def opAvalible(uop: MicroOp, bt: Seq[Bool]) = {
     assert(bt.length == 2)
 
-    val r1PrfValid = uop.op1.valid || bt(0)
-    val r2PrfValid = uop.op2.valid || bt(1)
+    val r1PrfValid = uop.op1.valid || !bt(0)
+    val r2PrfValid = uop.op2.valid || !bt(1)
 
     (r1PrfValid && r2PrfValid)
   }
@@ -105,13 +105,13 @@ object AluIssueUtil {
   def op1Ready(uop: MicroOp, bt: Seq[Bool]) = {
     assert(bt.length == 2)
 
-    uop.op1.valid || bt(0)
+    uop.op1.valid || !bt(0)
   }
 
   def op2Ready(uop: MicroOp, bt: Seq[Bool]) = {
     assert(bt.length == 2)
 
-    uop.op2.valid || bt(1)
+    uop.op2.valid || !bt(1)
   }
 
   def awake(wake: MicroOp, uop: MicroOp) = {
