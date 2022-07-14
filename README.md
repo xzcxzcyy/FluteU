@@ -16,7 +16,7 @@ chiseltest从测试独立性的角度出发，前后端设计独立性，可以�
 - verilator：使用`VerilatorBackendAnnotation`选项开启，full bindings；启动满，仿真快；支持VCD, FST波形输出
 
 ### 生成波形
-添加`WriteVcdAnnotation`选项即可输出VCD波形，输出目录在`/test_run_dir`
+添加`WriteVcdAnnotation`选项即可输出VCD波形，输出目录在`/test_run_dir`，可以使用`GTKWave`等工具阅读波形文件
 
 
 示例：
@@ -41,6 +41,3 @@ class AluIssueQueueTest extends AnyFlatSpec with ChiselScalatestTester with Matc
 }
 
 ```
-
-其他：
-- 使用GTKWave阅读波形文件
