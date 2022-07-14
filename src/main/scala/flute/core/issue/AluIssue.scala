@@ -82,12 +82,12 @@ class AluIssue(detectWidth: Int) extends Module {
 
   for (i <- 0 until numOfAluPipeline) {
     io.issue(i).bits  := issue(i)
-    io.issue(i).valid := issueV(i)
+    io.issue(i).valid := issueV(i) && io.detect(issue(i)).valid
 
     io.out(i).bits.uop       := uops(issue(i))
     io.out(i).bits.op1Awaken := op1Awaken(issue(i))
     io.out(i).bits.op2Awaken := op2Awaken(issue(i))
-    io.out(i).valid          := issueV(i)
+    io.out(i).valid          := issueV(i) && io.detect(issue(i)).valid
   }
 
 }

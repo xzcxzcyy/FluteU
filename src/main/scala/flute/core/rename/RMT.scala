@@ -66,7 +66,7 @@ class RMT(numWays: Int, numCommit: Int, release: Boolean = false) extends Module
     val archRegAddr = io.commit.write(i).addr
     val phyRegAddr  = io.commit.write(i).data
     when(en && !io.chToArch) {
-      sRAT(archRegAddr) := phyRegAddr
+      aRAT(archRegAddr) := phyRegAddr
     }
   }
 

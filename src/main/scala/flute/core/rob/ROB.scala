@@ -85,11 +85,8 @@ class ROB(numEntries: Int, numRead: Int, numWrite: Int, numSetComplete: Int) ext
 
   for (i <- 0 until numRead) {
     val offset = i.U
-    when(offset < numDeq) {
-      io.read(i).bits := entries((head_ptr + offset)(log2Up(numEntries) - 1, 0))
-    }.otherwise {
-      io.read(i).bits := DontCare
-    }
+
+    io.read(i).bits  := entries((head_ptr + offset)(log2Up(numEntries) - 1, 0))
     io.read(i).valid := offset < deqEntries
   }
 

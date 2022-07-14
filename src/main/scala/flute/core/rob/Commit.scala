@@ -6,7 +6,7 @@ import flute.core.decode.StoreMode
 import flute.core.rename.RenameCommit
 import flute.config.CPUConfig._
 
-class StoreCommit  extends Bundle {}
+class StoreCommit extends Bundle {}
 class BranchCommit extends Bundle {
   val pc = UInt(addrWidth.W)
 }
@@ -97,11 +97,10 @@ class Commit(nCommit: Int) extends Module {
     io.commit.freelist.alloc(i).valid := wbValid
 
     // TODO may be only work for ALU INSTR
-    io.rob(i).ready := 1.B
+    io.rob(i).ready := robRaw(i).regWEn && completeMask(i)
   }
   io.commit.chToArch := finalMask(0) && hasException(0)
   io.recover         := finalMask(0) && hasException(0)
-
 
   for (i <- 0 until nCommit) {
     when(finalMask(i) && robRaw(i).branch) {
@@ -114,6 +113,6 @@ class Commit(nCommit: Int) extends Module {
   }
 
   io.branch := DontCare
-  
+  io.store  := DontCare
 
 }
