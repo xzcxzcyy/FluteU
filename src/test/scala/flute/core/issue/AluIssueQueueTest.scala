@@ -1,31 +1,16 @@
 package flute.core.issue
 
 import chisel3._
-import chisel3.util._
-
-import flute.util.BaseTestHelper
-import org.scalatest.freespec.AnyFreeSpec
-import org.scalatest.matchers.should.Matchers
 import chiseltest._
-import flute.core.decode.MicroOp
-import scala.collection.mutable.ListBuffer
+import org.scalatest.flatspec.AnyFlatSpec
+import org.scalatest.matchers.should.Matchers
 
-private class AluIssueQueueTestHelper(fileName: String)
-    extends BaseTestHelper(
-      fileName,
-      () => new AluIssueQueue(20, 4)
-    ) {}
+class AluIssueQueueTest extends AnyFlatSpec with ChiselScalatestTester with Matchers {
+  behavior of "AluIssueQueue"
 
-class AluIssueQueueTest extends AnyFreeSpec with ChiselScalatestTester with Matchers {
-  "compile" in {
-    val t = new AluIssueQueueTestHelper("AluIssueQueueTestHelper")
-    val res = t.t.peek(s"io_data_0_valid")
-    t.writer.println(res)
-    t.writer.close()
-  }
-  "all test" in {
+  it should "pass all test" in {
     val detectWidth = 20
-    test(new AluCompressIssueQueue(UInt(32.W), 20, detectWidth)) { c =>
+    test(new AluCompressIssueQueue(UInt(32.W), 20, detectWidth)).withAnnotations(Seq(WriteVcdAnnotation)) { c =>
       def expectData(a: Seq[Int]) = {
         for (i <- 0 until a.length) {
           c.io.data(i).valid.expect(1.B)
