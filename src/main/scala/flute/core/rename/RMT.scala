@@ -19,6 +19,11 @@ class RMTCommit(numCommit: Int) extends Bundle {
   val write = Vec(numCommit, new RMTWritePort)
 }
 
+class RMTDebugOut extends Bundle {
+  val sRAT = Output(Vec(archRegAmount, UInt(phyRegAddrWidth.W)))
+  val aRAT = Output(Vec(archRegAmount, UInt(phyRegAddrWidth.W)))
+}
+
 // Map: arch -> phy
 class RMT(numWays: Int, numCommit: Int, release: Boolean = false) extends Module {
   val io = IO(new Bundle {
@@ -33,11 +38,7 @@ class RMT(numWays: Int, numCommit: Int, release: Boolean = false) extends Module
 
     val chToArch = Input(Bool())
 
-    val debug = if (!release) Some(new Bundle {
-      val sRAT = Output(Vec(archRegAmount, UInt(phyRegAddrWidth.W)))
-      val aRAT = Output(Vec(archRegAmount, UInt(phyRegAddrWidth.W)))
-    })
-    else None
+    val debug = if (!release) Some(new RMTDebugOut) else None
   })
 
   // reset init all arch reg map to phy reg $0
