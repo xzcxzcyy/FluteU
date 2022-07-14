@@ -41,3 +41,6 @@ class AluIssueQueueTest extends AnyFlatSpec with ChiselScalatestTester with Matc
 }
 
 ```
+
+其他：
+- 使用GTKWave阅读波形文件
