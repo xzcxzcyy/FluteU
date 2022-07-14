@@ -10,7 +10,7 @@ Visual Studio Code 可以安装插件 `Scala(Metals)` 后使用；测试时在 `
 
 直接使用chiseltest, 详见官方文档https://github.com/ucb-bar/chiseltest
 
-chiseltest从测试独立性的角度出发，前后端设计独立性，可以选用不同的后端：
+chiseltest从测试独立性的角度出发，前后端设计具有独立性，可以选用不同的后端：
 
 - treadle： 默认，full bindings；启动快，仿真慢；支持VCD波形输出
 - verilator：使用`VerilatorBackendAnnotation`选项开启，full bindings；启动满，仿真快；支持VCD, FST波形输出
