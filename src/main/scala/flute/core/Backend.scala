@@ -22,6 +22,7 @@ class Backend(nWays: Int = 2) extends Module {
   val io = IO(new Bundle {
     val ibuffer   = Vec(nWays, Flipped(DecoupledIO(new IBEntry)))
     val prf       = Output(Vec(phyRegAmount, UInt(dataWidth.W)))
+    val rmt       = new RMTDebugOut
     val busyTable = Output(Vec(phyRegAmount, Bool()))
   })
 
@@ -108,7 +109,9 @@ class Backend(nWays: Int = 2) extends Module {
 
   aluIssueStage.io.valid := 1.B
 
-  io.prf := regfile.io.debug
+  // debug
+  io.prf       := regfile.io.debug
   io.busyTable := VecInit(busyTable.io.debug.table.asBools)
+  io.rmt       := rename.io.rmtDebug
 
 }

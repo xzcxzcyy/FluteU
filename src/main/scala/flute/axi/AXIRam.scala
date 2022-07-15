@@ -6,7 +6,7 @@ import chisel3.util._
 class AXIRamBlackBox(
     DATA_WIDTH: Int = 32,
     ADDR_WIDTH: Int = 32,
-    ID_WIDTH: Int = 8,
+    ID_WIDTH: Int = 4,
     PIPELINE_OUTPUT: Int = 0
 ) extends BlackBox(
       Map(
@@ -75,12 +75,15 @@ class AXIRamBlackBox(
 
 class AXIRam extends Module {
   val io = IO(new Bundle {
-    
+    val axi = AXIIO.slave()
   })
 
-  val axi_ram = Module(new AXIRamBlackBox(32, 32, 8, 0))
+  val axi_ram = Module(new AXIRamBlackBox(32, 32, 4, 0))
   axi_ram.io.clk := clock
   axi_ram.io.rst := reset
+
+  // aw
+
 }
 
 object Gen extends App {

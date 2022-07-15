@@ -33,6 +33,8 @@ class Rename(nWays: Int, nCommit: Int) extends Module {
 
     val stall    = Input(Bool())
     val stallReq = Output(Bool())
+
+    val rmtDebug = new RMTDebugOut
   })
 
   val freelist = Module(new Freelist(nWays, nCommit))
@@ -167,6 +169,9 @@ class Rename(nWays: Int, nCommit: Int) extends Module {
     freelist.io.chToArch := io.commit.chToArch
     rat.io.chToArch      := io.commit.chToArch
   }
+
+  // debug only not realse TODO
+  io.rmtDebug := rat.io.debug.get
 
 }
 

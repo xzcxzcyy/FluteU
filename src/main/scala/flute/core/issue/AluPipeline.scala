@@ -56,7 +56,7 @@ class AluPipeline extends Module {
 
   // busyTable check out
   io.wb.busyTable.bits  := exIn.bits.writeRegAddr
-  io.wb.busyTable.valid := exIn.bits.regWriteEn
+  io.wb.busyTable.valid := exIn.valid && exIn.bits.regWriteEn
 
   // bypass out
   io.bypass.out := alu.io.result

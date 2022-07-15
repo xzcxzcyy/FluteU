@@ -3,12 +3,12 @@ package flute.core
 import chisel3._
 import chisel3.util._
 import flute.config.CPUConfig._
+import flute.core.rename.ArfView
 
 class BetaTop(memoryFile: String = "test_data/imem.in") extends Module {
   val io = IO(new Bundle {
-    val pc        = Output(UInt(addrWidth.W))
-    val prf       = Output(Vec(phyRegAmount, UInt(dataWidth.W)))
-    val busyTable = Output(Vec(phyRegAmount, Bool()))
+    val pc  = Output(UInt(addrWidth.W))
+    val arf = Output(Vec(archRegAmount, UInt(dataWidth.W)))
   })
 
   val frontend = Module(new Frontend(memoryFile = memoryFile))
@@ -19,7 +19,12 @@ class BetaTop(memoryFile: String = "test_data/imem.in") extends Module {
     frontend.io.out(i).ready    := backend.io.ibuffer(i).ready
     backend.io.ibuffer(i).valid := frontend.io.out(i).bits.inst.orR
   }
-  io.pc        := frontend.io.pc
-  io.prf       := backend.io.prf
-  io.busyTable := backend.io.busyTable
+  io.pc := frontend.io.pc
+
+  val arfView = Module(new ArfView)
+  arfView.io.rmtIn := backend.io.rmt
+  arfView.io.prf   := backend.io.prf
+
+  io.arf := arfView.io.arfOut
+
 }
