@@ -66,7 +66,16 @@ class Decoder extends Module {
 
   // Controller //////////////////////////////////////////////////////
   controller.io.instruction := io.instr.inst
-  io.microOp.regWriteEn     := controller.io.regWriteEn
+  val writeArfRegAddr = MuxLookup(
+    key = controller.io.regDst,
+    default = instruction(15, 11),
+    mapping = Seq(
+      RegDst.rt    -> instruction(20, 16),
+      RegDst.rd    -> instruction(15, 11),
+      RegDst.GPR31 -> 31.U(regAddrWidth.W)
+    )
+  )
+  io.microOp.regWriteEn     := controller.io.regWriteEn && writeArfRegAddr =/= 0.U
   io.microOp.loadMode       := controller.io.loadMode
   io.microOp.storeMode      := controller.io.storeMode
   io.microOp.aluOp          := controller.io.aluOp
@@ -96,15 +105,7 @@ class Decoder extends Module {
   ////////////////////////////////////////////////////////////////////
 
   // RegFile /////////////////////////////////////////////////////////
-  io.microOp.writeRegAddr := MuxLookup(
-    key = controller.io.regDst,
-    default = instruction(15, 11),
-    mapping = Seq(
-      RegDst.rt    -> instruction(20, 16),
-      RegDst.rd    -> instruction(15, 11),
-      RegDst.GPR31 -> 31.U(regAddrWidth.W)
-    )
-  )
+  io.microOp.writeRegAddr := writeArfRegAddr
   // Issue Wake Up
   io.microOp.rsAddr := instruction(25, 21)
   io.microOp.rtAddr := instruction(20, 16)
