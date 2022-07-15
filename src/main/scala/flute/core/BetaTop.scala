@@ -14,11 +14,7 @@ class BetaTop(memoryFile: String = "test_data/imem.in") extends Module {
   val frontend = Module(new Frontend(memoryFile = memoryFile))
   val backend  = Module(new Backend)
 
-  for (i <- 0 until 2) {
-    backend.io.ibuffer(i).bits  := frontend.io.out(i).bits
-    frontend.io.out(i).ready    := backend.io.ibuffer(i).ready
-    backend.io.ibuffer(i).valid := frontend.io.out(i).bits.inst.orR
-  }
+  backend.io.ibuffer <> frontend.io.out
   io.pc := frontend.io.pc
 
   val arfView = Module(new ArfView)
