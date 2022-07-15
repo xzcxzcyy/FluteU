@@ -70,7 +70,7 @@ class AXIRamBlackBox(
     val s_axi_rready = Input(Bool())
 
   })
-  addResource("/AXIRam.v")
+  addResource("/axi_ram.v")
 }
 
 class AXIRam extends Module {
