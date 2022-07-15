@@ -20,9 +20,12 @@ class ROBEntry extends Bundle {
   val memWMode  = UInt(StoreMode.width.W)
   val memWAddr  = UInt(addrWidth.W)
   val memWData  = UInt(dataWidth.W)
-  val branch    = Bool()
-  val predictBT = UInt(addrWidth.W)
-  val computeBT = UInt(addrWidth.W)
+
+  // branch
+  val branch      = Bool()
+  val predictBT   = UInt(addrWidth.W)
+  val computeBT   = UInt(addrWidth.W)
+  val branchTaken = Bool()
 }
 
 class ROBWrite(numEntries: Int) extends Bundle {
@@ -41,6 +44,10 @@ class ROBCompleteBundle(robAddrWidth: Int) extends Bundle {
   val memWMode  = UInt(StoreMode.width.W)
   val memWAddr  = UInt(addrWidth.W)
   val memWData  = UInt(dataWidth.W)
+
+  // branch
+  val computeBT   = UInt(addrWidth.W)
+  val branchTaken = Bool()
 }
 
 class ROB(numEntries: Int, numRead: Int, numWrite: Int, numSetComplete: Int) extends Module {

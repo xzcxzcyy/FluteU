@@ -17,6 +17,8 @@ class FetchIO extends Bundle {
 class IBEntry extends Bundle {
   val inst = UInt(instrWidth.W)
   val addr = UInt(addrWidth.W)
+
+  val predictBT = UInt(addrWidth.W)
 }
 
 class FetchWithCP0 extends Bundle {
