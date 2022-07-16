@@ -16,6 +16,8 @@ import flute.core.issue.AluEntry
 import flute.core.components.RegFile
 import flute.config.CPUConfig._
 import flute.core.rob.Commit
+import flute.core.issue.LsuIssue
+import flute.core.execute.LsuPipeline
 
 class Backend(nWays: Int = 2) extends Module {
   require(nWays == 2)
@@ -30,7 +32,7 @@ class Backend(nWays: Int = 2) extends Module {
   val rename    = Module(new Rename(nWays = nWays, nCommit = nWays))
   val dispatch  = Module(new Dispatch)
   val rob       = Module(new ROB(numEntries = 128, numRead = 2, numWrite = 2, numSetComplete = 2))
-  val busyTable = Module(new BusyTable(nRead = 8, nCheckIn = 2, nCheckOut = 2))
+  val busyTable = Module(new BusyTable(nRead = 10, nCheckIn = 2, nCheckOut = 3))
   val commit    = Module(new Commit(nCommit = nWays))
 
   val decodeStage = Module(new StageReg(Vec(nWays, Valid(new MicroOp))))
@@ -59,20 +61,25 @@ class Backend(nWays: Int = 2) extends Module {
   commit.io.rob <> rob.io.read
   rename.io.commit := commit.io.commit
 
-  //---------------- AluIssueQueue + AluPipelines ------------------ //
-
   private val detectWidth = 4
   private val nAluPl      = 2 // number of alu piplines
 
   val aluIssueQueue = Module(new AluIssueQueue(30, detectWidth))
   val aluIssue      = Module(new AluIssue(detectWidth))
   val aluPipeline   = for (i <- 0 until nAluPl) yield Module(new AluPipeline)
-  val regfile       = Module(new RegFile(numRead = 2, numWrite = 2))
+
+  val lsuIssueQueue = Module(new Queue(new MicroOp(rename = true), entries = 30, hasFlush = true))
+  val lsuIssue      = Module(new LsuIssue)
+  val lsuPipeline   = Module(new LsuPipeline)
+
+  val regfile = Module(new RegFile(numRead = 3, numWrite = 3))
 
   dispatch.io.out(0) <> aluIssueQueue.io.enq(0)
   dispatch.io.out(1) <> aluIssueQueue.io.enq(1)
-  dispatch.io.out(2).ready := 0.B
+  dispatch.io.out(2) <> lsuIssueQueue.io.enq
   dispatch.io.out(3).ready := 0.B
+
+  //---------------- AluIssueQueue + AluPipelines ------------------ //
 
   aluIssue.io.detect     := aluIssueQueue.io.data
   aluIssueQueue.io.issue := aluIssue.io.issue
@@ -108,6 +115,20 @@ class Backend(nWays: Int = 2) extends Module {
   aluIssueQueue.io.flush := 0.B
 
   aluIssueStage.io.valid := 1.B
+
+  // ---------------- LSU ------------------ //
+  lsuIssue.io.in <> lsuIssueQueue.io.deq
+  for (i <- 0 to 1) {
+    lsuIssue.io.bt(i) <> busyTable.io.read(2 * detectWidth + i)
+  }
+  lsuPipeline.io.uop <> lsuIssue.io.out
+  // lsuPipeline.io.dcache // TODO: DCache Ports.
+  lsuPipeline.io.flush := 0.B // TODO: flush
+  lsuPipeline.io.prf <> regfile.io.read(2)
+
+  regfile.io.write(2)      := lsuPipeline.io.wb.prf
+  busyTable.io.checkOut(2) := lsuPipeline.io.wb.busyTable
+  rob.io.setComplete(2)    := lsuPipeline.io.wb.rob
 
   // debug
   io.prf       := regfile.io.debug
