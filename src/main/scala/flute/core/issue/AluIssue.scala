@@ -4,7 +4,6 @@ import chisel3._
 import chisel3.util._
 import flute.core.decode.MicroOp
 import flute.core.rename.BusyTableReadPort
-import firrtl.FirrtlProtos.Firrtl.Expression.PrimOp.Op
 
 class OpAwaken extends Bundle {
   private val deqNum = 2 // ALU 流水线个数
@@ -69,7 +68,7 @@ class AluIssue(detectWidth: Int) extends Module {
     val op1Avalible = AluIssueUtil.op1Ready(uops(i), bt) || op1Awaken(i).awaken
     val op2Avalible = AluIssueUtil.op2Ready(uops(i), bt) || op2Awaken(i).awaken
 
-    avalible(i) := op1Avalible && op2Avalible
+    avalible(i) := op1Avalible && op2Avalible && io.detect(i).valid
 
     awaken(i) := avalible(i) && (op1Awaken(i).awaken || op2Awaken(i).awaken) // awaken 是 avalible的子集
   }
@@ -82,12 +81,12 @@ class AluIssue(detectWidth: Int) extends Module {
 
   for (i <- 0 until numOfAluPipeline) {
     io.issue(i).bits  := issue(i)
-    io.issue(i).valid := issueV(i) && io.detect(issue(i)).valid
+    io.issue(i).valid := issueV(i)
 
     io.out(i).bits.uop       := uops(issue(i))
     io.out(i).bits.op1Awaken := op1Awaken(issue(i))
     io.out(i).bits.op2Awaken := op2Awaken(issue(i))
-    io.out(i).valid          := issueV(i) && io.detect(issue(i)).valid
+    io.out(i).valid          := issueV(i)
   }
 
 }

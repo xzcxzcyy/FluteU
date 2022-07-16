@@ -129,6 +129,9 @@ object AluPipelineUtil {
     rob.memWData  := DontCare
     rob.memWMode  := DontCare
 
+    rob.branchTaken := DontCare
+    rob.computeBT   := DontCare
+
     rob
   }
 

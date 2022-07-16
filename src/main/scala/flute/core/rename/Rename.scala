@@ -193,6 +193,8 @@ object RemameUtil {
     robEntry.branch    := uop.bjCond =/= 0.U
     robEntry.predictBT := uop.predictBT
     robEntry.computeBT := DontCare
+    
+    robEntry.branchTaken := DontCare
 
     robEntry
   }
