@@ -14,9 +14,9 @@ import flute.core.decode.LoadMode
 import flute.core.decode.StoreMode
 
 class LSUWithDCacheIO extends Bundle {
-  val req       = DecoupledIO(new DCacheReq)
-  val resp      = Flipped(Valid(new DCacheResp))
-  val pipeStall = Input(Bool())
+  val req    = DecoupledIO(new DCacheReq)
+  val resp   = Flipped(Valid(new DCacheResp))
+  val hazard = Input(Bool())
 }
 
 class MemReq extends Bundle {
@@ -25,12 +25,13 @@ class MemReq extends Bundle {
     * If store, [[data]] contains the word/halfword/byte to be stored.
     * If load, [[data]] is retrieved from sb with mask [[valid]]
     */
-  val data      = UInt(32.W)
-  val addr      = UInt(32.W)
-  val loadMode  = UInt(LoadMode.width.W)
-  val valid     = Vec(4, Bool())
-  val storeMode = UInt(StoreMode.width.W)
-  val robAddr   = UInt(robEntryNumWidth.W)
+  val data         = UInt(32.W)
+  val addr         = UInt(32.W)
+  val loadMode     = UInt(LoadMode.width.W)
+  val valid        = Vec(4, Bool())
+  val storeMode    = UInt(StoreMode.width.W)
+  val robAddr      = UInt(robEntryNumWidth.W)
+  val writeRegAddr = UInt(phyRegAddrWidth.W)
 }
 
 /**
@@ -40,7 +41,6 @@ class MemReq extends Bundle {
 class LSU extends Module {
   val io = IO(new Bundle {
     val dcache = new LSUWithDCacheIO
-    val hazard = Input(Bool())
     val instr  = Flipped(DecoupledIO(new MicroOp))
     val flush  = Input(Bool())
     val toRob  = ValidIO(new MemReq)
@@ -48,8 +48,8 @@ class LSU extends Module {
 
   val sbuffer = Module(new Sbuffer(robEntryAmount))
   val s0      = Module(new MuxStageReg(ValidBundle(new MicroOp)))
-  val opQ   = Module(new Queue(new MemReq, 8, hasFlush = true))
-  val respQ = Module(new Queue(new DCacheResp, 8, hasFlush = true))
+  val opQ     = Module(new Queue(new MemReq, 8, hasFlush = true))
+  val respQ   = Module(new Queue(new DCacheResp, 8, hasFlush = true))
 
   val microOpWire = io.instr
   val memAddr     = microOpWire.bits.op1.op + microOpWire.bits.immediate
@@ -64,7 +64,7 @@ class LSU extends Module {
   sbuffer.io.write.valid := s0.io.out.valid && s0.io.out.bits.storeMode =/= StoreMode.disable && !io.flush
   sbuffer.io.flush := io.flush
   // val intoQFire = queue.io.enq.fire
-  val cacheReqReady = io.dcache.req.ready && !io.hazard
+  val cacheReqReady = io.dcache.req.ready && !io.dcache.hazard
   val queueReady    = opQ.io.enq.ready
   val cacheReqValid =
     s0.io.out.valid && (s0.io.out.bits.loadMode =/= LoadMode.disable) && queueReady && !io.flush
@@ -79,12 +79,13 @@ class LSU extends Module {
     sbuffer.io.read.data,
     s0.io.out.bits.op2.op
   )
-  opQ.io.enq.bits.addr      := s0.io.out.bits.op1.op + s0.io.out.bits.immediate
-  opQ.io.enq.bits.loadMode  := s0.io.out.bits.loadMode
-  opQ.io.enq.bits.storeMode := s0.io.out.bits.storeMode
-  opQ.io.enq.bits.robAddr   := s0.io.out.bits.robAddr
-  opQ.io.enq.bits.valid     := sbuffer.io.read.valid
-  opQ.io.flush.get          := io.flush
+  opQ.io.enq.bits.addr         := s0.io.out.bits.op1.op + s0.io.out.bits.immediate
+  opQ.io.enq.bits.loadMode     := s0.io.out.bits.loadMode
+  opQ.io.enq.bits.storeMode    := s0.io.out.bits.storeMode
+  opQ.io.enq.bits.robAddr      := s0.io.out.bits.robAddr
+  opQ.io.enq.bits.writeRegAddr := s0.io.out.bits.writeRegAddr
+  opQ.io.enq.bits.valid        := sbuffer.io.read.valid
+  opQ.io.flush.get             := io.flush
 
   io.dcache.req.valid          := cacheReqValid
   io.dcache.req.bits.storeMode := s0.io.out.bits.storeMode // TODO: 这里易错

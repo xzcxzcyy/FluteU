@@ -6,11 +6,6 @@ import flute.config.CPUConfig._
 import flute.core.decode.MicroOp
 import flute.core.rename.BusyTableReadPort
 
-class AluIqEntry extends Bundle {
-  val uop    = new MicroOp
-  val awaken = Bool()
-}
-
 class AluIssueQueue(volume: Int, detectWidth: Int) extends Module {
   private val enqNum = 2
 
@@ -118,14 +113,6 @@ object AluIssueQueueComponents {
     movement
   }
 
-  def canIssue(entry: AluIqEntry, bt: Seq[Bool]) = {
-    assert(bt.length == 2)
-
-    val r1PrfValid = entry.uop.op1.valid || bt(0)
-    val r2PrfValid = entry.uop.op2.valid || bt(1)
-
-    entry.awaken || (r1PrfValid && r2PrfValid)
-  }
 }
 
 // 1 2 3 4 5 6 7
