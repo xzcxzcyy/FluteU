@@ -7,6 +7,8 @@ import flute.config.CPUConfig._
 import flute.core.rob._
 import flute.core.components._
 import flute.cp0._
+import flute.core.components.ALU
+import flute.core.decode._
 
 class AluWB extends Bundle {
   val rob = new ROBCompleteBundle(robEntryNumWidth)
@@ -42,7 +44,7 @@ class AluPipeline extends Module {
   read2Ex.op1.op := op1
   read2Ex.op2.op := op2
 
-  /// stage 2: ALU Execute & BusyTable Checkout  & Bypass Out ///
+  /// stage 2: ALU Execute & Branch Compute & BusyTable Checkout  & Bypass Out ///
   val stage2 = Module(new StageReg(Valid(new MicroOp(true))))
   stage2.io.in.bits  := read2Ex
   stage2.io.in.valid := readIn.valid
@@ -61,13 +63,18 @@ class AluPipeline extends Module {
   // bypass out
   io.bypass.out := alu.io.result
 
+  // branch
+  val (taken, target) = AluPipelineUtil.branchRes(exIn.bits, alu.io.flag)
+
   val ex2Wb = Wire(new AluExWbBundle)
-  ex2Wb.valid     := exIn.valid
-  ex2Wb.robAddr   := exIn.bits.robAddr
-  ex2Wb.regWEn    := exIn.bits.regWriteEn
-  ex2Wb.regWData  := alu.io.result
-  ex2Wb.regWAddr  := exIn.bits.writeRegAddr
-  ex2Wb.exception := DontCare
+  ex2Wb.valid       := exIn.valid
+  ex2Wb.robAddr     := exIn.bits.robAddr
+  ex2Wb.regWEn      := exIn.bits.regWriteEn
+  ex2Wb.regWData    := alu.io.result
+  ex2Wb.regWAddr    := exIn.bits.writeRegAddr
+  ex2Wb.exception   := DontCare
+  ex2Wb.computeBT   := target
+  ex2Wb.branchTaken := taken
 
   /// stage 3: WriteBack --------------------------------///
   val stage3 = Module(new StageReg(new AluExWbBundle))
@@ -96,6 +103,9 @@ class AluExWbBundle extends Bundle {
   val regWEn    = Bool()
   val regWData  = UInt(dataWidth.W)
   val regWAddr  = UInt(phyRegAddrWidth.W)
+
+  val computeBT   = UInt(addrWidth.W)
+  val branchTaken = Bool()
 }
 
 object AluPipelineUtil {
@@ -129,10 +139,47 @@ object AluPipelineUtil {
     rob.memWData  := DontCare
     rob.memWMode  := DontCare
 
-    rob.branchTaken := DontCare
-    rob.computeBT   := DontCare
+    rob.branchTaken := ex2Wb.branchTaken
+    rob.computeBT   := ex2Wb.computeBT
 
     rob
+  }
+
+  def branchRes(uop: MicroOp, aluFlag: Flag) = {
+    val branchTaken = MuxLookup(
+      key = uop.bjCond,
+      default = 0.B,
+      mapping = Seq(
+        BJCond.none -> 0.B,
+        BJCond.eq   -> aluFlag.equal,
+        BJCond.ge   -> !aluFlag.lessS,
+        BJCond.gez  -> !aluFlag.lessS, // rs-0
+        BJCond.geu  -> !aluFlag.lessU,
+        BJCond.gt   -> !(aluFlag.lessS || aluFlag.equal),
+        BJCond.gtz  -> !(aluFlag.lessS || aluFlag.equal),
+        BJCond.gtu  -> !(aluFlag.lessU || aluFlag.equal),
+        BJCond.le   -> (aluFlag.lessS || aluFlag.equal),
+        BJCond.lez  -> (aluFlag.lessS || aluFlag.equal),
+        BJCond.leu  -> (aluFlag.lessU || aluFlag.equal),
+        BJCond.lt   -> aluFlag.lessS,
+        BJCond.ltz  -> aluFlag.lessS,
+        BJCond.ltu  -> aluFlag.lessU,
+        BJCond.ne   -> !aluFlag.equal,
+        BJCond.jr   -> 1.B,
+        BJCond.all  -> 0.B,            // HAS been handled by Fetch
+      )
+    )
+    // all 代表 J & JAL, 已经被 Fetch 处理，不需要分支目标地址
+    val branchValid = uop.bjCond =/= BJCond.none && uop.bjCond =/= BJCond.all
+    val branchAddr  = WireInit(0.U(addrWidth.W)) // 默认情况下返回0
+    
+    when(uop.bjCond === BJCond.jr) {
+      branchAddr := uop.op1.op
+    }.otherwise {
+      branchAddr := uop.pc + 4.U + Cat(uop.immediate, 0.U(2.W))
+    }
+
+    (branchTaken, branchAddr)
   }
 
 }

@@ -35,7 +35,7 @@ class ROBWrite(numEntries: Int) extends Bundle {
   val robAddr = Output(UInt(log2Up(numEntries).W))
 }
 /// once complete bundle valid, complete shall be set automatically
-class ROBCompleteBundle(robAddrWidth: Int) extends Bundle {
+class ROBCompleteBundle(robAddrWidth: Int = robEntryNumWidth) extends Bundle {
   val valid     = Bool()
   val robAddr   = UInt(robAddrWidth.W)
   val exception = new ExceptionBundle
