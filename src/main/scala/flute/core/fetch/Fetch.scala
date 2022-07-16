@@ -17,6 +17,8 @@ class FetchIO extends Bundle {
 class IBEntry extends Bundle {
   val inst = UInt(instrWidth.W)
   val addr = UInt(addrWidth.W)
+
+  val predictBT = UInt(addrWidth.W)
 }
 
 class FetchWithCP0 extends Bundle {
@@ -80,6 +82,7 @@ class Fetch extends Module {
       i.U(fetchGroupWidth.W),
       0.U(2.W)
     )
+    ibuffer.io.write(i).bits.predictBT := DontCare
     ibuffer.io.write(i).bits.inst := io.iCache.data.bits(i)
     when(state === State.Free) {
       ibuffer.io.write(i).valid :=

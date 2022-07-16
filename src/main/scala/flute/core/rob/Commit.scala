@@ -8,7 +8,10 @@ import flute.config.CPUConfig._
 
 class StoreCommit extends Bundle {}
 class BranchCommit extends Bundle {
-  val pc = UInt(addrWidth.W)
+  val valid = Bool() // 全局有效位
+  val pc = UInt(addrWidth.W) // 指令pc
+  val taken = Bool() // 是否跳转
+  val target = UInt(instrWidth.W)
 }
 class Commit(nCommit: Int) extends Module {
   val io = IO(new Bundle {

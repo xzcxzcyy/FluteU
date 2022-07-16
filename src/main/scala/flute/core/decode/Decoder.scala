@@ -34,6 +34,8 @@ class MicroOp(rename: Boolean = false) extends Bundle {
   // calculate branchAddr in Ex
   val pc      = UInt(instrWidth.W)
   val robAddr = UInt(robEntryNumWidth.W)
+
+  val predictBT = UInt(addrWidth.W)
 }
 
 class Decoder extends Module {
@@ -49,6 +51,8 @@ class Decoder extends Module {
   val instruction = Wire(UInt(instrWidth.W))
   instruction   := io.instr.inst
   io.microOp.pc := io.instr.addr
+
+  io.microOp.predictBT := io.instr.predictBT
 
   // Immediate ////////////////////////////////////////////////////
   val extendedImm = WireInit(0.U(dataWidth.W))
