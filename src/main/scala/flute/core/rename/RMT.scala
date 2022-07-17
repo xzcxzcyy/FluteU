@@ -62,18 +62,20 @@ class RMT(numWays: Int, numCommit: Int, release: Boolean = false) extends Module
   }
 
   // aRAT
+  val nextARat = WireInit(aRAT)
   for (i <- 0 until numCommit) {
     val en          = io.commit.write(i).en
     val archRegAddr = io.commit.write(i).addr
     val phyRegAddr  = io.commit.write(i).data
     when(en && !io.chToArch && archRegAddr =/= 0.U) {
-      aRAT(archRegAddr) := phyRegAddr
+      nextARat(archRegAddr) := phyRegAddr
     }
   }
+  aRAT := nextARat
 
   // aRAT -> sRAT
   when(io.chToArch) {
-    sRAT := aRAT
+    sRAT := nextARat
   }
 
   if (!release) {
