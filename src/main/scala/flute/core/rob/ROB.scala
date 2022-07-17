@@ -16,7 +16,7 @@ class ROBEntry extends Bundle {
   val exception = new ExceptionBundle
   val instrType = UInt(instrTypeWidth.W)
   val regWEn    = Bool()
-  val regWData  = UInt(dataWidth.W)
+  // val regWData  = UInt(dataWidth.W)
   val memWMode  = UInt(StoreMode.width.W)
   val memWAddr  = UInt(addrWidth.W)
   val memWData  = UInt(dataWidth.W)
@@ -39,8 +39,8 @@ class ROBCompleteBundle(robAddrWidth: Int = robEntryNumWidth) extends Bundle {
   val valid     = Bool()
   val robAddr   = UInt(robAddrWidth.W)
   val exception = new ExceptionBundle
-  val regWEn    = Bool()
-  val regWData  = UInt(dataWidth.W)
+  // val regWEn    = Bool()
+  // val regWData  = UInt(dataWidth.W)
   val memWMode  = UInt(StoreMode.width.W)
   val memWAddr  = UInt(addrWidth.W)
   val memWData  = UInt(dataWidth.W)
@@ -104,8 +104,8 @@ class ROB(numEntries: Int, numRead: Int, numWrite: Int, numSetComplete: Int) ext
     when(port.valid) {
       entries(port.robAddr).complete  := 1.B
       entries(port.robAddr).exception := port.exception
-      entries(port.robAddr).regWEn    := port.regWEn
-      entries(port.robAddr).regWData  := port.regWData
+      // entries(port.robAddr).regWEn    := port.regWEn
+      // entries(port.robAddr).regWData  := port.regWData
       entries(port.robAddr).memWAddr  := port.memWAddr
       entries(port.robAddr).memWData  := port.memWData
       entries(port.robAddr).memWMode  := port.memWMode

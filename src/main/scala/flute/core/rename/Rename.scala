@@ -186,7 +186,7 @@ object RemameUtil {
     robEntry.exception := DontCare
     robEntry.instrType := uop.instrType
     robEntry.regWEn    := uop.regWriteEn
-    robEntry.regWData  := DontCare
+    // robEntry.regWData  := DontCare
     robEntry.memWMode  := uop.storeMode
     robEntry.memWAddr  := DontCare
     robEntry.memWData  := DontCare

@@ -42,7 +42,7 @@ class Commit(nCommit: Int = 2) extends Module {
 
   val robRaw = io.rob.map(r => r.bits)
 
-  val validMask = WireDefault(VecInit(io.rob.map(r => r.valid)))
+  val validMask = WireInit(VecInit(io.rob.map(r => r.valid)))
 
   val isStore = WireInit(VecInit(robRaw.map(r => r.memWMode =/= StoreMode.disable)))
 
@@ -55,6 +55,8 @@ class Commit(nCommit: Int = 2) extends Module {
     }
     completeMask(i) := complete
   }
+
+  val existMask = WireInit(VecInit((0 to 1).map(i => validMask(i) && completeMask(i))))
 
   val storeMask = Wire(Vec(nCommit, Bool()))
 
@@ -72,50 +74,56 @@ class Commit(nCommit: Int = 2) extends Module {
   val branchFail       = Wire(Vec(nCommit, Bool()))
 
   for (i <- 0 until nCommit) {
-    programException(i) := robRaw(i).exception.asUInt.orR
-    branchFail(i)       := robRaw(i).branch && robRaw(i).predictBT =/= robRaw(i).computeBT
+    programException(i) := existMask(i) && robRaw(i).exception.asUInt.orR
+    branchFail(i)       := existMask(i) && robRaw(i).branch && robRaw(i).predictBT =/= robRaw(i).computeBT
   }
-  val hasExceptionOrFail = Wire(Vec(2, Bool()))
-
-  hasExceptionOrFail(0) := 0.B
-  hasExceptionOrFail(1) := programException(1) || branchFail(1)
-
-  val mask1 = WireDefault(
-    VecInit(
-      (0 until nCommit).map(i =>
-        validMask(i) && completeMask(i) && storeMask(i) && !hasExceptionOrFail(i) && cp0Mask(i)
-      )
-    )
-  )
-
-  val cycleEn = WireInit(1.B)
-
-  when(branchFail(0) && !completeMask(1)) {
-    cycleEn := 0.B
+  
+  val restMask = WireInit(VecInit(Seq.fill(nCommit)(1.B)))
+  when (branchFail(0) && !existMask(1)) {
+    restMask(0) := 0.B
+  }
+  when (programException(1)) {
+    restMask(1) := 0.B
+  }
+  when (branchFail(1)) {
+    restMask(1) := 0.B
   }
 
-  val wbEn = WireInit(1.B)
+  val finalMask = WireInit(VecInit(
+    for (i <- 0 until nCommit) yield {
+      existMask(i) && storeMask(i) && cp0Mask(i) && restMask(i)
+    }
+  ))
 
+  
+  // [[io.commit]] 数据通路
+  for (i <- 0 until nCommit) {
+    io.commit.rmt.write(i).addr      := robRaw(i).logicReg
+    io.commit.rmt.write(i).data      := robRaw(i).physicReg
+    io.commit.freelist.free(i).bits  := robRaw(i).originReg
+    io.commit.freelist.alloc(i).bits := robRaw(i).physicReg
+    val wbValid = finalMask(i) && robRaw(i).regWEn
+    io.commit.rmt.write(i).en         := wbValid
+    io.commit.freelist.free(i).valid  := wbValid
+    io.commit.freelist.alloc(i).valid := wbValid
+  }
 
+  val branchRecovery = branchFail(0) && finalMask(1)
 
+  io.commit.chToArch := branchRecovery || io.intrReq
+  io.recover := branchRecovery
 
-  // val exceptionMask = Wire(Vec(nCommit, Bool()))
-  // exceptionMask(0) := 1.B
-  // for (i <- 1 until nCommit) {
-  //   var hasNoExcptBefore = 1.B
-  //   for (j <- 0 to i) { // include itself
-  //     hasNoExcptBefore = hasNoExcptBefore && !hasException(j)
-  //   }
-  //   exceptionMask(i) := hasNoExcptBefore
-  // }
-
-  // val finalMask = WireDefault(
-  //   VecInit(
-  //     (0 until nCommit).map(i =>
-  //       validMask(i) && completeMask(i) && storeMask(i) && exceptionMask(i)
-  //     )
-  //   )
-  // )
+  val branchTrain = WireInit(0.U.asTypeOf(Valid(new BranchTrain)))
+  for (i <- 0 until nCommit) yield {
+    // TODO: 分支训练时机可以选择
+    when(branchFail(i)) {
+      branchTrain.valid := 1.B
+      branchTrain.bits.pc := robRaw(i).pc
+      branchTrain.bits.taken := robRaw(i).branchTaken
+      branchTrain.bits.target := robRaw(i).computeBT
+    }
+  }
+  io.branch.train := branchTrain
 
   // // Rename Commit
   // for (i <- 0 until nCommit) {
