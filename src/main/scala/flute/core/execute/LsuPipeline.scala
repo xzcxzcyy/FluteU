@@ -47,8 +47,8 @@ class LsuPipeline extends Module {
   writeRob.valid     := lsu.io.toRob.valid
   writeRob.robAddr   := lsuMemReq.robAddr
   writeRob.exception := 0.U.asTypeOf(new ExceptionBundle) // TODO: Exception
-  writeRob.regWEn    := (lsuMemReq.loadMode =/= LoadMode.disable)
-  writeRob.regWData  := lsuMemReq.data
+  // writeRob.regWEn    := (lsuMemReq.loadMode =/= LoadMode.disable)
+  // writeRob.regWData  := lsuMemReq.data
   writeRob.memWMode  := lsuMemReq.storeMode
   writeRob.memWAddr  := lsuMemReq.addr
   writeRob.memWData  := lsuMemReq.data
