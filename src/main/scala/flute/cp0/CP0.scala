@@ -34,6 +34,7 @@ class CP0WithCommit extends Bundle {
   val exceptions = Input(new ExceptionBundle)
   val completed  = Input(Bool())
   val eret       = Input(Bool())
+  val valid      = Input(Bool())
 }
 
 class CP0WithCore extends Bundle {
@@ -85,16 +86,15 @@ class CP0 extends Module {
   countInc := !countInc
 
   val commitWire = io.core.commit
-  // val completedWire = io.core.commit.completed
   val excVector =
-    VecInit(io.core.commit.exceptions.asUInt.asBools.map(_ && io.core.commit.completed))
+    VecInit(commitWire.exceptions.asUInt.asBools.map(_ && commitWire.valid && commitWire.completed))
       .asTypeOf(new ExceptionBundle)
 
   val hasExc = excVector.asUInt.orR
   val intReqs = for (i <- 0 until 8) yield {
     cause.reg.ip(i) && status.reg.im(i)
   }
-  val hasInt = intReqs.foldLeft(0.B)((z, a) => z || a) && status.reg.ie && !status.reg.exl
+  val hasInt = intReqs.foldLeft(0.B)((z, a) => z || a) && status.reg.ie && !status.reg.exl && commitWire.valid
   val exceptionReqestsNext = 0.B // TODO: 不同类型的异常应当要求从本指令/下一条指令执行
   when(hasInt) {
     epc.reg           := Mux(commitWire.inSlot, commitWire.pc - 4.U, commitWire.pc)

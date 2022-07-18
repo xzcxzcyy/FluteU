@@ -149,7 +149,8 @@ class Commit(nCommit: Int = 2) extends Module {
   io.store.req.valid := cacheReq.valid
   io.store.req.bits  := cacheReq.bits
 
-  io.cp0.completed  := validMask(0) && robRaw(0).complete
+  io.cp0.valid      := validMask(0)
+  io.cp0.completed  := robRaw(0).complete
   io.cp0.exceptions := robRaw(0).exception
   // TODO: support ERET; notify inSlot(IMPORTANT) 
   io.cp0.eret   := 0.B
