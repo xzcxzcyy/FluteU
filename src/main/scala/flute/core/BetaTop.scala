@@ -5,6 +5,10 @@ import chisel3.util._
 import flute.config.CPUConfig._
 import flute.core.rename.ArfView
 import flute.cp0.CP0
+import chisel3.stage.ChiselStage
+import flute.cache.top.DCachePorts
+import flute.cache.top.DataCache
+import flute.config.CacheConfig
 
 class BetaTop(memoryFile: String = "test_data/imem.in") extends Module {
   val io = IO(new Bundle {
@@ -16,6 +20,7 @@ class BetaTop(memoryFile: String = "test_data/imem.in") extends Module {
   val frontend = Module(new Frontend(memoryFile = memoryFile))
   val backend  = Module(new Backend)
   val cp0      = Module(new CP0)
+  val dcache   = Module(new DataCache(new CacheConfig))
 
   backend.io.ibuffer <> frontend.io.out
   frontend.io.branchCommit := backend.io.branchCommit
@@ -28,6 +33,7 @@ class BetaTop(memoryFile: String = "test_data/imem.in") extends Module {
   // ==== //
   backend.io.cp0IntrReq := cp0.io.core.intrReq
   backend.io.cp0 <> cp0.io.core.commit
+  backend.io.dcache <> dcache.io
 
   val arfView = Module(new ArfView)
   arfView.io.rmtIn := backend.io.rmt
@@ -35,4 +41,10 @@ class BetaTop(memoryFile: String = "test_data/imem.in") extends Module {
 
   io.arf := arfView.io.arfOut
 
+}
+
+object BetaTopGen extends App {
+  println("===== BataTop Gen Start =====")
+  (new ChiselStage).emitVerilog(new BetaTop, Array("--target-dir", "target/verilog", "--target:fpga"))
+  println("===== BataTop Gen Complete =====")
 }

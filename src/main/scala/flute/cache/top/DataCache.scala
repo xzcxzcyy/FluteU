@@ -32,4 +32,8 @@ class DCachePorts extends Bundle {
 
 class DataCache(cacheConfig: CacheConfig) extends Module {
   val io = IO(new DCachePorts)
+
+  // DEBUG ONLY //
+  io := DontCare
+  // ---------- //
 }

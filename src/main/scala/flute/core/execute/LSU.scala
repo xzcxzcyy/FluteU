@@ -94,6 +94,7 @@ class LSU extends Module {
 
   respQ.io.enq.valid := io.dcache.resp.valid
   respQ.io.enq.bits  := io.dcache.resp.bits
+  respQ.io.flush.get := io.flush
 
   val reqFires = opQ.io.enq.fire
 

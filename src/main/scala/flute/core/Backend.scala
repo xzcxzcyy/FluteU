@@ -39,7 +39,7 @@ class Backend(nWays: Int = 2) extends Module {
 
   val decoders  = for (i <- 0 until nWays) yield Module(new Decoder)
   val dispatch  = Module(new Dispatch)
-  val rob       = Module(new ROB(numEntries = 128, numRead = 2, numWrite = 2, numSetComplete = 2))
+  val rob       = Module(new ROB(numEntries = 128, numRead = 2, numWrite = 2, numSetComplete = 3))
   val regfile   = Module(new RegFile(numRead = 3, numWrite = 3))
   val rename    = Module(new Rename(nWays = nWays, nCommit = nWays))
   val busyTable = Module(new BusyTable(nRead = 10, nCheckIn = 2, nCheckOut = 3))
@@ -89,6 +89,8 @@ class Backend(nWays: Int = 2) extends Module {
   val lsuIssue      = Module(new LsuIssue)
   val lsuPipeline   = Module(new LsuPipeline)
 
+  val needFlush = io.cp0IntrReq || commit.io.branch.pcRestore.valid
+
   dispatch.io.out(0) <> aluIssueQueue.io.enq(0)
   dispatch.io.out(1) <> aluIssueQueue.io.enq(1)
   dispatch.io.out(2) <> lsuIssueQueue.io.enq
@@ -133,6 +135,7 @@ class Backend(nWays: Int = 2) extends Module {
 
   // ---------------- LSU ------------------ //
   lsuIssue.io.in <> lsuIssueQueue.io.deq
+  lsuIssueQueue.io.flush.get := needFlush
   for (i <- 0 to 1) {
     lsuIssue.io.bt(i) <> busyTable.io.read(2 * detectWidth + i)
   }
@@ -145,7 +148,7 @@ class Backend(nWays: Int = 2) extends Module {
     dCacheReqWire  := lsuPipeline.io.dcache.req.bits
   }
   lsuPipeline.io.dcache.resp := io.dcache.resp
-  lsuPipeline.io.flush       := io.cp0IntrReq || commit.io.branch.pcRestore.valid
+  lsuPipeline.io.flush       := needFlush
   lsuPipeline.io.prf <> regfile.io.read(2)
   regfile.io.write(2)      := lsuPipeline.io.wb.prf
   busyTable.io.checkOut(2) := lsuPipeline.io.wb.busyTable
