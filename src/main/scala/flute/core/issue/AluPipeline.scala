@@ -134,7 +134,8 @@ object AluPipelineUtil {
     // rob.regWData  := ex2Wb.regWData
     rob.robAddr   := ex2Wb.robAddr
     // rob.regWEn    := ex2Wb.regWEn
-    rob.valid     := ex2Wb.valid && ex2Wb.regWEn
+    rob.valid     := ex2Wb.valid
+    // rob.valid     := ex2Wb.valid && ex2Wb.regWEn
     rob.memWAddr  := DontCare
     rob.memWData  := DontCare
     rob.memWMode  := DontCare

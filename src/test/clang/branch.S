@@ -22,20 +22,11 @@ jmp_next2:
 jmp_next3:
   jal jmp_func
   addi $v0,$zero,10         # system call for exit
-  nop
-  nop
-  nop
   syscall                  # we are out of here.   
  
 jmp_func: 
   addi $s1,$s1,-1
-  nop
-  nop
-  nop
   add $a0,$0,$s1      
-  nop
-  nop
-  nop
   syscall        
   bne $s1,$zero,jmp_func           
   jr $31
