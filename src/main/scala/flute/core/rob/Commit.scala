@@ -95,6 +95,11 @@ class Commit(nCommit: Int = 2) extends Module {
     )
   )
 
+  // io.rob.ready
+  for (i <- 0 to 1) {
+    io.rob(i).ready := finalMask(i)
+  }
+
   // [[io.commit]] 数据通路
   for (i <- 0 until nCommit) {
     io.commit.rmt.write(i).addr      := robRaw(i).logicReg
