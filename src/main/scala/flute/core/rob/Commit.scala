@@ -35,7 +35,7 @@ class Commit(nCommit: Int = 2) extends Module {
     val branch  = Output(new BranchCommit)
     val store   = new StoreCommit
     val cp0     = Flipped(new CP0WithCommit)
-    val recover = Output(Bool())
+    // val recover = Output(Bool())
   })
 
   val robRaw = io.rob.map(r => r.bits)
@@ -115,7 +115,7 @@ class Commit(nCommit: Int = 2) extends Module {
   val branchRecovery = branchFail(0) && finalMask(1)
 
   io.commit.chToArch := branchRecovery || io.intrReq
-  io.recover         := branchRecovery
+  // io.recover         := branchRecovery
 
   val branchTrain = WireInit(0.U.asTypeOf(Valid(new BranchTrain)))
   for (i <- 0 until nCommit) yield {
