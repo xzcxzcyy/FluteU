@@ -10,17 +10,17 @@ import flute.cache.top.DCachePorts
 import flute.cache.top.DataCache
 import flute.config.CacheConfig
 
-class BetaTop(memoryFile: String = "test_data/imem.in") extends Module {
+class BetaTop(iFile: String, dFile: String) extends Module {
   val io = IO(new Bundle {
     val hwIntr = Input(UInt(6.W))
     val pc     = Output(UInt(addrWidth.W))
     val arf    = Output(Vec(archRegAmount, UInt(dataWidth.W)))
   })
 
-  val frontend = Module(new Frontend(memoryFile = memoryFile))
+  val frontend = Module(new Frontend(memoryFile = iFile))
   val backend  = Module(new Backend)
   val cp0      = Module(new CP0)
-  val dcache   = Module(new DataCache(new CacheConfig))
+  val dcache   = Module(new DataCache(new CacheConfig, dFile))
 
   backend.io.ibuffer <> frontend.io.out
   frontend.io.branchCommit := backend.io.branchCommit
@@ -45,6 +45,9 @@ class BetaTop(memoryFile: String = "test_data/imem.in") extends Module {
 
 object BetaTopGen extends App {
   println("===== BataTop Gen Start =====")
-  (new ChiselStage).emitVerilog(new BetaTop, Array("--target-dir", "target/verilog", "--target:fpga"))
+  (new ChiselStage).emitVerilog(
+    new BetaTop("test_data/xor.in", "test_data/zero.in"),
+    Array("--target-dir", "target/verilog", "--target:fpga")
+  )
   println("===== BataTop Gen Complete =====")
 }
