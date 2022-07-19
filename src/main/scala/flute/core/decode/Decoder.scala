@@ -45,7 +45,7 @@ class Decoder extends Module {
     // val withRegfile = Flipped(new RegFileReadIO)
     val microOp = Output(new MicroOp)
   })
-  val controller = Module(new Controller())
+  val controller = Module(new Controller)
 
   // 解开 Fetch 传来的 IBEntry 结构
   val instruction = Wire(UInt(instrWidth.W))
