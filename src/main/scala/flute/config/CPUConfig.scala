@@ -11,7 +11,7 @@ object CPUConfig {
   // ROB /////////////////
   val exceptionAmount = 16
   val instrTypeAmount = 8
-  val robEntryAmount  = 64
+  val robEntryAmount  = 128
   ////////////////////////
   val issueQEntryMaxAmount = 16
 

@@ -15,7 +15,7 @@ class BetaTopTest extends AnyFlatSpec with ChiselScalatestTester with Matchers {
           VerilatorBackendAnnotation,
         )
       ) { c =>
-        for (i <- 0 until 700) {
+        for (i <- 0 until 400) {
           c.io.hwIntr.poke(0.U)
           println(c.io.pc.peek())
           c.clock.step()

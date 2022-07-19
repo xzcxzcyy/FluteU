@@ -39,7 +39,7 @@ class Backend(nWays: Int = 2) extends Module {
 
   val decoders  = for (i <- 0 until nWays) yield Module(new Decoder)
   val dispatch  = Module(new Dispatch)
-  val rob       = Module(new ROB(numEntries = 128, numRead = 2, numWrite = 2, numSetComplete = 3))
+  val rob       = Module(new ROB(numEntries = robEntryAmount, numRead = 2, numWrite = 2, numSetComplete = 3))
   val regfile   = Module(new RegFile(numRead = 3, numWrite = 3))
   val rename    = Module(new Rename(nWays = nWays, nCommit = nWays))
   val busyTable = Module(new BusyTable(nRead = 10, nCheckIn = 2, nCheckOut = 3))

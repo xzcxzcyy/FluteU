@@ -15,6 +15,7 @@ class BetaTop(iFile: String, dFile: String) extends Module {
     val hwIntr = Input(UInt(6.W))
     val pc     = Output(UInt(addrWidth.W))
     val arf    = Output(Vec(archRegAmount, UInt(dataWidth.W)))
+    val count  = Output(UInt(dataWidth.W))
   })
 
   val frontend = Module(new Frontend(memoryFile = iFile))
@@ -38,6 +39,10 @@ class BetaTop(iFile: String, dFile: String) extends Module {
   val arfView = Module(new ArfView)
   arfView.io.rmtIn := backend.io.rmt
   arfView.io.prf   := backend.io.prf
+
+  // DEBUG //
+  io.count := cp0.io.debug.count
+  // ===== //
 
   io.arf := arfView.io.arfOut
 
