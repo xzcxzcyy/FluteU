@@ -26,7 +26,6 @@ jmp_next3:
  
 jmp_func: 
   addi $s1,$s1,-1
-  add $a0,$0,$s1      
-  syscall        
+  add $a0,$0,$s1           
   bne $s1,$zero,jmp_func           
   jr $31

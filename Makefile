@@ -24,6 +24,7 @@ BCC=gcc
 SCC=${PREFIX}-gcc
 RCC=${PREFIX}-gcc
 MCP=${PREFIX}-objcopy
+OBJ_DUMP=${PREFIX}-objdump
 
 # generate asm code for mips
 ${DIR}/%.asm: ${SRC}/%.c
@@ -44,6 +45,7 @@ ${DIR}/%.binS: ${SRC}/%.S
 
 ${DIR}/%.hexS: ${DIR}/%.binS
 	hexdump -ve '4/1 "%02x"' -e '"\n"' $^ > $@
+	${OBJ_DUMP} -d ${DIR}/$*.oS > $@.dump
 
 # generate hex file for mips
 ${DIR}/%.hex: ${DIR}/%.bin

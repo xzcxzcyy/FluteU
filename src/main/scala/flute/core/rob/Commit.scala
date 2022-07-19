@@ -70,10 +70,13 @@ class Commit(nCommit: Int = 2) extends Module {
 
   val programException = Wire(Vec(nCommit, Bool()))
   val branchFail       = Wire(Vec(nCommit, Bool()))
+  val targetBranchAddr = for (i <- 0 until nCommit) yield {
+    Mux(robRaw(i).branchTaken, robRaw(i).computeBT, robRaw(i).pc + 8.U)
+  }
 
   for (i <- 0 until nCommit) {
     programException(i) := existMask(i) && robRaw(i).exception.asUInt.orR
-    branchFail(i) := existMask(i) && robRaw(i).branch && robRaw(i).predictBT =/= robRaw(i).computeBT
+    branchFail(i) := existMask(i) && robRaw(i).branch && robRaw(i).predictBT =/= targetBranchAddr(i)
   }
 
   val restMask = WireInit(VecInit(Seq.fill(nCommit)(1.B)))
@@ -132,7 +135,7 @@ class Commit(nCommit: Int = 2) extends Module {
   val pcRestore = WireInit(0.U.asTypeOf(Valid(UInt(addrWidth.W))))
   when(finalMask(0) && finalMask(1) && branchFail(0)) {
     pcRestore.valid := 1.B
-    pcRestore.bits  := robRaw(0).computeBT
+    pcRestore.bits  := targetBranchAddr(0)
   }
   io.branch.pcRestore := pcRestore
 

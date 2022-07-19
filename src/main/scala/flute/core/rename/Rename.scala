@@ -5,6 +5,7 @@ import chisel3.util._
 import flute.core.decode.MicroOp
 import flute.config.CPUConfig._
 import flute.core.rob._
+import flute.core.decode.BJCond
 
 class RenameEntry extends Bundle {
   val srcL      = UInt(phyRegAddrWidth.W)
@@ -190,7 +191,7 @@ object RemameUtil {
     robEntry.memWMode  := uop.storeMode
     robEntry.memWAddr  := DontCare
     robEntry.memWData  := DontCare
-    robEntry.branch    := uop.bjCond =/= 0.U
+    robEntry.branch    := uop.bjCond =/= BJCond.none && uop.bjCond =/= BJCond.all
     robEntry.predictBT := uop.predictBT
     robEntry.computeBT := DontCare
     
