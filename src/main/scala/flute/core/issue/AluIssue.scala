@@ -77,7 +77,11 @@ class AluIssue(detectWidth: Int) extends Module {
   val canIssue = avalible
 
   val issue  = AluIssueUtil.selectFirstN(canIssue.asUInt, numOfAluPipeline)
-  val issueV = issue.map({ case a => canIssue(a) })
+  val issueV = WireInit(VecInit(issue.map({ case a => canIssue(a) })))
+
+  when(issue(0) === issue(1)) {
+    issueV(1) := 0.B
+  }
 
   for (i <- 0 until numOfAluPipeline) {
     io.issue(i).bits  := issue(i)

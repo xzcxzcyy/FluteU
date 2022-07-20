@@ -88,7 +88,7 @@ class AluPipeline extends Module {
   io.wb.prf.writeData   := wbIn.regWData
   io.wb.prf.writeEnable := wbIn.regWEn
 
-  stage2.io.flush := 0.B
+  stage2.io.flush := !readIn.valid
   stage3.io.flush := !stage2.io.data.valid
   stage2.io.valid := 1.B
   stage3.io.valid := 1.B

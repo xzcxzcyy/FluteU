@@ -106,7 +106,7 @@ class Rename(nWays: Int, nCommit: Int) extends Module {
     for (j <- 0 until i) { //  0 <= j < i
       fire(j) := uops(j).regWriteEn && uops(j).writeRegAddr === uops(i).writeRegAddr
       // no need to && uop(i).regWriteEn, think why :)
-      originReg(j) := uops(j).writeRegAddr
+      originReg(j) := real(j).originReg
     }
 
     real(i).originReg := MuxCase(

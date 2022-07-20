@@ -61,5 +61,5 @@ sll $t0,$t0,16
 ori $t0,$t0,0xffff
 
 addu   $a0,$0,$t0       # display $t0
-syscall                 # display 
+# syscall                 # display 
 nop
