@@ -16,7 +16,8 @@ TARGET=xor.hexS xor.hex xori.hexS xor_load.hex \
 		sb_flat.hexS sw_flat.hexS fetch1_base.hexS \
 		fetch2_j.hexS \
 		selection_sort.hex \
-		displayLight.hexS
+		displayLight.hexS \
+		add.hexS
 
 SRC=src/test/clang
 DIR=target/clang

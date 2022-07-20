@@ -69,8 +69,8 @@ class Rename(nWays: Int, nCommit: Int) extends Module {
     val fireR    = Wire(Vec(i, Bool()))
     val writeReg = Wire(Vec(i, UInt(phyRegAddrWidth.W)))
     for (j <- 0 until i) {
-      fireL(j)    := uops(j).regWriteEn && ideal(j).writeReg === ideal(i).srcL
-      fireR(j)    := uops(j).regWriteEn && ideal(j).writeReg === ideal(i).srcR
+      fireL(j)    := uops(j).regWriteEn && uops(j).writeRegAddr === uops(i).rsAddr
+      fireR(j)    := uops(j).regWriteEn && uops(j).writeRegAddr === uops(i).rtAddr
       writeReg(j) := ideal(j).writeReg
     }
     // 注意倒序 match case
