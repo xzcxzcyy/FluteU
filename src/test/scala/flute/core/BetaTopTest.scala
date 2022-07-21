@@ -54,7 +54,7 @@ class BetaSortTest
       "target/clang/sort.hexS",
       "test_data/sort.dcache",
       "sort",
-      512,
+      20000,
     )
 
 class BetaGeneralTest

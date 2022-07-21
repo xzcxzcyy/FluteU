@@ -46,7 +46,7 @@ class LsuIssue extends Module {
   io.in.ready := ((!stage.io.out.valid) || (io.out.fire)) && avalible
 
   // stage控制信号
-  when(io.in.fire && io.out.fire) {
+  when(io.in.fire && (io.out.fire || !stage.io.out.valid)) {
     stage.io.mode := MuxStageRegMode.next
   }.elsewhen(!io.in.fire && io.out.fire) {
     stage.io.mode := MuxStageRegMode.flush

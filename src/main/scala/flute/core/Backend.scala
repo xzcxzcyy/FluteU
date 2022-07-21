@@ -85,7 +85,7 @@ class Backend(nWays: Int = 2) extends Module {
   val aluIssue      = Module(new AluIssue(detectWidth))
   val aluPipeline   = for (i <- 0 until nAluPl) yield Module(new AluPipeline)
 
-  val lsuIssueQueue = Module(new Queue(new MicroOp(rename = true), entries = 30, hasFlush = true))
+  val lsuIssueQueue = Module(new Queue(new MicroOp(rename = true), 32, hasFlush = true))
   val lsuIssue      = Module(new LsuIssue)
   val lsuPipeline   = Module(new LsuPipeline)
 

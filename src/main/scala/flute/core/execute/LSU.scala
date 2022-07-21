@@ -54,8 +54,8 @@ class LSU extends Module {
   val microOpWire = io.instr
   val memAddr     = microOpWire.bits.op1.op + microOpWire.bits.immediate
 
-  sbuffer.io.retire.valid      := 0.B
-  sbuffer.io.retire.bits       := 0.B
+  sbuffer.io.retire.valid      := 0.B // TODO:
+  sbuffer.io.retire.bits       := 0.B // TODO:
   sbuffer.io.read.memGroupAddr := memAddr(31, 2)
   sbuffer.io.write.memAddr     := memAddr
   sbuffer.io.write.memData     := s0.io.out.bits.op2.op
@@ -100,13 +100,13 @@ class LSU extends Module {
 
   when(io.flush || (reqFires && !io.instr.valid)) {
     s0.io.mode := MuxStageRegMode.flush
-  }.elsewhen(!reqFires) {
+  }.elsewhen(!reqFires && s0.io.out.valid) {
     s0.io.mode := MuxStageRegMode.stall
   }.otherwise {
     s0.io.mode := MuxStageRegMode.next
   }
 
-  io.instr.ready := reqFires
+  io.instr.ready := reqFires || !s0.io.out.valid
   s0.io.in.bits  := io.instr.bits
   s0.io.in.valid := io.instr.valid
   // TODO: LSU指令完成，写入rob entry
@@ -127,12 +127,13 @@ class LSU extends Module {
     }.elsewhen(
       opQ.io.deq.bits.loadMode =/= LoadMode.disable
     ) {
-      toRob.addr      := opQ.io.deq.bits.addr
-      toRob.loadMode  := opQ.io.deq.bits.loadMode
-      toRob.robAddr   := opQ.io.deq.bits.robAddr
-      toRob.storeMode := opQ.io.deq.bits.storeMode
-      toRob.valid     := opQ.io.deq.bits.valid
-      toRob.data      := Cat(replacedData(3), replacedData(2), replacedData(1), replacedData(0))
+      toRob.addr         := opQ.io.deq.bits.addr
+      toRob.loadMode     := opQ.io.deq.bits.loadMode
+      toRob.robAddr      := opQ.io.deq.bits.robAddr
+      toRob.writeRegAddr := opQ.io.deq.bits.writeRegAddr
+      toRob.storeMode    := opQ.io.deq.bits.storeMode
+      toRob.valid        := opQ.io.deq.bits.valid
+      toRob.data         := Cat(replacedData(3), replacedData(2), replacedData(1), replacedData(0))
     }
   }.otherwise {
     toRob := 0.U.asTypeOf(new MemReq)
