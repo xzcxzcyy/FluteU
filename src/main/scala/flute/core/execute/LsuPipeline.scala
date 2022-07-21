@@ -20,6 +20,8 @@ class LsuPipeline extends Module {
     val flush  = Input(Bool())
   })
 
+  dontTouch(io.uop)
+
   val readIn = io.uop
   io.prf.r1Addr := readIn.bits.rsAddr
   io.prf.r2Addr := readIn.bits.rtAddr

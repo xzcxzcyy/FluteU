@@ -52,7 +52,7 @@ class LSU extends Module {
   val respQ   = Module(new Queue(new DCacheResp, 8, hasFlush = true))
 
   val microOpWire = io.instr
-  val memAddr     = microOpWire.bits.op1.op + microOpWire.bits.immediate
+  val memAddr     = s0.io.out.bits.op1.op + s0.io.out.bits.immediate
 
   sbuffer.io.retire.valid      := 0.B // TODO:
   sbuffer.io.retire.bits       := 0.B // TODO:
