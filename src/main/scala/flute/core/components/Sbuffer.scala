@@ -12,8 +12,11 @@ class SbufferEntry extends Bundle {
   val valid = Vec(4, Bool())
 }
 
-class SbufferWrite(entryAmount: Int) extends Bundle {
-  val robAddr   = Input(UInt(log2Up(entryAmount).W))
+/**
+  * TODO: fix and migrate to decoupled.
+  *
+  */
+class SbufferWrite extends Bundle {
   val memAddr   = Input(UInt(32.W))
   val memData   = Input(UInt(32.W))
   val storeMode = Input(UInt(StoreMode.width.W))
@@ -25,7 +28,7 @@ class SbufferWrite(entryAmount: Int) extends Bundle {
   *
   * @param entryAmount
   */
-class SbufferRead(entryAmount: Int) extends Bundle {
+class SbufferRead extends Bundle {
   val memGroupAddr = Input(UInt(30.W))
   val data         = Output(UInt(32.W))
   val valid        = Output(Vec(4, Bool()))
@@ -39,90 +42,15 @@ class SbufferRead(entryAmount: Int) extends Bundle {
   *
   * @param entryAmount Store Buffer 的大小
   */
-class Sbuffer(entryAmount: Int) extends Module {
-
+class Sbuffer extends Module {
+  assert(isPow2(sbufferAmount) && sbufferAmount > 1)
   val io = IO(new Bundle {
-    val write  = new SbufferWrite(entryAmount)
-    val read   = new SbufferRead(entryAmount)
-    val retire = Flipped(ValidIO(UInt(log2Up(entryAmount).W)))
+    val write  = new SbufferWrite
+    val read   = new SbufferRead
+    val retire = Input(Bool())
     val flush  = Input(Bool())
   })
-
-  val entries = RegInit(VecInit(Seq.fill(entryAmount)(0.U.asTypeOf(new SbufferEntry))))
-
-  val writeGroupAddr = io.write.memAddr(31, 2)
-  val writeOffset    = io.write.memAddr(1, 0)
-  val writeSbEntry   = WireInit(0.U.asTypeOf(new SbufferEntry))
-
-  writeSbEntry.addr := writeGroupAddr
-  when(io.write.storeMode === StoreMode.word) {
-    writeSbEntry.data := io.write.memData
-  }.elsewhen(io.write.storeMode === StoreMode.halfword) {
-    when(writeOffset(1)) {
-      writeSbEntry.data := Cat(io.write.memData(15, 0), 0.U(16.W))
-    }.otherwise {
-      writeSbEntry.data := Cat(0.U(16.W), io.write.memData(15, 0))
-    }
-  }.elsewhen(io.write.storeMode === StoreMode.byte) {
-    writeSbEntry.data := MuxLookup(
-      key = writeOffset,
-      default = 0.U,
-      mapping = Seq(
-        0.U -> Cat(0.U(24.W), io.write.memData(7, 0)),
-        1.U -> Cat(0.U(16.W), io.write.memData(7, 0), 0.U(8.W)),
-        2.U -> Cat(0.U(8.W), io.write.memData(7, 0), 0.U(16.W)),
-        3.U -> Cat(io.write.memData(7, 0), 0.U(24.W))
-      )
-    )
-  }
-  when(io.write.storeMode === StoreMode.word) {
-    writeSbEntry.valid := VecInit("b1111".U(4.W).asBools)
-  }.elsewhen(io.write.storeMode === StoreMode.halfword) {
-    when(writeOffset(1)) {
-      writeSbEntry.valid := VecInit("b1100".U(4.W).asBools)
-    }.otherwise {
-      writeSbEntry.valid := VecInit("b0011".U(4.W).asBools)
-    }
-  }.elsewhen(io.write.storeMode === StoreMode.byte) {
-    writeSbEntry.valid(writeOffset) := 1.B
-  }
-
-  when(io.write.valid && !io.flush) {
-    entries(io.write.robAddr) := writeSbEntry
-  }
-  for (i <- 0 until entryAmount) {
-    for (j <- 0 until 4) {
-      val deactive = io.write.valid &&
-        io.write.robAddr =/= i.U &&
-        writeGroupAddr === entries(i).addr &&
-        writeSbEntry.valid(j) &&
-        entries(i).valid(j)
-      when(deactive) {
-        entries(i).valid(j) := 0.B
-      }
-    }
-  }
-
-  val readGroupAddr = io.read.memGroupAddr
-  val sbReadData    = WireInit(VecInit(Seq.fill(4)(0.U(8.W))))
-  val sbReadValid   = WireInit(VecInit(Seq.fill(4)(0.B)))
-  for (i <- 0 until entryAmount) {
-    for (j <- 0 until 4) {
-      val valid = entries(i).valid(j) && entries(i).addr === readGroupAddr
-      when(valid) {
-        sbReadData(j)  := entries(i).data(j * 8 + 7, j * 8)
-        sbReadValid(j) := 1.B
-      }
-    }
-  }
-  io.read.valid := sbReadValid
-  io.read.data  := Cat(sbReadData(3), sbReadData(2), sbReadData(1), sbReadData(0))
-
-  when(io.retire.valid) {
-    entries(io.retire.bits).valid := VecInit("b0000".U(4.W).asBools)
-  }
-
-  when(io.flush) {
-    entries.foreach(_.valid := VecInit("b0000".U(4.W).asBools))
-  }
+  val entries = RegInit(VecInit(Seq.fill(sbufferAmount)(0.U.asTypeOf(new SbufferEntry))))
 }
+
+object SbUtils {}

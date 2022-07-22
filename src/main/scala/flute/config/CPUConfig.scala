@@ -13,6 +13,9 @@ object CPUConfig {
   val instrTypeAmount = 8
   val robEntryAmount  = 128
   ////////////////////////
+  // SBuffer //////
+  val sbufferAmount = 8
+  /////////////////
   val issueQEntryMaxAmount = 16
 
   val superscalar = 2

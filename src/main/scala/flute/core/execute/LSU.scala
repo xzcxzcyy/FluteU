@@ -46,7 +46,7 @@ class LSU extends Module {
     val toRob  = ValidIO(new MemReq)
   })
 
-  val sbuffer = Module(new Sbuffer(robEntryAmount))
+  val sbuffer = Module(new Sbuffer)
   val s0      = Module(new MuxStageReg(ValidBundle(new MicroOp)))
   val opQ     = Module(new Queue(new MemReq, 8, hasFlush = true))
   val respQ   = Module(new Queue(new DCacheResp, 8, hasFlush = true))
@@ -54,15 +54,19 @@ class LSU extends Module {
   val microOpWire = io.instr
   val memAddr     = s0.io.out.bits.op1.op + s0.io.out.bits.immediate
 
-  sbuffer.io.retire.valid      := 0.B // TODO:
-  sbuffer.io.retire.bits       := 0.B // TODO:
+  // TODO: rewrite SB.
+  // TODO: assign SB retire wires.
+
+  // sbuffer.io.retire.valid      := 0.B
+  // sbuffer.io.retire.bits       := 0.B
   sbuffer.io.read.memGroupAddr := memAddr(31, 2)
   sbuffer.io.write.memAddr     := memAddr
   sbuffer.io.write.memData     := s0.io.out.bits.op2.op
-  sbuffer.io.write.robAddr     := s0.io.out.bits.robAddr
+  // sbuffer.io.write.robAddr     := s0.io.out.bits.robAddr
   sbuffer.io.write.storeMode   := s0.io.out.bits.storeMode
   sbuffer.io.write.valid := s0.io.out.valid && s0.io.out.bits.storeMode =/= StoreMode.disable && !io.flush
   sbuffer.io.flush := io.flush
+
   // val intoQFire = queue.io.enq.fire
   val cacheReqReady = io.dcache.req.ready && !io.dcache.hazard
   val queueReady    = opQ.io.enq.ready
