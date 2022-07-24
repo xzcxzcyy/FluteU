@@ -17,10 +17,9 @@ class LsuPipeline extends Module {
     val prf    = Flipped(new RegFileReadIO)
     val wb     = Output(new AluWB)
     val dcache = new LSUWithDCacheIO
+    val sbRetire = Input(Bool())
     val flush  = Input(Bool())
   })
-
-  dontTouch(io.uop)
 
   val readIn = io.uop
   io.prf.r1Addr := readIn.bits.rsAddr
@@ -35,6 +34,7 @@ class LsuPipeline extends Module {
   val lsu = Module(new LSU)
   lsu.io.dcache <> io.dcache
   lsu.io.flush := io.flush
+  lsu.io.sbRetire := io.sbRetire
 
   io.uop.ready       := lsu.io.instr.ready
   lsu.io.instr.valid := io.uop.valid

@@ -31,11 +31,12 @@ class Commit(nCommit: Int = 2) extends Module {
     val rob     = Vec(nCommit, Flipped(Decoupled(new ROBEntry)))
     val intrReq = Input(Bool())
 
-    val commit  = Flipped(new RenameCommit(nCommit))
-    val branch  = Output(new BranchCommit)
-    val store   = new StoreCommit
-    val cp0     = Flipped(new CP0WithCommit)
+    val commit = Flipped(new RenameCommit(nCommit))
+    val branch = Output(new BranchCommit)
+    val store  = new StoreCommit
+    val cp0    = Flipped(new CP0WithCommit)
     // val recover = Output(Bool())
+    val sbRetire = Output(Bool())
   })
 
   val robRaw = io.rob.map(r => r.bits)
@@ -140,22 +141,25 @@ class Commit(nCommit: Int = 2) extends Module {
   io.branch.pcRestore := pcRestore
 
   val cacheReq = WireInit(0.U.asTypeOf(Valid(new DCacheReq)))
+  val sbRetire = WireInit(0.B)
   for (i <- 0 until nCommit) yield {
     when(finalMask(i) && isStore(i)) {
       cacheReq.valid          := 1.B
       cacheReq.bits.addr      := robRaw(i).memWAddr
       cacheReq.bits.storeMode := robRaw(i).memWMode
       cacheReq.bits.writeData := robRaw(i).memWData
+      sbRetire                := 1.B
     }
   }
   io.store.hazard    := cacheReq.valid
   io.store.req.valid := cacheReq.valid
   io.store.req.bits  := cacheReq.bits
+  io.sbRetire        := sbRetire
 
   io.cp0.valid      := validMask(0)
   io.cp0.completed  := robRaw(0).complete
   io.cp0.exceptions := robRaw(0).exception
-  // TODO: support ERET; notify inSlot(IMPORTANT) 
+  // TODO: support ERET; notify inSlot(IMPORTANT)
   io.cp0.eret   := 0.B
   io.cp0.inSlot := 0.B
   io.cp0.pc     := robRaw(0).pc

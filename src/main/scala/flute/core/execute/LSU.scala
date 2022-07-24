@@ -40,10 +40,11 @@ class MemReq extends Bundle {
   */
 class LSU extends Module {
   val io = IO(new Bundle {
-    val dcache = new LSUWithDCacheIO
-    val instr  = Flipped(DecoupledIO(new MicroOp))
-    val flush  = Input(Bool())
-    val toRob  = ValidIO(new MemReq)
+    val dcache   = new LSUWithDCacheIO
+    val instr    = Flipped(DecoupledIO(new MicroOp))
+    val flush    = Input(Bool())
+    val toRob    = ValidIO(new MemReq)
+    val sbRetire = Input(Bool())
   })
 
   val sbuffer = Module(new Sbuffer)
@@ -54,20 +55,13 @@ class LSU extends Module {
   val microOpWire = io.instr
   val memAddr     = s0.io.out.bits.op1.op + s0.io.out.bits.immediate
 
-  // TODO: rewrite SB.
-  // TODO: assign SB retire wires.
-
-  /*
-  // sbuffer.io.retire.valid      := 0.B
-  // sbuffer.io.retire.bits       := 0.B
+  sbuffer.io.flush             := io.flush
   sbuffer.io.read.memGroupAddr := memAddr(31, 2)
   sbuffer.io.write.memAddr     := memAddr
   sbuffer.io.write.memData     := s0.io.out.bits.op2.op
-  // sbuffer.io.write.robAddr     := s0.io.out.bits.robAddr
-  sbuffer.io.write.storeMode   := s0.io.out.bits.storeMode
   sbuffer.io.write.valid := s0.io.out.valid && s0.io.out.bits.storeMode =/= StoreMode.disable && !io.flush
-  sbuffer.io.flush := io.flush
-  */
+  sbuffer.io.write.storeMode := s0.io.out.bits.storeMode
+  sbuffer.io.retire          := io.sbRetire
 
   // val intoQFire = queue.io.enq.fire
   val cacheReqReady = io.dcache.req.ready && !io.dcache.hazard
@@ -76,7 +70,7 @@ class LSU extends Module {
     s0.io.out.valid && (s0.io.out.bits.loadMode =/= LoadMode.disable) && queueReady && !io.flush
   val queueValid =
     s0.io.out.valid && ((s0.io.out.bits.loadMode =/= LoadMode.disable && cacheReqReady) ||
-      s0.io.out.bits.storeMode =/= StoreMode.disable)
+      (s0.io.out.bits.storeMode =/= StoreMode.disable && sbuffer.io.write.ready))
 
   opQ.io.enq.valid := queueValid
   // queue.io.enq.bits.data     := sbuffer.io.read.data

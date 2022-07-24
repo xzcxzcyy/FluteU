@@ -140,6 +140,7 @@ class Backend(nWays: Int = 2) extends Module {
     lsuIssue.io.bt(i) <> busyTable.io.read(2 * detectWidth + i)
   }
   lsuPipeline.io.uop <> lsuIssue.io.out
+  lsuPipeline.io.sbRetire := commit.io.sbRetire
   // lsuPipeline.io.dcache // TODO: DCache Ports.
   lsuPipeline.io.dcache.hazard    := commit.io.store.hazard
   lsuPipeline.io.dcache.req.ready := io.dcache.req.ready
