@@ -57,6 +57,7 @@ class LSU extends Module {
   // TODO: rewrite SB.
   // TODO: assign SB retire wires.
 
+  /*
   // sbuffer.io.retire.valid      := 0.B
   // sbuffer.io.retire.bits       := 0.B
   sbuffer.io.read.memGroupAddr := memAddr(31, 2)
@@ -66,6 +67,7 @@ class LSU extends Module {
   sbuffer.io.write.storeMode   := s0.io.out.bits.storeMode
   sbuffer.io.write.valid := s0.io.out.valid && s0.io.out.bits.storeMode =/= StoreMode.disable && !io.flush
   sbuffer.io.flush := io.flush
+  */
 
   // val intoQFire = queue.io.enq.fire
   val cacheReqReady = io.dcache.req.ready && !io.dcache.hazard
