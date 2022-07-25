@@ -6,10 +6,12 @@ import chisel3.util._
 
 import flute.config.CPUConfig._
 import flute.cache.ICacheIO
-import flute.core.execute.ExecuteFeedbackIO
-import flute.core.decode.DecodeFeedbackIO
 import flute.util.BitMode.fromIntToBitModeLong
 import flute.util.ValidBundle
+
+class ExecuteFeedbackIO extends Bundle {
+  val branchAddr = Valid(UInt(instrWidth.W))
+}
 
 class FetchIO extends Bundle {
   val ibufferEntries = Vec(decodeWay, Decoupled(new IBEntry))
@@ -30,7 +32,6 @@ class FetchWithCP0 extends Bundle {
 class Fetch extends Module {
   val io = IO(new Bundle {
     val withDecode         = new FetchIO()
-    val feedbackFromDecode = Flipped(new DecodeFeedbackIO())
     val feedbackFromExec   = Flipped(new ExecuteFeedbackIO())
     val iCache             = Flipped(new ICacheIO())
     val cp0                = new FetchWithCP0

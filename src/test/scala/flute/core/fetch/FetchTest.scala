@@ -10,7 +10,6 @@ import org.scalatest.matchers.should.Matchers
 import flute.cache.ICache
 import flute.config.CPUConfig._
 import flute.util.BitMode.fromIntToBitModeLong
-import flute.core.execute.ExecuteFeedbackIO
 import firrtl.options.TargetDirAnnotation
 import chisel3.stage.ChiselGeneratorAnnotation
 import treadle.TreadleTester

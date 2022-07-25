@@ -22,7 +22,6 @@ class Frontend(nWays: Int = 2, memoryFile: String = "test_data/imem.in") extends
   fetch.io.iCache <> iCache.io
   io.out <> fetch.io.withDecode.ibufferEntries
   fetch.io.cp0                := DontCare
-  fetch.io.feedbackFromDecode := DontCare
   fetch.io.feedbackFromExec.branchAddr.valid := io.branchCommit.pcRestore.valid
   fetch.io.feedbackFromExec.branchAddr.bits  := io.branchCommit.pcRestore.bits
 
