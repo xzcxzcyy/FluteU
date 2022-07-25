@@ -2,7 +2,7 @@ package flute.core.components
 
 import chisel3._
 import chiseltest._
-import flute.core.decode.Controller
+import flute.core.backend.decode.Controller
 import org.scalatest.freespec.AnyFreeSpec
 import org.scalatest.matchers.should.Matchers
 

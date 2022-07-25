@@ -10,6 +10,7 @@ import flute.cache.top.DCachePorts
 import flute.cache.top.DataCache
 import flute.config.CacheConfig
 import flute.core.backend.Backend
+import flute.core.frontend.Frontend
 
 class BetaTop(iFile: String, dFile: String) extends Module {
   val io = IO(new Bundle {

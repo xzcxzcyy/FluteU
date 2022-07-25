@@ -2,7 +2,7 @@ package flute.core.backend
 
 import chisel3._
 import chisel3.util._
-import flute.core.fetch._
+import flute.core.frontend._
 import flute.core.backend.decode._
 import flute.core.backend.rename._
 import flute.core.components.StageReg

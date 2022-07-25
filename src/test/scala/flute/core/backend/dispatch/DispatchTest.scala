@@ -1,4 +1,4 @@
-package flute.core.issue
+package flute.core.backend.dispatch
 
 import chisel3._
 import chisel3.util._
@@ -6,7 +6,7 @@ import flute.util.BaseTestHelper
 import org.scalatest.freespec.AnyFreeSpec
 import org.scalatest.matchers.should.Matchers
 import chiseltest._
-import flute.core.decode._
+import flute.core.backend.decode._
 import flute.core.components.ALUOp
 
 class DispatchTest extends AnyFreeSpec with ChiselScalatestTester with Matchers {

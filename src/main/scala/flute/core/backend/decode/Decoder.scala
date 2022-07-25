@@ -5,7 +5,7 @@ import chisel3._
 import chisel3.util.MuxLookup
 import flute.config.CPUConfig._
 import flute.core.components._
-import flute.core.fetch.IBEntry
+import flute.core.frontend.IBEntry
 import chisel3.util.Fill
 
 class OpBundle extends Bundle {

@@ -1,4 +1,4 @@
-package flute.core.execute
+package flute.core.backend.lsu
 
 import flute.util.BaseTestHelper
 import org.scalatest.freespec.AnyFreeSpec

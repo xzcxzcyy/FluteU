@@ -1,4 +1,4 @@
-package flute.core
+package flute.core.backend
 
 import chisel3._
 import chiseltest._

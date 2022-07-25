@@ -1,8 +1,8 @@
-package flute.core
+package flute.core.frontend
 
 import chisel3._
 import chisel3.util._
-import flute.core.fetch._
+import flute.core.frontend._
 import flute.cache.ICache
 import flute.config.CPUConfig._
 import flute.core.backend.commit.BranchCommit
