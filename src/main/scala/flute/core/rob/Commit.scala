@@ -5,47 +5,59 @@ import chisel3.util._
 import flute.core.decode.StoreMode
 import flute.core.rename.RenameCommit
 import flute.config.CPUConfig._
+import flute.cp0.CP0WithCommit
+import flute.cache.top.DCacheReq
 
-class StoreCommit  extends Bundle {}
-class BranchCommit extends Bundle {
-  val pc = UInt(addrWidth.W)
+class StoreCommit extends Bundle {
+  val req    = DecoupledIO(new DCacheReq)
+  val hazard = Output(Bool())
 }
-class Commit(nCommit: Int) extends Module {
+
+class BranchTrain extends Bundle {
+  val pc     = UInt(addrWidth.W) // 指令pc
+  val taken  = Bool()            // 是否跳转
+  val target = UInt(instrWidth.W)
+}
+
+class BranchCommit extends Bundle {
+  val train     = Valid(new BranchTrain)
+  val pcRestore = Valid(UInt(addrWidth.W))
+}
+
+class Commit(nCommit: Int = 2) extends Module {
+  assert(nCommit == 2)
+
   val io = IO(new Bundle {
-    val rob = Vec(nCommit, Flipped(Decoupled(new ROBEntry)))
+    val rob     = Vec(nCommit, Flipped(Decoupled(new ROBEntry)))
+    val intrReq = Input(Bool())
 
     val commit = Flipped(new RenameCommit(nCommit))
-
-    val store  = Output(new StoreCommit)
     val branch = Output(new BranchCommit)
-
-    val recover = Output(Bool())
+    val store  = new StoreCommit
+    val cp0    = Flipped(new CP0WithCommit)
+    // val recover = Output(Bool())
+    val sbRetire = Output(Bool())
   })
 
   val robRaw = io.rob.map(r => r.bits)
 
-  val validMask = WireDefault(VecInit(io.rob.map(r => r.valid)))
+  val validMask = WireInit(VecInit(io.rob.map(r => r.valid)))
+
+  val isStore = WireInit(VecInit(robRaw.map(r => r.memWMode =/= StoreMode.disable)))
 
   val completeMask = Wire(Vec(nCommit, Bool()))
+
   for (i <- 0 until nCommit) {
-    var complete = robRaw(i).complete
+    var complete = robRaw(i).complete && (!isStore(i) || io.store.req.ready)
     for (j <- 0 until i) {
-      complete = complete && robRaw(j).complete
+      complete = complete && robRaw(j).complete && (!isStore(i) || io.store.req.ready)
     }
     completeMask(i) := complete
   }
 
-  val branchMask = Wire(Vec(nCommit, Bool()))
-  for (i <- 0 until nCommit) {
-    var hasNoBranchBefore = 1.B
-    for (j <- 0 until i) {
-      hasNoBranchBefore = hasNoBranchBefore && !robRaw(i).branch
-    }
-    branchMask(i) := !robRaw(i).branch || hasNoBranchBefore
-  }
+  val existMask = WireInit(VecInit((0 to 1).map(i => validMask(i) && completeMask(i))))
 
   val storeMask = Wire(Vec(nCommit, Bool()))
-  val isStore   = WireInit(VecInit(robRaw.map(r => r.memWMode =/= StoreMode.disable)))
 
   for (i <- 0 until nCommit) {
     var hasNoStoreBefore = 1.B
@@ -55,65 +67,101 @@ class Commit(nCommit: Int) extends Module {
     storeMask(i) := !isStore(i) || hasNoStoreBefore
   }
 
+  val cp0Mask = WireInit(VecInit(Seq.fill(nCommit)(!io.intrReq)))
+
   val programException = Wire(Vec(nCommit, Bool()))
-  val branchException  = Wire(Vec(nCommit, Bool()))
+  val branchFail       = Wire(Vec(nCommit, Bool()))
+  val targetBranchAddr = for (i <- 0 until nCommit) yield {
+    Mux(robRaw(i).branchTaken, robRaw(i).computeBT, robRaw(i).pc + 8.U)
+  }
 
   for (i <- 0 until nCommit) {
-    programException(i) := robRaw(i).exception.asUInt.orR
-    branchException(i)  := robRaw(i).branch && robRaw(i).predictBT =/= robRaw(i).computeBT
-  }
-  val hasException = (0 until nCommit).map(i => programException(i) || branchException(i))
-
-  val exceptionMask = Wire(Vec(nCommit, Bool()))
-  exceptionMask(0) := 1.B
-  for (i <- 1 until nCommit) {
-    var hasNoExcptBefore = 1.B
-    for (j <- 0 to i) { // include itself
-      hasNoExcptBefore = hasNoExcptBefore && !hasException(j)
-    }
-    exceptionMask(i) := hasNoExcptBefore
+    programException(i) := existMask(i) && robRaw(i).exception.asUInt.orR
+    branchFail(i) := existMask(i) && robRaw(i).branch && robRaw(i).predictBT =/= targetBranchAddr(i)
   }
 
-  val finalMask = WireDefault(
+  val restMask = WireInit(VecInit(Seq.fill(nCommit)(1.B)))
+  when(branchFail(0) && !existMask(1)) {
+    restMask(0) := 0.B
+  }
+  when(programException(1)) {
+    restMask(1) := 0.B
+  }
+  when(branchFail(1)) {
+    restMask(1) := 0.B
+  }
+
+  val finalMask = WireInit(
     VecInit(
-      (0 until nCommit).map(i =>
-        validMask(i) && completeMask(i) && branchMask(i) && storeMask(i) && exceptionMask(i)
-      )
+      for (i <- 0 until nCommit) yield {
+        existMask(i) && storeMask(i) && cp0Mask(i) && restMask(i)
+      }
     )
   )
 
-  // Rename Commit
+  // io.rob.ready
+  for (i <- 0 to 1) {
+    io.rob(i).ready := finalMask(i)
+  }
+
+  // [[io.commit]] 数据通路
   for (i <- 0 until nCommit) {
-    // [[io.commit]]
-    // 数据通路
     io.commit.rmt.write(i).addr      := robRaw(i).logicReg
     io.commit.rmt.write(i).data      := robRaw(i).physicReg
     io.commit.freelist.free(i).bits  := robRaw(i).originReg
     io.commit.freelist.alloc(i).bits := robRaw(i).physicReg
-    // 控制信号
-    val wbValid = finalMask(i) && !hasException(i) && robRaw(i).regWEn
+    val wbValid = finalMask(i) && robRaw(i).regWEn
     io.commit.rmt.write(i).en         := wbValid
     io.commit.freelist.free(i).valid  := wbValid
     io.commit.freelist.alloc(i).valid := wbValid
-
-    // TODO may be only work for ALU INSTR
-    io.rob(i).ready := 1.B
   }
-  io.commit.chToArch := finalMask(0) && hasException(0)
-  io.recover         := finalMask(0) && hasException(0)
 
+  val branchRecovery = branchFail(0) && finalMask(1)
 
-  for (i <- 0 until nCommit) {
-    when(finalMask(i) && robRaw(i).branch) {
-      // commit to branch predictor
+  io.commit.chToArch := branchRecovery || io.intrReq
+  // io.recover         := branchRecovery
+
+  val branchTrain = WireInit(0.U.asTypeOf(Valid(new BranchTrain)))
+  for (i <- 0 until nCommit) yield {
+    // TODO: 分支训练时机可以选择
+    when(branchFail(i)) {
+      branchTrain.valid       := 1.B
+      branchTrain.bits.pc     := robRaw(i).pc
+      branchTrain.bits.taken  := robRaw(i).branchTaken
+      branchTrain.bits.target := robRaw(i).computeBT
     }
+  }
+  io.branch.train := branchTrain
 
+  val pcRestore = WireInit(0.U.asTypeOf(Valid(UInt(addrWidth.W))))
+  when(finalMask(0) && finalMask(1) && branchFail(0)) {
+    pcRestore.valid := 1.B
+    pcRestore.bits  := targetBranchAddr(0)
+  }
+  io.branch.pcRestore := pcRestore
+
+  val cacheReq = WireInit(0.U.asTypeOf(Valid(new DCacheReq)))
+  val sbRetire = WireInit(0.B)
+  for (i <- 0 until nCommit) yield {
     when(finalMask(i) && isStore(i)) {
-      // commit to LSU & DCache
+      cacheReq.valid          := 1.B
+      cacheReq.bits.addr      := robRaw(i).memWAddr
+      cacheReq.bits.storeMode := robRaw(i).memWMode
+      cacheReq.bits.writeData := robRaw(i).memWData
+      sbRetire                := 1.B
     }
   }
+  io.store.hazard    := cacheReq.valid
+  io.store.req.valid := cacheReq.valid
+  io.store.req.bits  := cacheReq.bits
+  io.sbRetire        := sbRetire
 
-  io.branch := DontCare
-  
+  io.cp0.valid      := validMask(0)
+  io.cp0.completed  := robRaw(0).complete
+  io.cp0.exceptions := robRaw(0).exception
+  // TODO: support ERET; notify inSlot(IMPORTANT)
+  io.cp0.eret   := 0.B
+  io.cp0.inSlot := 0.B
+  io.cp0.pc     := robRaw(0).pc
 
 }

@@ -16,13 +16,16 @@ class ROBEntry extends Bundle {
   val exception = new ExceptionBundle
   val instrType = UInt(instrTypeWidth.W)
   val regWEn    = Bool()
-  val regWData  = UInt(dataWidth.W)
-  val memWMode  = UInt(StoreMode.width.W)
-  val memWAddr  = UInt(addrWidth.W)
-  val memWData  = UInt(dataWidth.W)
-  val branch    = Bool()
-  val predictBT = UInt(addrWidth.W)
-  val computeBT = UInt(addrWidth.W)
+  // val regWData  = UInt(dataWidth.W)
+  val memWMode = UInt(StoreMode.width.W)
+  val memWAddr = UInt(addrWidth.W)
+  val memWData = UInt(dataWidth.W)
+
+  // branch
+  val branch      = Bool()
+  val predictBT   = UInt(addrWidth.W)
+  val computeBT   = UInt(addrWidth.W)
+  val branchTaken = Bool()
 }
 
 class ROBWrite(numEntries: Int) extends Bundle {
@@ -32,15 +35,19 @@ class ROBWrite(numEntries: Int) extends Bundle {
   val robAddr = Output(UInt(log2Up(numEntries).W))
 }
 /// once complete bundle valid, complete shall be set automatically
-class ROBCompleteBundle(robAddrWidth: Int) extends Bundle {
+class ROBCompleteBundle(robAddrWidth: Int = robEntryNumWidth) extends Bundle {
   val valid     = Bool()
   val robAddr   = UInt(robAddrWidth.W)
   val exception = new ExceptionBundle
-  val regWEn    = Bool()
-  val regWData  = UInt(dataWidth.W)
-  val memWMode  = UInt(StoreMode.width.W)
-  val memWAddr  = UInt(addrWidth.W)
-  val memWData  = UInt(dataWidth.W)
+  // val regWEn    = Bool()
+  // val regWData  = UInt(dataWidth.W)
+  val memWMode = UInt(StoreMode.width.W)
+  val memWAddr = UInt(addrWidth.W)
+  val memWData = UInt(dataWidth.W)
+
+  // branch
+  val computeBT   = UInt(addrWidth.W)
+  val branchTaken = Bool()
 }
 
 class ROB(numEntries: Int, numRead: Int, numWrite: Int, numSetComplete: Int) extends Module {
@@ -85,11 +92,8 @@ class ROB(numEntries: Int, numRead: Int, numWrite: Int, numSetComplete: Int) ext
 
   for (i <- 0 until numRead) {
     val offset = i.U
-    when(offset < numDeq) {
-      io.read(i).bits := entries((head_ptr + offset)(log2Up(numEntries) - 1, 0))
-    }.otherwise {
-      io.read(i).bits := DontCare
-    }
+
+    io.read(i).bits  := entries((head_ptr + offset)(log2Up(numEntries) - 1, 0))
     io.read(i).valid := offset < deqEntries
   }
 
@@ -100,11 +104,13 @@ class ROB(numEntries: Int, numRead: Int, numWrite: Int, numSetComplete: Int) ext
     when(port.valid) {
       entries(port.robAddr).complete  := 1.B
       entries(port.robAddr).exception := port.exception
-      entries(port.robAddr).regWEn    := port.regWEn
-      entries(port.robAddr).regWData  := port.regWData
-      entries(port.robAddr).memWAddr  := port.memWAddr
-      entries(port.robAddr).memWData  := port.memWData
-      entries(port.robAddr).memWMode  := port.memWMode
+      // entries(port.robAddr).regWEn    := port.regWEn
+      // entries(port.robAddr).regWData  := port.regWData
+      entries(port.robAddr).memWAddr    := port.memWAddr
+      entries(port.robAddr).memWData    := port.memWData
+      entries(port.robAddr).memWMode    := port.memWMode
+      entries(port.robAddr).branchTaken := port.branchTaken
+      entries(port.robAddr).computeBT   := port.computeBT
     }
   }
 }

@@ -34,6 +34,8 @@ class MicroOp(rename: Boolean = false) extends Bundle {
   // calculate branchAddr in Ex
   val pc      = UInt(instrWidth.W)
   val robAddr = UInt(robEntryNumWidth.W)
+
+  val predictBT = UInt(addrWidth.W)
 }
 
 class Decoder extends Module {
@@ -43,12 +45,14 @@ class Decoder extends Module {
     // val withRegfile = Flipped(new RegFileReadIO)
     val microOp = Output(new MicroOp)
   })
-  val controller = Module(new Controller())
+  val controller = Module(new Controller)
 
   // 解开 Fetch 传来的 IBEntry 结构
   val instruction = Wire(UInt(instrWidth.W))
   instruction   := io.instr.inst
   io.microOp.pc := io.instr.addr
+
+  io.microOp.predictBT := io.instr.predictBT
 
   // Immediate ////////////////////////////////////////////////////
   val extendedImm = WireInit(0.U(dataWidth.W))
@@ -66,7 +70,16 @@ class Decoder extends Module {
 
   // Controller //////////////////////////////////////////////////////
   controller.io.instruction := io.instr.inst
-  io.microOp.regWriteEn     := controller.io.regWriteEn
+  val writeArfRegAddr = MuxLookup(
+    key = controller.io.regDst,
+    default = instruction(15, 11),
+    mapping = Seq(
+      RegDst.rt    -> instruction(20, 16),
+      RegDst.rd    -> instruction(15, 11),
+      RegDst.GPR31 -> 31.U(regAddrWidth.W)
+    )
+  )
+  io.microOp.regWriteEn     := controller.io.regWriteEn && writeArfRegAddr =/= 0.U
   io.microOp.loadMode       := controller.io.loadMode
   io.microOp.storeMode      := controller.io.storeMode
   io.microOp.aluOp          := controller.io.aluOp
@@ -96,15 +109,7 @@ class Decoder extends Module {
   ////////////////////////////////////////////////////////////////////
 
   // RegFile /////////////////////////////////////////////////////////
-  io.microOp.writeRegAddr := MuxLookup(
-    key = controller.io.regDst,
-    default = instruction(15, 11),
-    mapping = Seq(
-      RegDst.rt    -> instruction(20, 16),
-      RegDst.rd    -> instruction(15, 11),
-      RegDst.GPR31 -> 31.U(regAddrWidth.W)
-    )
-  )
+  io.microOp.writeRegAddr := writeArfRegAddr
   // Issue Wake Up
   io.microOp.rsAddr := instruction(25, 21)
   io.microOp.rtAddr := instruction(20, 16)

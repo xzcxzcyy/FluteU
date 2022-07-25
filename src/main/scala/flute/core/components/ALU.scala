@@ -4,14 +4,14 @@ import chisel3._
 import flute.config.CPUConfig._
 import chisel3.util.MuxLookup
 
+class Flag extends Bundle {
+  val equal = Bool()
+  val lessU = Bool()
+  val lessS = Bool()
+  val trap  = Bool()
+}
 
 class ALU extends Module {
-  class Flag extends Bundle {
-    val equal = Bool()
-    val lessU = Bool()
-    val lessS = Bool()
-    val trap  = Bool()
-  }
 
   val io = IO(new Bundle {
     val aluOp  = Input(UInt(ALUOp.width.W))

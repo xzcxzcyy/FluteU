@@ -19,10 +19,10 @@ class Dispatch(nWays: Int = 2, nQueue: Int = 4) extends Module {
     val stallReq = Output(Bool())
   })
 
-  val alu0Valid = Wire(Bool())
-  val alu1Valid = Wire(Bool())
-  val lsuValid  = Wire(Bool())
-  val mduValid  = Wire(Bool())
+  val alu0Valid = WireInit(0.B)
+  val alu1Valid = WireInit(0.B)
+  val lsuValid  = WireInit(0.B)
+  val mduValid  = WireInit(0.B)
 
   // with valid
   val isALU = Wire(Vec(nWays, Bool()))

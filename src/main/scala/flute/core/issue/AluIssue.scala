@@ -4,7 +4,6 @@ import chisel3._
 import chisel3.util._
 import flute.core.decode.MicroOp
 import flute.core.rename.BusyTableReadPort
-import firrtl.FirrtlProtos.Firrtl.Expression.PrimOp.Op
 
 class OpAwaken extends Bundle {
   private val deqNum = 2 // ALU 流水线个数
@@ -69,7 +68,7 @@ class AluIssue(detectWidth: Int) extends Module {
     val op1Avalible = AluIssueUtil.op1Ready(uops(i), bt) || op1Awaken(i).awaken
     val op2Avalible = AluIssueUtil.op2Ready(uops(i), bt) || op2Awaken(i).awaken
 
-    avalible(i) := op1Avalible && op2Avalible
+    avalible(i) := op1Avalible && op2Avalible && io.detect(i).valid
 
     awaken(i) := avalible(i) && (op1Awaken(i).awaken || op2Awaken(i).awaken) // awaken 是 avalible的子集
   }
@@ -78,7 +77,11 @@ class AluIssue(detectWidth: Int) extends Module {
   val canIssue = avalible
 
   val issue  = AluIssueUtil.selectFirstN(canIssue.asUInt, numOfAluPipeline)
-  val issueV = issue.map({ case a => canIssue(a) })
+  val issueV = WireInit(VecInit(issue.map({ case a => canIssue(a) })))
+
+  when(issue(0) === issue(1)) {
+    issueV(1) := 0.B
+  }
 
   for (i <- 0 until numOfAluPipeline) {
     io.issue(i).bits  := issue(i)
@@ -96,8 +99,8 @@ object AluIssueUtil {
   def opAvalible(uop: MicroOp, bt: Seq[Bool]) = {
     assert(bt.length == 2)
 
-    val r1PrfValid = uop.op1.valid || bt(0)
-    val r2PrfValid = uop.op2.valid || bt(1)
+    val r1PrfValid = uop.op1.valid || !bt(0)
+    val r2PrfValid = uop.op2.valid || !bt(1)
 
     (r1PrfValid && r2PrfValid)
   }
@@ -105,13 +108,13 @@ object AluIssueUtil {
   def op1Ready(uop: MicroOp, bt: Seq[Bool]) = {
     assert(bt.length == 2)
 
-    uop.op1.valid || bt(0)
+    uop.op1.valid || !bt(0)
   }
 
   def op2Ready(uop: MicroOp, bt: Seq[Bool]) = {
     assert(bt.length == 2)
 
-    uop.op2.valid || bt(1)
+    uop.op2.valid || !bt(1)
   }
 
   def awake(wake: MicroOp, uop: MicroOp) = {

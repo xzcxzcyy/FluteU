@@ -19,6 +19,11 @@ class RMTCommit(numCommit: Int) extends Bundle {
   val write = Vec(numCommit, new RMTWritePort)
 }
 
+class RMTDebugOut extends Bundle {
+  val sRAT = Output(Vec(archRegAmount, UInt(phyRegAddrWidth.W)))
+  val aRAT = Output(Vec(archRegAmount, UInt(phyRegAddrWidth.W)))
+}
+
 // Map: arch -> phy
 class RMT(numWays: Int, numCommit: Int, release: Boolean = false) extends Module {
   val io = IO(new Bundle {
@@ -33,11 +38,7 @@ class RMT(numWays: Int, numCommit: Int, release: Boolean = false) extends Module
 
     val chToArch = Input(Bool())
 
-    val debug = if (!release) Some(new Bundle {
-      val sRAT = Output(Vec(archRegAmount, UInt(phyRegAddrWidth.W)))
-      val aRAT = Output(Vec(archRegAmount, UInt(phyRegAddrWidth.W)))
-    })
-    else None
+    val debug = if (!release) Some(new RMTDebugOut) else None
   })
 
   // reset init all arch reg map to phy reg $0
@@ -55,24 +56,26 @@ class RMT(numWays: Int, numCommit: Int, release: Boolean = false) extends Module
     val en          = io.write(i).en
     val archRegAddr = io.write(i).addr
     val phyRegAddr  = io.write(i).data
-    when(en && !io.chToArch) {
+    when(en && !io.chToArch && archRegAddr =/= 0.U) {
       sRAT(archRegAddr) := phyRegAddr
     }
   }
 
   // aRAT
+  val nextARat = WireInit(aRAT)
   for (i <- 0 until numCommit) {
     val en          = io.commit.write(i).en
     val archRegAddr = io.commit.write(i).addr
     val phyRegAddr  = io.commit.write(i).data
-    when(en && !io.chToArch) {
-      sRAT(archRegAddr) := phyRegAddr
+    when(en && archRegAddr =/= 0.U) {
+      nextARat(archRegAddr) := phyRegAddr
     }
   }
+  aRAT := nextARat
 
   // aRAT -> sRAT
   when(io.chToArch) {
-    sRAT := aRAT
+    sRAT := nextARat
   }
 
   if (!release) {

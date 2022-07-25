@@ -5,6 +5,7 @@ import chisel3.util._
 import flute.core.decode.MicroOp
 import flute.config.CPUConfig._
 import flute.core.rob._
+import flute.core.decode.BJCond
 
 class RenameEntry extends Bundle {
   val srcL      = UInt(phyRegAddrWidth.W)
@@ -33,6 +34,8 @@ class Rename(nWays: Int, nCommit: Int) extends Module {
 
     val stall    = Input(Bool())
     val stallReq = Output(Bool())
+
+    val rmtDebug = new RMTDebugOut
   })
 
   val freelist = Module(new Freelist(nWays, nCommit))
@@ -66,8 +69,8 @@ class Rename(nWays: Int, nCommit: Int) extends Module {
     val fireR    = Wire(Vec(i, Bool()))
     val writeReg = Wire(Vec(i, UInt(phyRegAddrWidth.W)))
     for (j <- 0 until i) {
-      fireL(j)    := uops(j).regWriteEn && ideal(j).writeReg === ideal(i).srcL
-      fireR(j)    := uops(j).regWriteEn && ideal(j).writeReg === ideal(i).srcR
+      fireL(j)    := uops(j).regWriteEn && uops(j).writeRegAddr === uops(i).rsAddr
+      fireR(j)    := uops(j).regWriteEn && uops(j).writeRegAddr === uops(i).rtAddr
       writeReg(j) := ideal(j).writeReg
     }
     // 注意倒序 match case
@@ -103,7 +106,7 @@ class Rename(nWays: Int, nCommit: Int) extends Module {
     for (j <- 0 until i) { //  0 <= j < i
       fire(j) := uops(j).regWriteEn && uops(j).writeRegAddr === uops(i).writeRegAddr
       // no need to && uop(i).regWriteEn, think why :)
-      originReg(j) := uops(j).writeRegAddr
+      originReg(j) := real(j).originReg
     }
 
     real(i).originReg := MuxCase(
@@ -168,6 +171,9 @@ class Rename(nWays: Int, nCommit: Int) extends Module {
     rat.io.chToArch      := io.commit.chToArch
   }
 
+  // debug only not realse TODO
+  io.rmtDebug := rat.io.debug.get
+
 }
 
 object RemameUtil {
@@ -181,13 +187,15 @@ object RemameUtil {
     robEntry.exception := DontCare
     robEntry.instrType := uop.instrType
     robEntry.regWEn    := uop.regWriteEn
-    robEntry.regWData  := DontCare
+    // robEntry.regWData  := DontCare
     robEntry.memWMode  := uop.storeMode
     robEntry.memWAddr  := DontCare
     robEntry.memWData  := DontCare
-    robEntry.branch    := uop.bjCond =/= 0.U
-    robEntry.predictBT := DontCare
+    robEntry.branch    := uop.bjCond =/= BJCond.none && uop.bjCond =/= BJCond.all
+    robEntry.predictBT := uop.predictBT
     robEntry.computeBT := DontCare
+    
+    robEntry.branchTaken := DontCare
 
     robEntry
   }

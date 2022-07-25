@@ -16,18 +16,33 @@ import flute.core.issue.AluEntry
 import flute.core.components.RegFile
 import flute.config.CPUConfig._
 import flute.core.rob.Commit
+import flute.core.issue.LsuIssue
+import flute.core.execute.LsuPipeline
+import flute.cache.top.DCachePorts
+import flute.core.rob.BranchCommit
+import flute.cp0.CP0WithCommit
 
 class Backend(nWays: Int = 2) extends Module {
   require(nWays == 2)
   val io = IO(new Bundle {
-    val ibuffer = Vec(nWays, Flipped(DecoupledIO(new IBEntry)))
+    val ibuffer      = Vec(nWays, Flipped(DecoupledIO(new IBEntry)))
+    // Debug out //
+    val prf          = Output(Vec(phyRegAmount, UInt(dataWidth.W)))
+    val rmt          = new RMTDebugOut
+    val busyTable    = Output(Vec(phyRegAmount, Bool()))
+    // ========= //
+    val dcache       = Flipped(new DCachePorts)
+    val branchCommit = Output(new BranchCommit)
+    val cp0          = Flipped(new CP0WithCommit)
+    val cp0IntrReq   = Input(Bool())
   })
 
   val decoders  = for (i <- 0 until nWays) yield Module(new Decoder)
-  val rename    = Module(new Rename(nWays = nWays, nCommit = nWays))
   val dispatch  = Module(new Dispatch)
-  val rob       = Module(new ROB(numEntries = 128, numRead = 2, numWrite = 2, numSetComplete = 2))
-  val busyTable = Module(new BusyTable(nRead = 8, nCheckIn = 2, nCheckOut = 2))
+  val rob       = Module(new ROB(numEntries = robEntryAmount, numRead = 2, numWrite = 2, numSetComplete = 3))
+  val regfile   = Module(new RegFile(numRead = 3, numWrite = 3))
+  val rename    = Module(new Rename(nWays = nWays, nCommit = nWays))
+  val busyTable = Module(new BusyTable(nRead = 10, nCheckIn = 2, nCheckOut = 3))
   val commit    = Module(new Commit(nCommit = nWays))
 
   val decodeStage = Module(new StageReg(Vec(nWays, Valid(new MicroOp))))
@@ -54,9 +69,14 @@ class Backend(nWays: Int = 2) extends Module {
   renameStage.io.valid := !(dispatch.io.stallReq)
 
   commit.io.rob <> rob.io.read
-  rename.io.commit := commit.io.commit
-
-  //---------------- AluIssueQueue + AluPipelines ------------------ //
+  rename.io.commit          := commit.io.commit
+  io.branchCommit           := commit.io.branch
+  io.cp0                    := commit.io.cp0
+  commit.io.intrReq         := io.cp0IntrReq
+  commit.io.store.req.ready := io.dcache.req.ready
+  val dCacheReqWire  = WireInit(commit.io.store.req.bits)
+  val dCacheReqValid = WireInit(commit.io.store.req.valid)
+  // 对 [[io.dcache.req.bits]] 的赋值，将在后面进行
 
   private val detectWidth = 4
   private val nAluPl      = 2 // number of alu piplines
@@ -64,12 +84,19 @@ class Backend(nWays: Int = 2) extends Module {
   val aluIssueQueue = Module(new AluIssueQueue(30, detectWidth))
   val aluIssue      = Module(new AluIssue(detectWidth))
   val aluPipeline   = for (i <- 0 until nAluPl) yield Module(new AluPipeline)
-  val regfile       = Module(new RegFile(numRead = 2, numWrite = 2))
+
+  val lsuIssueQueue = Module(new Queue(new MicroOp(rename = true), 32, hasFlush = true))
+  val lsuIssue      = Module(new LsuIssue)
+  val lsuPipeline   = Module(new LsuPipeline)
+
+  val needFlush = io.cp0IntrReq || commit.io.branch.pcRestore.valid
 
   dispatch.io.out(0) <> aluIssueQueue.io.enq(0)
   dispatch.io.out(1) <> aluIssueQueue.io.enq(1)
-  dispatch.io.out(2).ready := 0.B
+  dispatch.io.out(2) <> lsuIssueQueue.io.enq
   dispatch.io.out(3).ready := 0.B
+
+  //---------------- AluIssueQueue + AluPipelines ------------------ //
 
   aluIssue.io.detect     := aluIssueQueue.io.data
   aluIssueQueue.io.issue := aluIssue.io.issue
@@ -105,5 +132,36 @@ class Backend(nWays: Int = 2) extends Module {
   aluIssueQueue.io.flush := 0.B
 
   aluIssueStage.io.valid := 1.B
+
+  // ---------------- LSU ------------------ //
+  lsuIssue.io.in <> lsuIssueQueue.io.deq
+  lsuIssueQueue.io.flush.get := needFlush
+  for (i <- 0 to 1) {
+    lsuIssue.io.bt(i) <> busyTable.io.read(2 * detectWidth + i)
+  }
+  lsuPipeline.io.uop <> lsuIssue.io.out
+  lsuPipeline.io.sbRetire := commit.io.sbRetire
+  // lsuPipeline.io.dcache // TODO: DCache Ports.
+  lsuPipeline.io.dcache.hazard    := commit.io.store.hazard
+  lsuPipeline.io.dcache.req.ready := io.dcache.req.ready
+  when(!commit.io.store.hazard) {
+    dCacheReqValid := lsuPipeline.io.dcache.req.valid
+    dCacheReqWire  := lsuPipeline.io.dcache.req.bits
+  }
+  lsuPipeline.io.dcache.resp := io.dcache.resp
+  lsuPipeline.io.flush       := needFlush
+  lsuPipeline.io.prf <> regfile.io.read(2)
+  regfile.io.write(2)      := lsuPipeline.io.wb.prf
+  busyTable.io.checkOut(2) := lsuPipeline.io.wb.busyTable
+  rob.io.setComplete(2)    := lsuPipeline.io.wb.rob
+
+  // ---------------- Data Cache ------------------ //
+  io.dcache.req.valid := dCacheReqValid
+  io.dcache.req.bits  := dCacheReqWire
+
+  // debug
+  io.prf       := regfile.io.debug
+  io.busyTable := VecInit(busyTable.io.debug.table.asBools)
+  io.rmt       := rename.io.rmtDebug
 
 }

@@ -8,6 +8,7 @@ import flute.config.CPUConfig._
 import flute.cache.ICacheIO
 import flute.core.execute.ExecuteFeedbackIO
 import flute.core.decode.DecodeFeedbackIO
+import flute.util.BitMode.fromIntToBitModeLong
 import flute.util.ValidBundle
 
 class FetchIO extends Bundle {
@@ -17,6 +18,8 @@ class FetchIO extends Bundle {
 class IBEntry extends Bundle {
   val inst = UInt(instrWidth.W)
   val addr = UInt(addrWidth.W)
+
+  val predictBT = UInt(addrWidth.W)
 }
 
 class FetchWithCP0 extends Bundle {
@@ -75,11 +78,14 @@ class Fetch extends Module {
   val earliestBranchInd = PriorityEncoder(pdOuts.map(_.isBranch))
 
   for (i <- 0 until fetchGroupSize) {
-    ibuffer.io.write(i).bits.addr := Cat(
+    val instAddr = Cat(
       pc.io.out(31, fetchGroupWidth + 2),
       i.U(fetchGroupWidth.W),
       0.U(2.W)
     )
+    ibuffer.io.write(i).bits.addr := instAddr
+    // TODO: Here we make up a branch fail.
+    ibuffer.io.write(i).bits.predictBT := -1.BM.U
     ibuffer.io.write(i).bits.inst := io.iCache.data.bits(i)
     when(state === State.Free) {
       ibuffer.io.write(i).valid :=
