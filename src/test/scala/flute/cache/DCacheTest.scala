@@ -7,7 +7,7 @@ import org.scalatest.matchers.should.Matchers
 
 import flute.util.BitMode.fromIntToBitModeLong
 import flute.config.CPUConfig._
-import flute.core.decode.StoreMode
+import flute.core.backend.decode.StoreMode
 
 class DCacheTest extends AnyFreeSpec with ChiselScalatestTester with Matchers {
   "test multi read port" in {

@@ -5,7 +5,7 @@ import chisel3.util._
 import chiseltest._
 import org.scalatest.matchers.should.Matchers
 import org.scalatest.flatspec.AnyFlatSpec
-import flute.core.decode.StoreMode
+import flute.core.backend.decode.StoreMode
 import sys.process._
 
 class SbufferTest extends AnyFlatSpec with ChiselScalatestTester with Matchers {

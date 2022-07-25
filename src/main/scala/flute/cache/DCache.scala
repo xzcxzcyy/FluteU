@@ -3,7 +3,7 @@ package flute.cache
 import chisel3._
 import chisel3.util._
 import flute.config.CPUConfig._
-import flute.core.decode.StoreMode
+import flute.core.backend.decode.StoreMode
 import chisel3.util.experimental.loadMemoryFromFileInline
 import dataclass.data
 
