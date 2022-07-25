@@ -5,7 +5,7 @@ import chisel3.util._
 import flute.core.fetch._
 import flute.cache.ICache
 import flute.config.CPUConfig._
-import flute.core.rob.BranchCommit
+import flute.core.backend.commit.BranchCommit
 
 class Frontend(nWays: Int = 2, memoryFile: String = "test_data/imem.in") extends Module {
   assert(nWays == 2)

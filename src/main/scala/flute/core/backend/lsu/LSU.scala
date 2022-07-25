@@ -1,17 +1,17 @@
-package flute.core.execute
+package flute.core.backend.lsu
 
 import chisel3._
 import chisel3.util._
 import flute.cache.top.DCacheReq
 import flute.cache.top.DCacheResp
-import flute.core.decode.MicroOp
+import flute.core.backend.decode.MicroOp
 import flute.util.ValidBundle
 import flute.core.components.MuxStageReg
 import flute.core.components.Sbuffer
 import flute.config.CPUConfig._
 import flute.core.components.MuxStageRegMode
-import flute.core.decode.LoadMode
-import flute.core.decode.StoreMode
+import flute.core.backend.decode.LoadMode
+import flute.core.backend.decode.StoreMode
 
 class LSUWithDCacheIO extends Bundle {
   val req    = DecoupledIO(new DCacheReq)

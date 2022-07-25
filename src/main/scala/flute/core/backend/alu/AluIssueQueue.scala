@@ -1,10 +1,10 @@
-package flute.core.issue
+package flute.core.backend.alu
 
 import chisel3._
 import chisel3.util._
 import flute.config.CPUConfig._
-import flute.core.decode.MicroOp
-import flute.core.rename.BusyTableReadPort
+import flute.core.backend.decode.MicroOp
+import flute.core.backend.rename.BusyTableReadPort
 
 class AluIssueQueue(volume: Int, detectWidth: Int) extends Module {
   private val enqNum = 2

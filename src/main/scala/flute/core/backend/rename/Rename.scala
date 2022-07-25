@@ -1,11 +1,11 @@
-package flute.core.rename
+package flute.core.backend.rename
 
 import chisel3._
 import chisel3.util._
-import flute.core.decode.MicroOp
+import flute.core.backend.decode.MicroOp
 import flute.config.CPUConfig._
-import flute.core.rob._
-import flute.core.decode.BJCond
+import flute.core.backend.commit._
+import flute.core.backend.decode.BJCond
 
 class RenameEntry extends Bundle {
   val srcL      = UInt(phyRegAddrWidth.W)

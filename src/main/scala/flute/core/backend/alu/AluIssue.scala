@@ -1,9 +1,9 @@
-package flute.core.issue
+package flute.core.backend.alu
 
 import chisel3._
 import chisel3.util._
-import flute.core.decode.MicroOp
-import flute.core.rename.BusyTableReadPort
+import flute.core.backend.decode.MicroOp
+import flute.core.backend.rename.BusyTableReadPort
 
 class OpAwaken extends Bundle {
   private val deqNum = 2 // ALU 流水线个数

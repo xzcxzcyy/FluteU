@@ -4,7 +4,7 @@ import chisel3._
 import chisel3.util._
 import flute.config.CPUConfig._
 import flute.config.CacheConfig
-import flute.core.decode.StoreMode
+import flute.core.backend.decode.StoreMode
 import flute.core.components.MuxStageReg
 import flute.core.components.MuxStageRegMode
 import chisel3.util.experimental.loadMemoryFromFileInline

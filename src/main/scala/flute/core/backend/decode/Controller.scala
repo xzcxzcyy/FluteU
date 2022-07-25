@@ -1,4 +1,4 @@
-package flute.core.decode
+package flute.core.backend.decode
 
 import chisel3._
 import chisel3.util.{ListLookup, log2Up}

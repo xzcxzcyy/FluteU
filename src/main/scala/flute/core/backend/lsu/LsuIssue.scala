@@ -1,11 +1,12 @@
-package flute.core.issue
+package flute.core.backend.lsu
 
 import chisel3._
 import chisel3.util._
 
-import flute.core.decode.MicroOp
-import flute.core.rename.BusyTableReadPort
+import flute.core.backend.decode.MicroOp
+import flute.core.backend.rename.BusyTableReadPort
 import flute.core.components._
+import flute.core.backend.alu.AluIssueUtil
 
 // 不同于AluIssue, LsuIssue包含LsuIssueStage
 class LsuIssue extends Module {

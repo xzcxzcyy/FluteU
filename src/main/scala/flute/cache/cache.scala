@@ -2,7 +2,7 @@ package flute.cache
 
 import chisel3._
 import flute.config.CPUConfig._
-import flute.core.decode.StoreMode
+import flute.core.backend.decode.StoreMode
 
 // no statemachine, no axi, no
 /**

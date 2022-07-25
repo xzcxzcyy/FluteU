@@ -3,12 +3,13 @@ package flute.core
 import chisel3._
 import chisel3.util._
 import flute.config.CPUConfig._
-import flute.core.rename.ArfView
+import flute.core.backend.rename.ArfView
 import flute.cp0.CP0
 import chisel3.stage.ChiselStage
 import flute.cache.top.DCachePorts
 import flute.cache.top.DataCache
 import flute.config.CacheConfig
+import flute.core.backend.Backend
 
 class BetaTop(iFile: String, dFile: String) extends Module {
   val io = IO(new Bundle {

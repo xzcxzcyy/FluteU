@@ -1,25 +1,25 @@
-package flute.core
+package flute.core.backend
 
 import chisel3._
 import chisel3.util._
 import flute.core.fetch._
-import flute.core.decode._
-import flute.core.rename._
+import flute.core.backend.decode._
+import flute.core.backend.rename._
 import flute.core.components.StageReg
 import flute.util.ValidBundle
-import flute.core.issue.Dispatch
-import flute.core.rob.ROB
-import flute.core.issue.AluIssueQueue
-import flute.core.issue.AluPipeline
-import flute.core.issue.AluIssue
-import flute.core.issue.AluEntry
+import flute.core.backend.dispatch.Dispatch
+import flute.core.backend.commit.ROB
+import flute.core.backend.alu.AluIssueQueue
+import flute.core.backend.alu.AluPipeline
+import flute.core.backend.alu.AluIssue
+import flute.core.backend.alu.AluEntry
 import flute.core.components.RegFile
 import flute.config.CPUConfig._
-import flute.core.rob.Commit
-import flute.core.issue.LsuIssue
-import flute.core.execute.LsuPipeline
+import flute.core.backend.commit.Commit
+import flute.core.backend.lsu.LsuIssue
+import flute.core.backend.lsu.LsuPipeline
 import flute.cache.top.DCachePorts
-import flute.core.rob.BranchCommit
+import flute.core.backend.commit.BranchCommit
 import flute.cp0.CP0WithCommit
 
 class Backend(nWays: Int = 2) extends Module {

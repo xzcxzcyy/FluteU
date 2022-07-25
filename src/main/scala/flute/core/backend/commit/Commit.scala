@@ -1,9 +1,9 @@
-package flute.core.rob
+package flute.core.backend.commit
 
 import chisel3._
 import chisel3.util._
-import flute.core.decode.StoreMode
-import flute.core.rename.RenameCommit
+import flute.core.backend.decode.StoreMode
+import flute.core.backend.rename.RenameCommit
 import flute.config.CPUConfig._
 import flute.cp0.CP0WithCommit
 import flute.cache.top.DCacheReq

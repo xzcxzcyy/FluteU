@@ -1,14 +1,14 @@
-package flute.core.issue
+package flute.core.backend.alu
 
 import chisel3._
 import chisel3.util._
-import flute.core.decode.MicroOp
+import flute.core.backend.decode.MicroOp
 import flute.config.CPUConfig._
-import flute.core.rob._
+import flute.core.backend.commit._
 import flute.core.components._
 import flute.cp0._
 import flute.core.components.ALU
-import flute.core.decode._
+import flute.core.backend.decode._
 
 class AluWB extends Bundle {
   val rob = new ROBCompleteBundle(robEntryNumWidth)

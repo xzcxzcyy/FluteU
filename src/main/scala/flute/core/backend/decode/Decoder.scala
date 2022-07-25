@@ -1,4 +1,4 @@
-package flute.core.decode
+package flute.core.backend.decode
 
 import Chisel.Cat
 import chisel3._

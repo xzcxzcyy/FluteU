@@ -4,7 +4,7 @@ import chisel3._
 import chisel3.util._
 
 import flute.config.CPUConfig._
-import flute.core.decode.StoreMode
+import flute.core.backend.decode.StoreMode
 
 class SbufferEntry extends Bundle {
   val addr  = UInt(30.W)

@@ -1,8 +1,8 @@
-package flute.core.issue
+package flute.core.backend.dispatch
 
 import chisel3._
 import chisel3.util._
-import flute.core.decode._
+import flute.core.backend.decode._
 
 class Dispatch(nWays: Int = 2, nQueue: Int = 4) extends Module {
   require(nWays == 2 && nQueue == 4)

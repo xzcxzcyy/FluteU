@@ -1,4 +1,4 @@
-package flute.core.rename
+package flute.core.backend.rename
 
 import flute.util.BaseTestHelper
 import firrtl.AnnotationSeq

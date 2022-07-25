@@ -1,11 +1,11 @@
-package flute.core.rob
+package flute.core.backend.commit
 
 import chisel3._
 import chisel3.util._
 import flute.config.CPUConfig._
 import flute.cp0.ExceptionBundle
 import flute.util.ValidBundle
-import flute.core.decode.StoreMode
+import flute.core.backend.decode.StoreMode
 
 class ROBEntry extends Bundle {
   val pc        = UInt(addrWidth.W)

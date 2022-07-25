@@ -1,24 +1,24 @@
-package flute.core.execute
+package flute.core.backend.lsu
 
 import chisel3._
 import chisel3.util._
 import flute.core.components.RegFileReadIO
-import flute.core.issue.AluWB
-import flute.core.decode.MicroOp
-import flute.core.decode.StoreMode
-import flute.core.rob.ROBCompleteBundle
+import flute.core.backend.alu.AluWB
+import flute.core.backend.decode.MicroOp
+import flute.core.backend.decode.StoreMode
+import flute.core.backend.commit.ROBCompleteBundle
 import flute.config.CPUConfig._
 import flute.cp0.ExceptionBundle
-import flute.core.decode.LoadMode
+import flute.core.backend.decode.LoadMode
 
 class LsuPipeline extends Module {
   val io = IO(new Bundle {
-    val uop    = Flipped(DecoupledIO(new MicroOp(rename = true)))
-    val prf    = Flipped(new RegFileReadIO)
-    val wb     = Output(new AluWB)
-    val dcache = new LSUWithDCacheIO
+    val uop      = Flipped(DecoupledIO(new MicroOp(rename = true)))
+    val prf      = Flipped(new RegFileReadIO)
+    val wb       = Output(new AluWB)
+    val dcache   = new LSUWithDCacheIO
     val sbRetire = Input(Bool())
-    val flush  = Input(Bool())
+    val flush    = Input(Bool())
   })
 
   val readIn = io.uop
@@ -33,7 +33,7 @@ class LsuPipeline extends Module {
 
   val lsu = Module(new LSU)
   lsu.io.dcache <> io.dcache
-  lsu.io.flush := io.flush
+  lsu.io.flush    := io.flush
   lsu.io.sbRetire := io.sbRetire
 
   io.uop.ready       := lsu.io.instr.ready
@@ -51,10 +51,10 @@ class LsuPipeline extends Module {
   writeRob.exception := 0.U.asTypeOf(new ExceptionBundle) // TODO: Exception
   // writeRob.regWEn    := (lsuMemReq.loadMode =/= LoadMode.disable)
   // writeRob.regWData  := lsuMemReq.data
-  writeRob.memWMode  := lsuMemReq.storeMode
-  writeRob.memWAddr  := lsuMemReq.addr
-  writeRob.memWData  := lsuMemReq.data
-  io.wb.rob          := writeRob
+  writeRob.memWMode := lsuMemReq.storeMode
+  writeRob.memWAddr := lsuMemReq.addr
+  writeRob.memWData := lsuMemReq.data
+  io.wb.rob         := writeRob
 
   // wb.busyTable
   val btCheckOut = WireInit(0.U.asTypeOf(Valid(UInt(phyRegAddrWidth.W))))
