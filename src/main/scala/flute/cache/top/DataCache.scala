@@ -11,7 +11,7 @@ import chisel3.util.experimental.loadMemoryFromFileInline
 
 /**
   * 
-  * @param store 为1代表当前为store类型指令, 0代表load类型指令
+  * [[storeMode]] 为 [[disable]] 时，为 Load 指令。
   */
 class DCacheReq extends Bundle {
   val addr      = UInt(addrWidth.W)
