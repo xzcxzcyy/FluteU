@@ -18,6 +18,11 @@ class ICacheResp extends Bundle {
   val data = Vec(fetchGroupSize, UInt(dataWidth.W))
 }
 
+class ICacheWithCore extends Bundle {
+  val req  = Flipped(DecoupledIO(new ICacheReq))
+  val resp = ValidIO(new ICacheResp)
+}
+
 class InstrCache(cacheConfig: CacheConfig) extends Module {
   implicit val config = cacheConfig
   val nWays           = config.numOfWays
@@ -25,8 +30,7 @@ class InstrCache(cacheConfig: CacheConfig) extends Module {
   val nBanks          = config.numOfBanks
 
   val io = IO(new Bundle {
-    val req  = Flipped(Decoupled(new ICacheReq))
-    val resp = Valid(new ICacheResp)
+    val core = new ICacheWithCore
     val axi  = AXIIO.master()
   })
 
@@ -41,8 +45,8 @@ class InstrCache(cacheConfig: CacheConfig) extends Module {
 
   val refillUnit = Module(new RefillUnit(AXIID = 0.U))
 
-  val s0Valid = RegNext(io.req.fire, 0.B)
-  val s0Addr  = RegEnable(io.req.bits.addr, io.req.fire)
+  val s0Valid = RegNext(io.core.req.fire, 0.B)
+  val s0Addr  = RegEnable(io.core.req.bits.addr, io.core.req.fire)
 
   val vTag   = Wire(Vec(nWays, new TagValidBundle))
   val iBanks = Wire(Vec(nWays, Vec(nBanks, UInt(dataWidth.W))))
@@ -119,7 +123,7 @@ class InstrCache(cacheConfig: CacheConfig) extends Module {
     }
   }
 
-  io.req.ready := (state === piplining) && !miss
+  io.core.req.ready := (state === piplining) && !miss
 
   s1Stall := !(state === piplining)
 
@@ -131,7 +135,7 @@ class InstrCache(cacheConfig: CacheConfig) extends Module {
     tagValid(i).io.addr := Mux(
       refillUnit.io.data.valid,
       config.getIndex(missAddrBuffer),
-      config.getIndex(io.req.bits.addr)
+      config.getIndex(io.core.req.bits.addr)
     )
     tagValid(i).io.dataIn := Cat(config.getTag(missAddrBuffer), 1.B).asTypeOf(new TagValidBundle)
     tagValid(i).io.write  := refillUnit.io.data.valid && (i.U === refillWay)
@@ -140,7 +144,7 @@ class InstrCache(cacheConfig: CacheConfig) extends Module {
       instrBanks(i)(j).io.addr := Mux(
         refillUnit.io.data.valid,
         config.getIndex(missAddrBuffer),
-        config.getIndex(io.req.bits.addr)
+        config.getIndex(io.core.req.bits.addr)
       )
       instrBanks(i)(j).io.dataIn := refillUnit.io.data.bits(j)
       instrBanks(i)(j).io.write  := refillUnit.io.data.valid && (i.U === refillWay)
@@ -152,15 +156,14 @@ class InstrCache(cacheConfig: CacheConfig) extends Module {
     missData(i) := refillUnit.io.data.bits(config.getBankIndex(missAddrBuffer) + i.U)
   }
 
-  io.resp.valid := (state === piplining && hit) || (state === writing)
-  io.resp.bits.data := MuxCase(
+  io.core.resp.valid := (state === piplining && hit) || (state === writing)
+  io.core.resp.bits.data := MuxCase(
     VecInit(Seq.fill(fetchGroupSize)(0.U(32.W))),
     Seq(
       (state === writing)          -> missData,
       (state === piplining && hit) -> hitData
     )
   )
-
 
   io.axi <> refillUnit.io.axi
 }
