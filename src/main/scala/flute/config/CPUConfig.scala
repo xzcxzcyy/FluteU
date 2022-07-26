@@ -8,6 +8,8 @@ object CPUConfig {
   val regAmount     = 32 // TODO: to be refractored
   val archRegAmount = 32
   val phyRegAmount  = 128
+  //// IBuffer
+  val ibufferAmount = 16
   // ROB /////////////////
   val exceptionAmount = 16
   val instrTypeAmount = 8
@@ -21,7 +23,7 @@ object CPUConfig {
   val superscalar = 2
   val decodeWay   = 2
 
-  val fetchGroupSize   = 8
+  val fetchGroupSize   = 2
   val fetchGroupWidth  = log2Up(fetchGroupSize)
   val fetchAmountWidth = fetchGroupWidth + 1
 
