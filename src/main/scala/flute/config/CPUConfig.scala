@@ -4,6 +4,8 @@ import chisel3._
 import chisel3.util.log2Up
 
 object CPUConfig {
+  // Interrupts
+  val intrProgramAddr = 0xBFC00380L
   /// amount ///
   val regAmount     = 32 // TODO: to be refractored
   val archRegAmount = 32
