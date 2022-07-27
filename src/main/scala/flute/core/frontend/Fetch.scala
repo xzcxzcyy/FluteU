@@ -6,7 +6,6 @@ import chisel3.util._
 import flute.config.CPUConfig._
 import flute.cache.ICacheIO
 import flute.util.BitMode.fromIntToBitModeLong
-import flute.util.ValidBundle
 import flute.cache.top.ICacheWithCore
 import flute.core.backend.commit.BranchCommit
 import flute.config.CPUConfig
@@ -55,12 +54,12 @@ class Fetch extends Module {
   val needFlush     = extFlush || innerFlush
   val ibRoom        = PopCount(ib.io.write.map(_.ready))
   val ibPermitCache = ibRoom > 8.U
-  val cacheReqReady = io.iCache.req.ready
+  val cacheFree     = io.iCache.req.ready
   val pcQEnqReady   = pcQ.io.enq.ready
 
   val pcRenewal     = pcQ.io.enq.fire
   val cacheReqValid = ibPermitCache && pcQEnqReady
-  val pcQEnqValid   = ibPermitCache && cacheReqReady
+  val pcQEnqValid   = ibPermitCache && cacheFree
 
   when(io.cp0.intrReq) {
     pc := intrProgramAddr.U(addrWidth.W)
