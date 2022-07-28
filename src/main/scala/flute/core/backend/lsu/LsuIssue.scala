@@ -18,6 +18,8 @@ class LsuIssue extends Module {
     val bt = Vec(2, Flipped(new BusyTableReadPort))
 
     val out = Decoupled(new MicroOp(rename = true))
+
+    val flush = Input(Bool())
   })
 
   // stage 1: Issue
@@ -47,10 +49,10 @@ class LsuIssue extends Module {
   io.in.ready := ((!stage.io.out.valid) || (io.out.fire)) && avalible
 
   // stage控制信号
-  when(io.in.fire && (io.out.fire || !stage.io.out.valid)) {
-    stage.io.mode := MuxStageRegMode.next
-  }.elsewhen(!io.in.fire && io.out.fire) {
+  when(io.flush || (!io.in.fire && io.out.fire)) {
     stage.io.mode := MuxStageRegMode.flush
+  }.elsewhen(io.in.fire && (io.out.fire || !stage.io.out.valid)) {
+    stage.io.mode := MuxStageRegMode.next
   }.otherwise {
     stage.io.mode := MuxStageRegMode.stall
   }

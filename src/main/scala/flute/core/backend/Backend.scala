@@ -126,15 +126,19 @@ class Backend(nWays: Int = 2) extends Module {
   }
 
   /// other interface
-  decodeStage.io.flush   := 0.B
-  renameStage.io.flush   := 0.B
-  aluIssueStage.io.flush := 0.B
-  aluIssueQueue.io.flush := 0.B
+  decodeStage.io.flush   := needFlush
+  renameStage.io.flush   := needFlush
+  aluIssueStage.io.flush := needFlush
+  aluIssueQueue.io.flush := needFlush
+  for (i <- 0 to 1) yield {
+    aluPipeline(i).io.flush := needFlush
+  }
 
   aluIssueStage.io.valid := 1.B
 
   // ---------------- LSU ------------------ //
   lsuIssue.io.in <> lsuIssueQueue.io.deq
+  lsuIssue.io.flush := needFlush
   lsuIssueQueue.io.flush.get := needFlush
   for (i <- 0 to 1) {
     lsuIssue.io.bt(i) <> busyTable.io.read(2 * detectWidth + i)
@@ -164,4 +168,5 @@ class Backend(nWays: Int = 2) extends Module {
   io.busyTable := VecInit(busyTable.io.debug.table.asBools)
   io.rmt       := rename.io.rmtDebug
 
+  rob.io.flush := needFlush
 }

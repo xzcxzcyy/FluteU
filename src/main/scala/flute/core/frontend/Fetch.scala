@@ -52,7 +52,7 @@ class Fetch extends Module {
   val extFlush      = io.branchCommit.pcRestore.valid || io.cp0.intrReq || io.cp0.eretReq
   val innerFlush    = Wire(Bool())
   val needFlush     = extFlush || innerFlush
-  val ibRoom        = PopCount(ib.io.write.map(_.ready))
+  val ibRoom        = ib.io.space
   val ibPermitCache = ibRoom > 8.U
   val cacheFree     = io.iCache.req.ready
   val pcQEnqReady   = pcQ.io.enq.ready
@@ -140,9 +140,15 @@ class Fetch extends Module {
   }
 
   for (i <- 0 to 1) {
-    io.withDecode.ibufferEntries(i).valid := ibEntries(i).valid && restMask(i) && insertIntoIb
-    io.withDecode.ibufferEntries(i).bits  := ibEntries(i).bits
+    ib.io.write(i).valid := ibEntries(i).valid && restMask(i) && insertIntoIb
+    ib.io.write(i).bits  := ibEntries(i).bits
   }
+
+  for (i <- 0 to 1) {
+    io.withDecode.ibufferEntries(i) <> ib.io.read(i)
+  }
+  ib.io.flush := extFlush
+  io.iCache.flush := needFlush
 
   io.pc := pc
 }

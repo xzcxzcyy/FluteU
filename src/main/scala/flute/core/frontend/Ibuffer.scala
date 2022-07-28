@@ -6,10 +6,10 @@ import chisel3.util.isPow2
 import chisel3.util.log2Up
 import chisel3.util.PopCount
 
-class IbufferBundle[T <: Data](gen: T, numRead: Int, numWrite: Int) extends Bundle {
+class IbufferBundle[T <: Data](gen: T, numEntries: Int, numRead: Int, numWrite: Int) extends Bundle {
   val read  = Vec(numRead, Decoupled(gen))
   val write = Flipped(Vec(numWrite, Decoupled(gen)))
-  // val test  = Output(UInt(32.W))
+  val space = Output(UInt((log2Up(numEntries) + 1).W))
   val flush = Input(Bool())
 }
 
@@ -22,7 +22,7 @@ class IbufferBundle[T <: Data](gen: T, numRead: Int, numWrite: Int) extends Bund
 class Ibuffer[T <: Data](gen: T, numEntries: Int, numRead: Int, numWrite: Int) extends Module {
   assert(isPow2(numEntries) && numEntries > 1)
 
-  val io = IO(new IbufferBundle(gen, numRead, numWrite))
+  val io = IO(new IbufferBundle(gen, numEntries, numRead, numWrite))
 
   val data = RegInit(VecInit(Seq.fill(numEntries)(0.U.asTypeOf(gen))))
 
@@ -34,6 +34,8 @@ class Ibuffer[T <: Data](gen: T, numEntries: Int, numRead: Int, numWrite: Int) e
   val difference = tail_ptr - head_ptr
   val deqEntries = difference
   val enqEntries = (numEntries - 1).U - difference
+
+  io.space := enqEntries
 
   val numTryEnq = PopCount(io.write.map(_.valid))
   val numTryDeq = PopCount(io.read.map(_.ready))
