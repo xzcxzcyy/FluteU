@@ -9,6 +9,8 @@ import flute.core.components.MuxStageReg
 import flute.core.components.MuxStageRegMode
 import chisel3.util.experimental.loadMemoryFromFileInline
 import flute.axi.AXIIO
+import flute.cache.axi.AXIRead
+import flute.cache.axi.AXIWirte
 
 /**
   * 
@@ -34,11 +36,35 @@ class DCacheWithCore extends Bundle {
   val stallReq = Output(Bool())
 }
 
-class ThroughDCache(cacheConfig: CacheConfig) extends Module {
+class ThroughDCache extends Module {
   val io = IO(new Bundle {
     val core = new DCacheWithCore
     val axi  = AXIIO.master()
   })
+
+  val axiRead  = Module(new AXIRead(axiId = 1.U))
+  val axiWrite = Module(new AXIWirte(axiId = 2.U))
+
+  axiRead.io.req.bits  := io.core.req.bits.addr
+  axiRead.io.req.valid := io.core.req.valid && io.core.req.bits.storeMode === StoreMode.disable
+
+  axiWrite.io.req.bits.addr      := io.core.req.bits.addr
+  axiWrite.io.req.bits.data      := io.core.req.bits.writeData
+  axiWrite.io.req.bits.storeMode := io.core.req.bits.storeMode
+  axiWrite.io.req.valid := io.core.req.valid && io.core.req.bits.storeMode =/= StoreMode.disable
+
+  io.core.req.ready := axiRead.io.req.ready && axiWrite.io.req.ready
+
+  io.core.resp.bits.loadData := axiRead.io.resp.bits
+  io.core.resp.valid         := axiRead.io.resp.valid
+
+  io.core.stallReq := !(axiRead.io.req.ready && axiWrite.io.req.ready)
+
+  io.axi.ar <> axiRead.io.axi.ar
+  io.axi.r <> axiRead.io.axi.r
+  io.axi.aw <> axiWrite.io.axi.aw
+  io.axi.w <> axiWrite.io.axi.w
+  io.axi.b <> axiWrite.io.axi.b
 }
 
 class DataCache(cacheConfig: CacheConfig, memoryFile: String) extends Module {
