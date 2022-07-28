@@ -8,6 +8,7 @@ import flute.core.backend.decode.StoreMode
 import flute.core.components.MuxStageReg
 import flute.core.components.MuxStageRegMode
 import chisel3.util.experimental.loadMemoryFromFileInline
+import flute.axi.AXIIO
 
 /**
   * 
@@ -23,7 +24,7 @@ class DCacheResp extends Bundle {
   val loadData = UInt(dataWidth.W)
 }
 
-class DCachePorts extends Bundle {
+class DCacheWithCore extends Bundle {
   val req = Flipped(DecoupledIO(new DCacheReq))
 
   /** valid 标志一次有效的load数据, store类型的请求不做任何回应 */
@@ -33,8 +34,15 @@ class DCachePorts extends Bundle {
   val stallReq = Output(Bool())
 }
 
+class ThroughDCache(cacheConfig: CacheConfig) extends Module {
+  val io = IO(new Bundle {
+    val core = new DCacheWithCore
+    val axi  = AXIIO.master()
+  })
+}
+
 class DataCache(cacheConfig: CacheConfig, memoryFile: String) extends Module {
-  val io = IO(new DCachePorts)
+  val io = IO(new DCacheWithCore)
 
   val mem = Mem(32 * 4, UInt(byteWidth.W))
   val s0  = RegInit(0.U.asTypeOf(Valid(new DCacheReq)))
