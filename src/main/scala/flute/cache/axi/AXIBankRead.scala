@@ -17,13 +17,13 @@ class AXIBankRead(axiId: UInt)(implicit cacheConfig: CacheConfig) extends Module
 
   val io = IO(new Bundle {
     val req  = Flipped(DecoupledIO(UInt(addrWidth.W)))
-    val resp = ValidIO(Vec(len, UInt(dataWidth.W)))
+    val resp = ValidIO(Vec(cacheConfig.numOfBanks, UInt(dataWidth.W)))
 
     val axi = AXIIO.master()
   })
 
   val addrBuffer = RegInit(0.U(addrWidth.W))
-  val dataBuffer = RegInit(VecInit(Seq.fill(len)(0.U(dataWidth.W))))
+  val dataBuffer = RegInit(VecInit(Seq.fill(cacheConfig.numOfBanks)(0.U(dataWidth.W))))
   val index      = RegInit(0.U(cacheConfig.bankIndexLen.W))
 
   val idle :: active :: transfer :: finish :: Nil = Enum(4)
@@ -62,7 +62,7 @@ class AXIBankRead(axiId: UInt)(implicit cacheConfig: CacheConfig) extends Module
 
     is(transfer) {
       when(io.axi.r.fire && io.axi.r.bits.id === axiId) {
-        dataBuffer(index) := io.axi.r.bits
+        dataBuffer(index) := io.axi.r.bits.data
         index             := index + 1.U
 
         when(io.axi.r.bits.last) {
