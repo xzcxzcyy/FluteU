@@ -12,7 +12,7 @@ import flute.config.CacheConfig
   * @param axiId : AXI ID
   * @param len   : 传输长度，单位：32bit
   */
-class AXIRead(axiId: Int)(implicit cacheConfig: CacheConfig) extends Module {
+class AXIBankRead(axiId: Int)(implicit cacheConfig: CacheConfig) extends Module {
   private val len = (cacheConfig.numOfBanks - 1)
 
   val io = IO(new Bundle {
