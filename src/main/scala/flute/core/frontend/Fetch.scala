@@ -1,187 +1,177 @@
 package flute.core.frontend
 
 import chisel3._
-import chisel3.experimental.BundleLiterals._
 import chisel3.util._
 
 import flute.config.CPUConfig._
 import flute.cache.ICacheIO
 import flute.util.BitMode.fromIntToBitModeLong
-import flute.util.ValidBundle
-
-class ExecuteFeedbackIO extends Bundle {
-  val branchAddr = Valid(UInt(instrWidth.W))
-}
+import flute.cache.top.ICacheWithCore
+import flute.core.backend.commit.BranchCommit
+import flute.config.CPUConfig
+import flute.cache.top.ICacheResp
 
 class FetchIO extends Bundle {
   val ibufferEntries = Vec(decodeWay, Decoupled(new IBEntry))
 }
 
 class IBEntry extends Bundle {
-  val inst = UInt(instrWidth.W)
-  val addr = UInt(addrWidth.W)
-
+  val inst      = UInt(instrWidth.W)
+  val addr      = UInt(addrWidth.W)
+  val inSlot    = Bool()
   val predictBT = UInt(addrWidth.W)
 }
 
 class FetchWithCP0 extends Bundle {
   val intrReq = Input(Bool())
+  val eretReq = Input(Bool())
   val epc     = Input(UInt(dataWidth.W))
 }
 
 class Fetch extends Module {
+  assert(fetchGroupSize == 2)
+
+  private val pcQueueVolume: Int = 8
+
   val io = IO(new Bundle {
-    val withDecode         = new FetchIO()
-    val feedbackFromExec   = Flipped(new ExecuteFeedbackIO())
-    val iCache             = Flipped(new ICacheIO())
-    val cp0                = new FetchWithCP0
-    val pc                 = Output(UInt(addrWidth.W))
-    val state              = Output(UInt(State.width.W))
+    val withDecode   = new FetchIO()
+    val branchCommit = Input(new BranchCommit)
+    val iCache       = Flipped(new ICacheWithCore)
+    val cp0          = new FetchWithCP0
+    val pc           = Output(UInt(addrWidth.W))
   })
 
-  private object State {
-    val width         = 2
-    val Free          = 0.U(width.W)
-    val FirstAndBlock = 1.U(width.W)
-    val Blocked       = 2.U(width.W)
-    val RESERVED      = 3.U(width.W) // illegal state; do not use
+  val pc        = RegInit(0.U(addrWidth.W))
+  val bpc       = RegInit(0.U.asTypeOf(Valid(UInt(addrWidth.W))))
+  val ib        = Module(new Ibuffer(new IBEntry, ibufferAmount, decodeWay, fetchGroupSize))
+  val pcQ       = Module(new Queue(UInt(addrWidth.W), pcQueueVolume, hasFlush = true))
+  val respStage = RegInit(0.U.asTypeOf(Valid(new ICacheResp)))
+  val slot      = RegInit(0.B)
+  val preDecs   = for (i <- 0 until fetchGroupSize) yield { Module(new PreDecode) }
+
+  val extFlush      = io.branchCommit.pcRestore.valid || io.cp0.intrReq || io.cp0.eretReq
+  val innerFlush    = Wire(Bool())
+  val needFlush     = extFlush || innerFlush
+  val ibRoom        = PopCount(ib.io.write.map(_.ready))
+  val ibPermitCache = ibRoom > 8.U
+  val cacheFree     = io.iCache.req.ready
+  val pcQEnqReady   = pcQ.io.enq.ready
+
+  val pcRenewal     = pcQ.io.enq.fire
+  val cacheReqValid = ibPermitCache && pcQEnqReady
+  val pcQEnqValid   = ibPermitCache && cacheFree
+
+  when(io.cp0.intrReq) {
+    pc := intrProgramAddr.U(addrWidth.W)
+  }.elsewhen(io.cp0.eretReq) {
+    pc := io.cp0.epc
+  }.elsewhen(io.branchCommit.pcRestore.valid) {
+    pc := io.branchCommit.pcRestore.bits
+  }.elsewhen(innerFlush && pcRenewal) {
+    pc := bpc.bits
+  }.elsewhen(pcRenewal) {
+    pc := Mux(FetchUtil.isLastInst(pc), pc + 4.U, pc + 8.U)
   }
 
-  val pc          = Module(new PC)
-  val ibuffer     = Module(new Ibuffer(new IBEntry, 16, decodeWay, fetchGroupSize))
-  val preDecoders = for (i <- 0 until fetchGroupSize) yield Module(new PreDecode)
-  val branchAddr  = RegInit(0.U.asTypeOf(ValidBundle(UInt(addrWidth.W))))
-  val state       = RegInit(State.Free)
+  io.iCache.req.valid     := cacheReqValid
+  io.iCache.req.bits.addr := pc
+  //TODO: Assign icache flush
 
-  ibuffer.io.flush := io.cp0.intrReq
+  pcQ.io.enq.valid := pcQEnqValid
+  pcQ.io.enq.bits  := pc
+  pcQ.io.flush.get := needFlush
 
-  val nextState = Wire(UInt(State.width.W))
-  val nextPc    = Wire(UInt(addrWidth.W))
-
-  nextPc    := DontCare
-  nextState := DontCare
-
-  val bias   = pc.io.out(1 + fetchGroupWidth, 1 + 1)
-  val pdOuts = Wire(Vec(fetchGroupSize, new PreDecoderOutput))
-
-  for (i <- 0 until fetchGroupSize) yield pdOuts(i) := preDecoders(i).io.out
-
-  for (i <- 0 until fetchGroupSize) {
-    preDecoders(i).io.instruction.bits  := io.iCache.data.bits(i)
-    preDecoders(i).io.instruction.valid := io.iCache.data.valid && (i.U >= bias)
-    preDecoders(i).io.pc := Cat(
-      pc.io.out(31, fetchGroupWidth + 2),
-      i.U(fetchGroupWidth.W),
-      0.U(2.W)
-    )
+  val cacheRespValid = io.iCache.resp.valid
+  when(extFlush) {
+    respStage.valid := 0.B
+  }.elsewhen(cacheRespValid && pcRenewal) {
+    respStage := io.iCache.resp
   }
 
-  val earliestBranchInd = PriorityEncoder(pdOuts.map(_.isBranch))
-
-  for (i <- 0 until fetchGroupSize) {
-    val instAddr = Cat(
-      pc.io.out(31, fetchGroupWidth + 2),
-      i.U(fetchGroupWidth.W),
-      0.U(2.W)
-    )
-    ibuffer.io.write(i).bits.addr := instAddr
-    // TODO: Here we make up a branch fail.
-    ibuffer.io.write(i).bits.predictBT := -1.BM.U
-    ibuffer.io.write(i).bits.inst := io.iCache.data.bits(i)
-    when(state === State.Free) {
-      ibuffer.io.write(i).valid :=
-        io.iCache.data.valid && (i.U >= bias) && (i.U <= earliestBranchInd)
-    }.elsewhen(state === State.FirstAndBlock) {
-      ibuffer.io.write(i).valid := io.iCache.data.valid && (i.U === bias)
-    }.otherwise { // State.{Blocked, RESERVED}
-      ibuffer.io.write(i).valid := 0.B
-    }
+  // control signals
+  val resultValid = respStage.valid && pcQ.io.deq.valid
+  pcQ.io.deq.ready := respStage.valid && pcRenewal
+  val insertIntoIb = pcQ.io.deq.fire
+  when(insertIntoIb && !cacheRespValid) {
+    respStage.valid := 0.B
   }
-  val numEnq = PopCount(ibuffer.io.write.map(_.ready))
+  // data path
+  val ibEntries = FetchUtil.getIbEntryCouple(respStage.bits, pcQ.io.deq.bits)
+  for (i <- 0 until fetchGroupSize) yield {
+    preDecs(i).io.instruction.valid := ibEntries(i).valid
+    preDecs(i).io.instruction.bits  := ibEntries(i).bits.inst
+    preDecs(i).io.pc                := ibEntries(i).bits.addr
+    ibEntries(i).bits.predictBT     := preDecs(i).io.out.predictBT
+  }
+  ibEntries(0).bits.inSlot := slot
+  ibEntries(1).bits.inSlot := preDecs(0).io.out.isBranch
 
-  switch(state) {
-    is(State.Free) {
-      val lastInstInd = bias + numEnq - 1.U
-      when(numEnq > 0.U && pdOuts(lastInstInd).isBranch) {
-        when(pdOuts(lastInstInd).targetAddr.valid) {
-          branchAddr.bits  := pdOuts(lastInstInd).targetAddr.bits
-          branchAddr.valid := pdOuts(lastInstInd).targetAddr.valid
-        }
-        nextState := State.FirstAndBlock
-      }.otherwise {
-        nextState := State.Free
-      }
-      nextPc := pc.io.out + Cat(numEnq, 0.U(2.W))
+  val restMask = WireInit(VecInit(Seq.fill(fetchGroupSize)(1.B)))
+  innerFlush := 0.B
+  when(slot) {
+    when(ibEntries(1).valid && ibEntries(1).bits.addr =/= bpc.valid) {
+      innerFlush := 1.B
+      restMask(1) := 0.B
     }
-
-    is(State.FirstAndBlock) {
-      when(numEnq === 0.U) {
-        nextState := State.FirstAndBlock
-        nextPc    := pc.io.out
-        when(io.feedbackFromExec.branchAddr.valid) {
-          branchAddr.valid := io.feedbackFromExec.branchAddr.valid
-          branchAddr.bits  := io.feedbackFromExec.branchAddr.bits
-        }
-      }.otherwise {
-        when(branchAddr.valid) {
-          nextPc           := branchAddr.bits
-          branchAddr.valid := 0.B
-          nextState        := State.Free
-        }.elsewhen(io.feedbackFromExec.branchAddr.valid) {
-          nextPc    := io.feedbackFromExec.branchAddr.bits
-          nextState := State.Free
-        }.otherwise {
-          nextPc    := pc.io.out
-          nextState := State.Blocked
-        }
-      }
-    }
-
-    is(State.Blocked) {
-      when(io.feedbackFromExec.branchAddr.valid) {
-        nextState := State.Free
-        nextPc    := io.feedbackFromExec.branchAddr.bits
-      }.elsewhen(branchAddr.valid) {
-        nextState        := State.Free
-        nextPc           := branchAddr.bits
-        branchAddr.valid := 0.B
-      }.otherwise {
-        nextPc    := pc.io.out
-        nextState := State.Blocked
-      }
-    }
-
-    is(State.RESERVED) {
-      nextPc    := pc.io.out
-      nextState := State.RESERVED
+  }.otherwise {
+    when(bpc.valid && ibEntries(0).bits.addr =/= bpc.bits) {
+      innerFlush := 1.B
+      restMask(0) := 0.B
+      restMask(1) := 0.B
     }
   }
 
-  state := nextState
+  when(insertIntoIb) {
+    slot := ((ibEntries(1).valid && preDecs(1).io.out.isBranch) ||
+      (!ibEntries(1).valid && preDecs(0).io.out.isBranch))
 
-  pc.io.stall := 0.B
-  pc.io.in    := nextPc
+    when(ibEntries(1).valid && preDecs(1).io.out.isBranch) {
+      bpc.valid := 1.B
+      bpc.bits  := preDecs(1).io.out.predictBT
+    }.elsewhen(ibEntries(1).valid && preDecs(0).io.out.isBranch) {
+      bpc.valid := 1.B
+      bpc.bits  := preDecs(0).io.out.predictBT
+    }.elsewhen(!ibEntries(1).valid && preDecs(0).io.out.isBranch) {
+      bpc.valid := 1.B
+      bpc.bits  := preDecs(0).io.out.predictBT
+    }.otherwise {
+      bpc.valid := 0.B
+    }
+  }
 
-  io.iCache.addr.bits  := pc.io.out
-  io.iCache.addr.valid := 1.B
-  io.iCache.data.ready := 1.B
+  for (i <- 0 to 1) {
+    io.withDecode.ibufferEntries(i).valid := ibEntries(i).valid && restMask(i) && insertIntoIb
+    io.withDecode.ibufferEntries(i).bits  := ibEntries(i).bits
+  }
 
-  io.withDecode.ibufferEntries <> ibuffer.io.read
-
-  // debug in verilog
-  io.pc    := pc.io.out
-  io.state := state
+  io.pc := pc
 }
 
-class PC extends Module {
-  val io = IO(new Bundle {
-    val out   = Output(UInt(addrWidth.W))
-    val in    = Input(UInt(addrWidth.W))
-    val stall = Input(Bool())
-  })
-  val data = RegInit(0.U(addrWidth.W))
-  when(!io.stall) {
-    data := io.in
+object FetchUtil {
+  def isLastInst(instAddr: UInt): Bool = {
+    assert(instAddr.getWidth == addrWidth)
+    instAddr(4, 2) === "b111".U
   }
-  io.out := data
+
+  /**
+    * Inflates addr, inst, valid for two ib entry valid bundles.
+    *
+    * @param resp
+    * @param pc
+    * @return Incomplete wirings. 
+    */
+  def getIbEntryCouple(resp: ICacheResp, pc: UInt): Vec[Valid[IBEntry]] = {
+    assert(pc.getWidth == 32)
+    assert(resp.data.length == 2)
+    // Wiring in-complete on purpose.
+    val ibEntries = Wire(Vec(2, Valid(new IBEntry)))
+    ibEntries(0).valid     := 1.B
+    ibEntries(0).bits.addr := pc
+    ibEntries(0).bits.inst := resp.data(0)
+    ibEntries(1).valid     := !isLastInst(pc)
+    ibEntries(1).bits.addr := pc + 4.U
+    ibEntries(1).bits.inst := resp.data(1)
+
+    ibEntries
+  }
 }
