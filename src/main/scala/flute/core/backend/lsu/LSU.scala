@@ -109,7 +109,7 @@ class LSU extends Module {
   io.instr.ready := reqFires || !s0.io.out.valid
   s0.io.in.bits  := io.instr.bits
   s0.io.in.valid := io.instr.valid
-  // TODO: LSU指令完成，写入rob entry
+  // LSU指令完成，写入rob entry
   val toRob = WireInit(0.U.asTypeOf(new MemReq))
   val replacedData = for (i <- 0 until 4) yield {
     Mux(

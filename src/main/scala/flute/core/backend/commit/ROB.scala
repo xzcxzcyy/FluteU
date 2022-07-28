@@ -57,6 +57,7 @@ class ROB(numEntries: Int, numRead: Int, numWrite: Int, numSetComplete: Int) ext
     val read        = Vec(numRead, Decoupled(new ROBEntry))
     val write       = Vec(numWrite, new ROBWrite(numEntries))
     val setComplete = Vec(numSetComplete, Input(new ROBCompleteBundle(log2Up(numEntries))))
+    val flush       = Input(Bool())
   })
 
   val entries = Mem(numEntries, new ROBEntry)
@@ -97,8 +98,8 @@ class ROB(numEntries: Int, numRead: Int, numWrite: Int, numSetComplete: Int) ext
     io.read(i).valid := offset < deqEntries
   }
 
-  head_ptr := head_ptr + numDeq
-  tail_ptr := tail_ptr + numEnq
+  head_ptr := Mux(io.flush, 0.U, head_ptr + numDeq)
+  tail_ptr := Mux(io.flush, 0.U, tail_ptr + numEnq)
 
   for (port <- io.setComplete) {
     when(port.valid) {
