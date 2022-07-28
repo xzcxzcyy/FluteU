@@ -9,6 +9,7 @@ import flute.cache.components.TagValidBundle
 import flute.cache.lru.LRU
 import flute.cache.components.RefillUnit
 import flute.axi.AXIIO
+import flute.cache.axi.AXIRead
 
 class ICacheReq extends Bundle {
   val addr = UInt(addrWidth.W)
@@ -21,6 +22,22 @@ class ICacheResp extends Bundle {
 class ICacheWithCore extends Bundle {
   val req  = Flipped(DecoupledIO(new ICacheReq))
   val resp = ValidIO(new ICacheResp)
+}
+
+class ThroughICache extends Module {
+  implicit val config = new CacheConfig(numOfBanks = 2)
+
+  val io = IO(new Bundle {
+    val core = new ICacheWithCore
+    val axi  = AXIIO.master()
+  })
+
+  val axiRead = Module(new AXIRead(axiId = 0.U))
+  io.axi <> axiRead.io.axi
+
+  
+
+
 }
 
 class InstrCache(cacheConfig: CacheConfig) extends Module {

@@ -67,4 +67,6 @@ class AXIRead(axiId: UInt) extends Module {
   io.req.ready  := (state === idle)
   io.resp.valid := (state === finish)
 
+  io.req.bits := dataBuffer
+
 }

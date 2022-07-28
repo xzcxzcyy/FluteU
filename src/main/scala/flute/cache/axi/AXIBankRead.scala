@@ -17,7 +17,7 @@ class AXIBankRead(axiId: UInt)(implicit cacheConfig: CacheConfig) extends Module
 
   val io = IO(new Bundle {
     val req  = Flipped(DecoupledIO(UInt(addrWidth.W)))
-    val resp = ValidIO(UInt((dataWidth * len).W))
+    val resp = ValidIO(Vec(len, UInt(dataWidth.W)))
 
     val axi = AXIIO.master()
   })
@@ -81,5 +81,7 @@ class AXIBankRead(axiId: UInt)(implicit cacheConfig: CacheConfig) extends Module
 
   io.req.ready  := (state === idle)
   io.resp.valid := (state === finish)
+
+  io.resp.bits := dataBuffer
 
 }
