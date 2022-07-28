@@ -9,10 +9,10 @@ import flute.config.CacheConfig
 /**
   * AXIRead FSM who buffers both the req and resp
   *
-  * @param axiId : AXI ID
+  * @param axiId : AXI ID (4.W)
   * @param len   : 传输长度，单位：32bit
   */
-class AXIBankRead(axiId: Int)(implicit cacheConfig: CacheConfig) extends Module {
+class AXIBankRead(axiId: UInt)(implicit cacheConfig: CacheConfig) extends Module {
   private val len = (cacheConfig.numOfBanks - 1)
 
   val io = IO(new Bundle {
@@ -35,7 +35,7 @@ class AXIBankRead(axiId: Int)(implicit cacheConfig: CacheConfig) extends Module 
   io.axi.w  := DontCare
   io.axi.b  := DontCare
 
-  io.axi.ar.bits.id    := axiId.U(4.W)
+  io.axi.ar.bits.id    := axiId
   io.axi.ar.bits.addr  := Mux(state === active, addrBuffer, io.req.bits)
   io.axi.ar.bits.len   := len.U(4.W)
   io.axi.ar.bits.size  := "b010".U(3.W) // always 4 bytes
@@ -61,7 +61,7 @@ class AXIBankRead(axiId: Int)(implicit cacheConfig: CacheConfig) extends Module 
     }
 
     is(transfer) {
-      when(io.axi.r.fire && io.axi.r.bits.id === axiId.U) {
+      when(io.axi.r.fire && io.axi.r.bits.id === axiId) {
         dataBuffer(index) := io.axi.r.bits
         index             := index + 1.U
 
