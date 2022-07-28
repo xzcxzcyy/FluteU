@@ -125,13 +125,13 @@ class Fetch extends Module {
     slot := ((ibEntries(1).valid && preDecs(1).io.out.isBranch) ||
       (!ibEntries(1).valid && preDecs(0).io.out.isBranch))
 
-    when(ibEntries(1).valid && preDecs(1).io.out.isBranch) {
+    when(ibEntries(1).valid && preDecs(1).io.out.isBranch && !innerFlush) {
       bpc.valid := 1.B
       bpc.bits  := preDecs(1).io.out.predictBT
-    }.elsewhen(ibEntries(1).valid && preDecs(0).io.out.isBranch) {
+    }.elsewhen(ibEntries(1).valid && preDecs(0).io.out.isBranch && !innerFlush) {
       bpc.valid := 1.B
       bpc.bits  := preDecs(0).io.out.predictBT
-    }.elsewhen(!ibEntries(1).valid && preDecs(0).io.out.isBranch) {
+    }.elsewhen(!ibEntries(1).valid && preDecs(0).io.out.isBranch && !innerFlush) {
       bpc.valid := 1.B
       bpc.bits  := preDecs(0).io.out.predictBT
     }.otherwise {
