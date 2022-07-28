@@ -67,7 +67,7 @@ class Fetch extends Module {
     pc := io.cp0.epc
   }.elsewhen(io.branchCommit.pcRestore.valid) {
     pc := io.branchCommit.pcRestore.bits
-  }.elsewhen(innerFlush && pcRenewal) {
+  }.elsewhen(innerFlush) {
     pc := bpc.bits
   }.elsewhen(pcRenewal) {
     pc := Mux(FetchUtil.isLastInst(pc), pc + 4.U, pc + 8.U)
@@ -82,7 +82,7 @@ class Fetch extends Module {
   pcQ.io.flush.get := needFlush
 
   val cacheRespValid = io.iCache.resp.valid
-  when(extFlush) {
+  when(needFlush) {
     respStage.valid := 0.B
   }.elsewhen(cacheRespValid && pcRenewal) {
     respStage := io.iCache.resp
@@ -121,7 +121,7 @@ class Fetch extends Module {
     }
   }
 
-  when(insertIntoIb) {
+  when(insertIntoIb && !extFlush) {
     slot := ((ibEntries(1).valid && preDecs(1).io.out.isBranch) ||
       (!ibEntries(1).valid && preDecs(0).io.out.isBranch))
 
@@ -137,6 +137,11 @@ class Fetch extends Module {
     }.otherwise {
       bpc.valid := 0.B
     }
+  }
+
+  when(extFlush) {
+    bpc.valid := 0.B
+    slot := 0.B
   }
 
   for (i <- 0 to 1) {
