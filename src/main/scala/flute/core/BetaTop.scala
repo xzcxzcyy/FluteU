@@ -11,6 +11,7 @@ import flute.cache.top.DataCache
 import flute.config.CacheConfig
 import flute.core.backend.Backend
 import flute.core.frontend.Frontend
+import flute.cache.ICache
 
 class BetaTop(iFile: String, dFile: String) extends Module {
   val io = IO(new Bundle {
@@ -20,17 +21,18 @@ class BetaTop(iFile: String, dFile: String) extends Module {
     val count  = Output(UInt(dataWidth.W))
   })
 
-  val frontend = Module(new Frontend(memoryFile = iFile))
+  val frontend = Module(new Frontend)
   val backend  = Module(new Backend)
   val cp0      = Module(new CP0)
   val dcache   = Module(new DataCache(new CacheConfig, dFile))
+  val iCache   = Module(new ICache(iFile))
 
   backend.io.ibuffer <> frontend.io.out
   frontend.io.branchCommit := backend.io.branchCommit
   frontend.io.cp0.epc      := cp0.io.core.epc
   frontend.io.cp0.eretReq  := backend.io.cp0.eret
   frontend.io.cp0.intrReq  := cp0.io.core.intrReq
-
+  frontend.io.icache       := iCache.io
   io.pc                    := frontend.io.pc
   cp0.io.hwIntr            := io.hwIntr
   // TEMP //
