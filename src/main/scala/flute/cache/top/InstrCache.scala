@@ -9,7 +9,7 @@ import flute.cache.components.TagValidBundle
 import flute.cache.lru.LRU
 import flute.cache.components.RefillUnit
 import flute.axi.AXIIO
-import flute.cache.axi.AXIRead
+import flute.cache.axi.AXIBankRead
 
 class ICacheReq extends Bundle {
   val addr = UInt(addrWidth.W)
@@ -25,18 +25,29 @@ class ICacheWithCore extends Bundle {
 }
 
 class ThroughICache extends Module {
-  implicit val config = new CacheConfig(numOfBanks = 2)
+  implicit val config = new CacheConfig(numOfBanks = fetchGroupSize)
 
   val io = IO(new Bundle {
     val core = new ICacheWithCore
     val axi  = AXIIO.master()
   })
 
-  val axiRead = Module(new AXIRead(axiId = 0.U))
+  val axiRead = Module(new AXIBankRead(axiId = 0.U))
   io.axi <> axiRead.io.axi
 
-  
+  axiRead.io.req.bits := io.core.req.bits.addr
+  axiRead.io.req.ready <> io.core.req.ready
+  axiRead.io.req.valid := io.core.req.valid
 
+  val index = RegInit(0.U(config.bankIndexLen.W))
+  when(io.core.req.fire) {
+    index := config.getBankIndex(io.core.req.bits.addr)
+  }
+
+  for (i <- 0 until fetchGroupSize) {
+    io.core.resp.bits.data(i) := axiRead.io.resp.bits(index + i.U)
+  }
+  io.core.resp.valid := axiRead.io.resp.valid
 
 }
 
