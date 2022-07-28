@@ -20,6 +20,7 @@ class MicroOp(rename: Boolean = false) extends Bundle {
   val loadMode   = UInt(LoadMode.width.W)
   val storeMode  = UInt(StoreMode.width.W)
   val aluOp      = UInt(ALUOp.width.W)
+  val mduOp      = UInt(MDUOp.width.W)
   val op1        = new OpBundle()
   val op2        = new OpBundle()
   val bjCond     = UInt(BJCond.width.W)
@@ -83,6 +84,7 @@ class Decoder extends Module {
   io.microOp.loadMode       := controller.io.loadMode
   io.microOp.storeMode      := controller.io.storeMode
   io.microOp.aluOp          := controller.io.aluOp
+  io.microOp.mduOp                  := controller.io.mduOp
   io.microOp.op1.op := MuxLookup(
     key = controller.io.op1Recipe,
     default = 0.U,
