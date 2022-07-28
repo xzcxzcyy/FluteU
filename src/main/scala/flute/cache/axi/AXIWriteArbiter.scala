@@ -20,7 +20,7 @@ class AXIWriteArbiter(masterCount: Int) extends Module {
   io.bus.ar := DontCare
   io.bus.r  := DontCare
   for (i <- 0 until masterCount) {
-    when(i.U === awSel) {
+    when(i.U === awSel && state === lock) {
       io.masters(i).aw <> io.bus.aw
       io.masters(i).w <> io.bus.w
       io.masters(i).b <> io.bus.b
@@ -30,6 +30,13 @@ class AXIWriteArbiter(masterCount: Int) extends Module {
       io.masters(i).b.valid  := 0.B
       io.masters(i).b.bits   := DontCare
     }
+  }
+  when(state === idle) {
+    io.bus.aw.valid := 0.B
+    io.bus.aw.bits  := DontCare
+    io.bus.w.valid  := 0.B
+    io.bus.w.bits   := DontCare
+    io.bus.b.ready  := 1.B
   }
 
   switch(state) {

@@ -21,7 +21,7 @@ class AXIReadArbiter(masterCount: Int) extends Module {
   io.bus.w  := DontCare
   io.bus.b  := DontCare
   for (i <- 0 until masterCount) {
-    when(i.U === arSel) {
+    when(i.U === arSel && state === lock) {
       io.masters(i).ar <> io.bus.ar
       io.masters(i).r <> io.bus.r
     }.otherwise {
@@ -29,6 +29,11 @@ class AXIReadArbiter(masterCount: Int) extends Module {
       io.masters(i).r.valid  := 0.B
       io.masters(i).r.bits   := DontCare
     }
+  }
+  when(state === idle) {
+    io.bus.ar.valid := 0.B
+    io.bus.ar.bits  := DontCare
+    io.bus.r.ready  := 0.B
   }
 
   switch(state) {
