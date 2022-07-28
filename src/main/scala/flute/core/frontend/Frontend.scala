@@ -14,6 +14,7 @@ class Frontend(nWays: Int = 2, memoryFile: String = "test_data/imem.in") extends
     val out          = Vec(nWays, DecoupledIO(new IBEntry))
     val pc           = Output(UInt(addrWidth.W))
     val branchCommit = Input(new BranchCommit)
+    val cp0          = new FetchWithCP0
   })
 
   val fetch  = Module(new Fetch)
@@ -21,7 +22,7 @@ class Frontend(nWays: Int = 2, memoryFile: String = "test_data/imem.in") extends
 
   fetch.io.iCache <> iCache.io
   io.out <> fetch.io.withDecode.ibufferEntries
-  fetch.io.cp0          := DontCare
+  fetch.io.cp0          := io.cp0
   fetch.io.branchCommit := io.branchCommit
 
   io.pc := fetch.io.pc

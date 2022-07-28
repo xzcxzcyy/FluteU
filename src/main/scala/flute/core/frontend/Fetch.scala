@@ -31,7 +31,7 @@ class FetchWithCP0 extends Bundle {
 class Fetch extends Module {
   assert(fetchGroupSize == 2)
 
-  private val pcQueueVolume: Int = 4
+  private val pcQueueVolume: Int = 8
 
   val io = IO(new Bundle {
     val withDecode   = new FetchIO()
@@ -106,14 +106,18 @@ class Fetch extends Module {
   ibEntries(0).bits.inSlot := slot
   ibEntries(1).bits.inSlot := preDecs(0).io.out.isBranch
 
+  val restMask = WireInit(VecInit(Seq.fill(fetchGroupSize)(1.B)))
   innerFlush := 0.B
   when(slot) {
     when(ibEntries(1).valid && ibEntries(1).bits.addr =/= bpc.valid) {
       innerFlush := 1.B
+      restMask(1) := 0.B
     }
   }.otherwise {
     when(bpc.valid && ibEntries(0).bits.addr =/= bpc.bits) {
       innerFlush := 1.B
+      restMask(0) := 0.B
+      restMask(1) := 0.B
     }
   }
 
@@ -136,7 +140,7 @@ class Fetch extends Module {
   }
 
   for (i <- 0 to 1) {
-    io.withDecode.ibufferEntries(i).valid := ibEntries(i).valid && insertIntoIb
+    io.withDecode.ibufferEntries(i).valid := ibEntries(i).valid && restMask(i) && insertIntoIb
     io.withDecode.ibufferEntries(i).bits  := ibEntries(i).bits
   }
 

@@ -21,6 +21,7 @@ class ICacheResp extends Bundle {
 class ICacheWithCore extends Bundle {
   val req  = Flipped(DecoupledIO(new ICacheReq))
   val resp = ValidIO(new ICacheResp)
+  val flush = Input(Bool())
 }
 
 class InstrCache(cacheConfig: CacheConfig) extends Module {
