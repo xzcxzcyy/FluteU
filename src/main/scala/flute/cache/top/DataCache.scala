@@ -24,6 +24,8 @@ class DCacheResp extends Bundle {
 }
 
 class DCachePorts extends Bundle {
+  val flush = Input(Bool())
+
   val req = Flipped(DecoupledIO(new DCacheReq))
 
   /** valid 标志一次有效的load数据, store类型的请求不做任何回应 */
@@ -45,7 +47,7 @@ class DataCache(cacheConfig: CacheConfig, memoryFile: String) extends Module {
   }
 
   io.req.ready := 1.B
-  when(io.req.fire) {
+  when(io.req.fire && !io.flush) {
     s0.valid := 1.B
     s0.bits  := io.req.bits
   }.otherwise {
@@ -81,7 +83,7 @@ class DataCache(cacheConfig: CacheConfig, memoryFile: String) extends Module {
 
   }
 
-  when(s0.valid && isLoad) {
+  when(s0.valid && isLoad && !io.flush) {
     s1.valid         := 1.B
     s1.bits.loadData := readData
   }.otherwise {

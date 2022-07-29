@@ -9,6 +9,7 @@ class Dispatch(nWays: Int = 2, nQueue: Int = 4) extends Module {
 
   val io = IO(new Bundle {
     val in = Vec(nWays, Flipped(ValidIO(new MicroOp(rename = true))))
+    val flush = Input(Bool())
 
     // ready 标志当前拍Queue是否有空间
     // 0, 1 -> ALU Queue
@@ -73,19 +74,29 @@ class Dispatch(nWays: Int = 2, nQueue: Int = 4) extends Module {
 
   switch(state) {
     is(idle) {
-      when(isMDU(0) && isMDU(1) && io.out(3).fire) {
-        state := dualMDU
-      }.elsewhen(isLSU(0) && isLSU(1) && io.out(2).fire) {
-        state := dualLSU
+      when(!io.flush) {
+        when(isMDU(0) && isMDU(1) && io.out(3).fire) {
+          state := dualMDU
+        }.elsewhen(isLSU(0) && isLSU(1) && io.out(2).fire) {
+          state := dualLSU
+        }
       }
     }
 
     is(dualLSU) {
-      state := Mux(io.out(2).fire, idle, dualLSU)
+      when(io.flush) {
+        state := idle
+      }.otherwise {
+        state := Mux(io.out(2).fire, idle, dualLSU)
+      }
     }
 
     is(dualMDU) {
-      state := Mux(io.out(3).fire, idle, dualMDU)
+      when(io.flush) {
+        state := idle
+      }.otherwise {
+        state := Mux(io.out(3).fire, idle, dualMDU)
+      }
     }
   }
 
