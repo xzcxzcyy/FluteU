@@ -1,120 +1,100 @@
-`timescale 1ns/100ps
-//module of 32 bit divider
-module bit32_divider (dividend,divider,s,quotient,remainder,error);
+`define DIV_FREE        2'b00
+`define DIV_ON          2'b01
+`define DIV_END         2'b10
+`define DIV_BY_ZERO     2'b11
 
-input [31:0] dividend;
-input [31:0] divider;
-input s;//switch between unsigned(s == 0) and signed(s == 1) division mode
-output [31:0] quotient;
-output [31:0] remainder;
-output error;//error sign, report error when divider == 0
+`define ZERO_DOUBLE_WORD 64'h0000_0000_0000_0000
+`define ZERO_WORD       32'h00000000
 
-reg [31:0] quotient;
-reg [31:0] remainder;
-reg error;
-reg [31:0] tdividend;//temporarily save dividend
-reg [31:0] tdivider;//temporarily save divider
-reg [4:0] L1; //MSB of dividend
-reg [4:0] L2; //MSB of divider
-reg [4:0] d;  //difference, d = L1 - L2
-wire s;
-reg sign;
-reg i;//an indicator
+module divider(
+    input wire          rst,
+    input wire          clk,
 
-always @(dividend or divider)
-begin
-/*save the two operands into temporary registers and manipulate the temps afterwads*/
-  tdividend <= dividend;
-  tdivider <= divider;
-end
+    input wire          signed_div_i,
+    input wire[31:0]    opdata1_i,
+    input wire[31:0]    opdata2_i,
+    input wire          start_i,            // start divide
+    input wire          annul_i,            // cancel divide
 
-always @(tdividend or tdivider)
-begin
-  error = 0;
-  //specical operands
-  if (tdivider == 0)
-      error = 1;//report error when divider == 0
-  
-  else if (tdividend == 0)
-    begin
-      quotient = 0;
-      remainder = 0;
-    end
-  
-  //general operands
-  else
-  begin
-      //in signed mode,save the signs and convert the operands to unsigned mode
-      if (s == 1)
-      begin
-      sign = tdividend[31] - tdivider[31];
-      if (tdividend[31] == 1)
-        begin
-        tdividend = tdividend - 1;
-        tdividend = ~tdividend;
+    output reg[63:0]    result_o,
+    output reg          ready_o             // divide complete
+);
+
+    reg[1:0]    state;
+    reg[5:0]    cnt;
+    reg[64:0]   tmp_result;
+    reg[31:0]   tmp_opdata2;
+    wire[32:0]  minuend;
+
+    assign minuend = {1'b0, tmp_result[63:32]} - {1'b0, tmp_opdata2};
+
+    always @(posedge clk) begin
+        if (rst == 1'b1) begin
+            state <= `DIV_FREE;
+            result_o <= `ZERO_DOUBLE_WORD;
+            ready_o  <= 1'b0;
+        end else begin
+            case (state)
+                `DIV_FREE: begin
+                    if(start_i == 1'b1 && annul_i == 1'b0) begin
+                        if(opdata2_i == `ZERO_WORD) begin
+                            state <= `DIV_BY_ZERO;
+                        end else begin
+                            state <= `DIV_ON;
+                            cnt   <= 6'b000000;
+                            if(signed_div_i == 1'b1 && opdata1_i[31] == 1'b1) begin
+                                tmp_result <= {`ZERO_WORD, ~opdata1_i + 1, 1'b0};
+                            end else begin
+                                tmp_result <= {`ZERO_WORD, opdata1_i, 1'b0};
+                            end
+                            if(signed_div_i == 1'b1 && opdata2_i[31] == 1'b1) begin
+                                tmp_opdata2 = ~opdata2_i + 1;
+                            end else begin
+                                tmp_opdata2 = opdata2_i;
+                            end
+                        end
+                    end else begin
+                        state <= `DIV_FREE;
+                        result_o <= `ZERO_WORD;
+                        ready_o <= 1'b0;
+                    end  // if opdata2_i
+                end // `DIV_FREE
+                `DIV_ON: begin
+                    if(annul_i == 1'b1) begin
+                        state <= `DIV_FREE;
+                    end else begin
+                        if(cnt != 6'b100000) begin
+                            cnt <= cnt + 1;
+                            if(minuend[32] == 1'b1) begin
+                                tmp_result <= {tmp_result[63:0], 1'b0};
+                            end else begin
+                                tmp_result <= {minuend[31:0], tmp_result[31:0], 1'b1};
+                            end
+                        end else begin
+                            if((signed_div_i == 1'b1) && ((opdata1_i[31] ^ opdata2_i[31]) == 1'b1)) begin
+                                tmp_result[31:0] <= ~tmp_result[31:0] + 1;
+                            end
+                            if((signed_div_i == 1'b1) && ((opdata1_i[31] ^ tmp_result[64]) == 1'b1)) begin
+                                tmp_result[64:33] <= ~tmp_result[64:33] + 1;
+                            end
+                            state <= `DIV_END;
+                        end
+                    end
+                end // `DIV_ON
+                `DIV_END: begin
+                    result_o <= {tmp_result[64:33], tmp_result[31:0]};
+                    ready_o <= 1'b1;
+                    if(start_i == 1'b0) begin
+                        state <= `DIV_FREE;
+                        result_o <= `ZERO_DOUBLE_WORD;
+                        ready_o <= 1'b0;
+                    end
+                end // `DIV_END
+                `DIV_BY_ZERO: begin
+                    state <= `DIV_END;
+                    tmp_result <= {`ZERO_DOUBLE_WORD, 1'b0};
+                end // `DIV_BY_ZERO
+            endcase
         end
-      if (tdivider[31] == 1)
-        begin
-        tdivider = tdivider - 1;
-        tdivider = ~tdivider;
-        end
-      end
-
-      //find MSB of dividend
-      L1 = 5'd31;
-      for (i = 1; L1 >= 0 && i > 0; L1 = L1 - 1)
-      begin
-      if (tdividend[L1] == 1)
-        begin
-        i = 0;
-	L1 = L1 + 1;
-	end
-      end
-      //find MSB of divider
-      L2 = 5'd31;
-      for (i = 1; L2 >= 0 && i > 0; L2 = L2 - 1)
-      begin
-      if (tdivider[L2] == 1)
-	begin
-	i = 0;	
-	L2 = L2 + 1;
-	end
-      end
-	      
-      d = L1 - L2;
-      remainder = tdividend;
-      tdivider = tdivider<<d;
-      quotient = 0;
-  
-      //calculate quotient and remainder in the loop
-      for (d = d; d != 5'd31; d = d - 1)
-      begin
-       if (remainder >= tdivider)
-	 begin
-	   quotient = {quotient[30:0],1'b0} + 1;
-	   remainder = remainder - tdivider;
-	   tdivider = tdivider>>1;
-	 end
-	else
-	 begin
-	   quotient = {quotient[30:0],1'b0} + 0;
-	   remainder = remainder;
-	   tdivider = tdivider>>1;
-	 end
-      end   
     end
-    //convert quotient and remainder back to signed mode
-    if (s == 1)
-    begin
-      if (sign == 1)
-        begin
-        quotient = ~quotient;
-        quotient = quotient + 1;
-        quotient = {sign,quotient[30:0]};
-        end
-      remainder = ~remainder;
-      remainder = remainder + 1;
-    end
-end
-
-endmodule
+endmodule // div

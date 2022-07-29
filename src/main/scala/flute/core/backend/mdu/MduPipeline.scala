@@ -12,6 +12,7 @@ import flute.core.backend.decode._
 import flute.core.components.StageReg
 import flute.core.backend.alu.BypassBundle
 import flute.cp0.ExceptionBundle
+import flute.core.backend.commit.ROBCompleteBundle
 
 class MduPipeline extends Module {
 	val io = IO(new Bundle {
@@ -65,12 +66,12 @@ class MduPipeline extends Module {
 	)
 
 	val ex2Wb = Wire(new MduExWbBundle)
-	ex2Wb.valid := exIn.valid 
-	ex2Wb.robAddr := exIn.bits.robAddr
-	ex2Wb.hiWEn := true.B
-	ex2Wb.hiWData := mdu.io.result.hi 
-	ex2Wb.loWEn := true.B 
-	ex2Wb.loWData := mdu.io.result.lo 
+	ex2Wb.valid     := mdu.io.result.hi.valid
+	ex2Wb.robAddr   := exIn.bits.robAddr
+	ex2Wb.hiWEn     := mdu.io.result.hi.valid
+	ex2Wb.hiWData   := mdu.io.result.hi.bits
+	ex2Wb.loWEn     := mdu.io.result.lo.valid
+	ex2Wb.loWData   := mdu.io.result.lo.bits
 	ex2Wb.exception := DontCare  // TODO: mdu output有除0 error
 
 	// Stage 3: WriteBack 
@@ -78,6 +79,15 @@ class MduPipeline extends Module {
 	stage3.io.in := ex2Wb 
 
 	val wbIn = stage3.io.data 
+	val writeRob = WireInit(0.U.asTypeOf(new ROBCompleteBundle(robEntryNumWidth)))
+	writeRob.valid       := wbIn.valid 
+	writeRob.robAddr     := wbIn.robAddr  // ?
+	writeRob.exception   := wbIn.exception
+	writeRob.memWMode    := DontCare
+	writeRob.memWAddr    := DontCare
+	writeRob.memWData    := DontCare 
+	writeRob.computeBT   := DontCare  // ?
+	writeRob.branchTaken := DontCare
 
 }
 

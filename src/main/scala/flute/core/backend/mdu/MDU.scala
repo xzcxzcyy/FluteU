@@ -6,8 +6,8 @@ import flute.config.CPUConfig._
 
 
 class HiLoBundle extends Bundle {
-  val hi = UInt(dataWidth.W)
-  val lo = UInt(dataWidth.W)
+  val hi = Valid(UInt(dataWidth.W))
+  val lo = Valid(UInt(dataWidth.W))
 }
 
 class MDU extends Module {
@@ -18,7 +18,6 @@ class MDU extends Module {
     val md     = Input(Bool())  // io.md===1.U : Mul
 
     val result = Output(new HiLoBundle)
-    val error  = Output(Bool())
   })
 
   // Mul
@@ -28,25 +27,33 @@ class MDU extends Module {
 
   // Div
   val div = Module(new DIVBlackBox())
-  div.io.s        := io.signed
-  div.io.dividend := io.op1
-  div.io.divider  := io.op2
-  io.error        := div.io.error
+  div.io.rst          := reset
+  div.io.clk          := clock
+  div.io.signed_div_i := io.signed
+  div.io.opdata1_i    := io.op1
+  div.io.opdata2_i    := io.op2
+  div.io.start_i      := 1.B  // io.enable
+  div.io.annul_i      := 0.B  // io.flush
 
-  io.result.hi   := Mux(io.md, result(63, 32), div.io.remainder)
-  io.result.lo   := Mux(io.md, result(31, 0) , div.io.quotient )
+  io.result.hi.bits   := Mux(io.md, result(63, 32), div.io.result_o(63, 32))
+  io.result.lo.bits   := Mux(io.md, result(31, 0) , div.io.result_o(31, 0))
+  io.result.hi.valid  := Mux(io.md, true.B, div.io.ready_o)
+  io.result.lo.valid  := Mux(io.md, true.B, div.io.ready_o)
 }
 
 class DIVBlackBox extends BlackBox with HasBlackBoxResource {
   val io = IO(new Bundle {
-    val s         = Input(Bool())
-    val dividend  = Input(UInt(32.W))
-    val divider   = Input(UInt(32.W))
-    val quotient  = Output(UInt(32.W))
-    val remainder = Output(UInt(32.W))
-    val error     = Output(Bool())
+    val rst          = Input(Reset())
+    val clk          = Input(Clock())
+    val signed_div_i = Input(Bool())
+    val opdata1_i    = Input(UInt(32.W))
+    val opdata2_i    = Input(UInt(32.W))
+    val start_i      = Input(Bool())
+    val annul_i      = Input(Bool())
+    val result_o     = Output(UInt(64.W))
+    val ready_o      = Output(Bool())
   })
-  addResource("/Divider.v")
+  addResource("/divider.v")
 
-  override def desiredName: String = "bit32_divider"
+  override def desiredName: String = "divider"
 }
