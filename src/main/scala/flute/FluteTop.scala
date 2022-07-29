@@ -46,7 +46,7 @@ class FluteTop extends Module {
   frontend.io.cp0.epc      := cp0.io.core.epc
   frontend.io.cp0.eretReq  := backend.io.cp0.eret
   frontend.io.cp0.intrReq  := cp0.io.core.intrReq
-  frontend.io.icache       := iCache.io.core
+  frontend.io.icache       <> iCache.io.core
   io.pc                    := frontend.io.pc
   cp0.io.hwIntr            := io.hwIntr
   // TEMP //

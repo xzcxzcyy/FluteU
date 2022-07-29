@@ -50,7 +50,7 @@ class AXIRead(axiId: UInt) extends Module {
     }
     is(transfer) {
       when(io.axi.r.fire && io.axi.r.bits.id === axiId) {
-        dataBuffer := io.axi.r.bits
+        dataBuffer := io.axi.r.bits.data
         when(io.axi.r.bits.last) {
           state := finish
         }
@@ -67,6 +67,6 @@ class AXIRead(axiId: UInt) extends Module {
   io.req.ready  := (state === idle)
   io.resp.valid := (state === finish)
 
-  io.req.bits := dataBuffer
+  io.resp.bits := dataBuffer
 
 }

@@ -65,6 +65,12 @@ class ThroughDCache extends Module {
   io.axi.aw <> axiWrite.io.axi.aw
   io.axi.w <> axiWrite.io.axi.w
   io.axi.b <> axiWrite.io.axi.b
+
+  axiRead.io.axi.aw  := DontCare
+  axiRead.io.axi.w   := DontCare
+  axiRead.io.axi.b   := DontCare
+  axiWrite.io.axi.ar := DontCare
+  axiWrite.io.axi.r  := DontCare
 }
 
 class DataCache(cacheConfig: CacheConfig, memoryFile: String) extends Module {

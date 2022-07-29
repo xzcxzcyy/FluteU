@@ -6,7 +6,7 @@ import flute.axi.AXIIO
 
 class AXIWriteArbiter(masterCount: Int) extends Module {
   val io = IO(new Bundle {
-    val masters = Vec(masterCount, AXIIO.master())
+    val masters = Vec(masterCount, AXIIO.slave())
     val bus     = AXIIO.master()
   })
 

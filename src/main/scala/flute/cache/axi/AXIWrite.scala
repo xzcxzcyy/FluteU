@@ -35,7 +35,7 @@ class AXIWirte(axiId: UInt) extends Module {
   io.axi.aw.bits.addr  := addrBuffer
   io.axi.aw.bits.id    := axiId
   io.axi.aw.bits.burst := "b01".U(2.W)
-  io.axi.aw.bits.len   := 0.U(4.W)       /// 只传输1拍
+  io.axi.aw.bits.len   := 0.U(4.W) /// 只传输1拍
   io.axi.aw.bits.size  := "b010".U(3.W)
   io.axi.aw.bits.cache := 0.U
   io.axi.aw.bits.prot  := 0.U
@@ -84,4 +84,9 @@ class AXIWirte(axiId: UInt) extends Module {
       state := idle
     }
   }
+
+  io.axi.w.valid  := (state === transfer)
+  io.axi.aw.valid := (state === active)
+  io.req.ready    := (state === idle)
+  io.resp         := (state === finish)
 }
