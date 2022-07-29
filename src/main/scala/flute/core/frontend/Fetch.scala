@@ -67,34 +67,33 @@ class Fetch extends Module {
     pc := io.cp0.epc
   }.elsewhen(io.branchCommit.pcRestore.valid) {
     pc := io.branchCommit.pcRestore.bits
-  }.elsewhen(innerFlush && pcRenewal) {
+  }.elsewhen(innerFlush) {
     pc := bpc.bits
   }.elsewhen(pcRenewal) {
     pc := Mux(FetchUtil.isLastInst(pc), pc + 4.U, pc + 8.U)
   }
-
+  // 笑死，前面管不着后面的
   io.iCache.req.valid     := cacheReqValid
   io.iCache.req.bits.addr := pc
   //TODO: Assign icache flush
 
   pcQ.io.enq.valid := pcQEnqValid
   pcQ.io.enq.bits  := pc
+  pcQ.io.deq.ready := respStage.valid
   pcQ.io.flush.get := needFlush
 
+  val insertIntoIb = pcQ.io.deq.fire
+
   val cacheRespValid = io.iCache.resp.valid
-  when(extFlush) {
+  when(needFlush || (insertIntoIb && !cacheRespValid)) {
     respStage.valid := 0.B
-  }.elsewhen(cacheRespValid && pcRenewal) {
+  }.elsewhen(cacheRespValid) {
     respStage := io.iCache.resp
   }
 
   // control signals
   val resultValid = respStage.valid && pcQ.io.deq.valid
-  pcQ.io.deq.ready := respStage.valid && pcRenewal
-  val insertIntoIb = pcQ.io.deq.fire
-  when(insertIntoIb && !cacheRespValid) {
-    respStage.valid := 0.B
-  }
+
   // data path
   val ibEntries = FetchUtil.getIbEntryCouple(respStage.bits, pcQ.io.deq.bits)
   for (i <- 0 until fetchGroupSize) yield {
@@ -110,33 +109,35 @@ class Fetch extends Module {
   innerFlush := 0.B
   when(slot) {
     when(ibEntries(1).valid && ibEntries(1).bits.addr =/= bpc.valid) {
-      innerFlush := 1.B
+      innerFlush  := 1.B
       restMask(1) := 0.B
     }
   }.otherwise {
     when(bpc.valid && ibEntries(0).bits.addr =/= bpc.bits) {
-      innerFlush := 1.B
+      innerFlush  := 1.B
       restMask(0) := 0.B
       restMask(1) := 0.B
     }
   }
 
-  when(insertIntoIb) {
+  when(insertIntoIb && !needFlush) {
     slot := ((ibEntries(1).valid && preDecs(1).io.out.isBranch) ||
       (!ibEntries(1).valid && preDecs(0).io.out.isBranch))
 
     when(ibEntries(1).valid && preDecs(1).io.out.isBranch) {
       bpc.valid := 1.B
       bpc.bits  := preDecs(1).io.out.predictBT
-    }.elsewhen(ibEntries(1).valid && preDecs(0).io.out.isBranch) {
-      bpc.valid := 1.B
-      bpc.bits  := preDecs(0).io.out.predictBT
-    }.elsewhen(!ibEntries(1).valid && preDecs(0).io.out.isBranch) {
+    }.elsewhen(preDecs(0).io.out.isBranch) {
       bpc.valid := 1.B
       bpc.bits  := preDecs(0).io.out.predictBT
     }.otherwise {
       bpc.valid := 0.B
     }
+  }
+
+  when(needFlush) {
+    bpc.valid := 0.B
+    slot      := 0.B
   }
 
   for (i <- 0 to 1) {
@@ -147,7 +148,7 @@ class Fetch extends Module {
   for (i <- 0 to 1) {
     io.withDecode.ibufferEntries(i) <> ib.io.read(i)
   }
-  ib.io.flush := extFlush
+  ib.io.flush     := extFlush
   io.iCache.flush := needFlush
 
   io.pc := pc
