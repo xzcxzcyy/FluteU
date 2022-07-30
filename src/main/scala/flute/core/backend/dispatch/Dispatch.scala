@@ -100,7 +100,7 @@ class Dispatch(nWays: Int = 2, nQueue: Int = 4) extends Module {
     }
   }
 
-  // note: 对于 0->非alu, 1->alu 指令的情况，仍将alu指令发往1,而不是发给0
+  // note: 对于 0->非alu, 1->alu 指令的情况，将alu指令发向0
   val congested = (alu0Valid && !io.out(0).ready) ||
     (alu1Valid && !io.out(1).ready) ||
     (lsuValid && !io.out(2).ready) ||
