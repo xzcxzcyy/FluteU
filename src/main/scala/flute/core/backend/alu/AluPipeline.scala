@@ -28,6 +28,7 @@ class AluPipeline extends Module {
     val uop = Input(Valid(new AluEntry))
     val prf = Flipped(new RegFileReadIO)
     val wb  = Output(new AluWB)
+    val flush = Input(Bool())
 
     val bypass = new BypassBundle
   })
@@ -88,8 +89,8 @@ class AluPipeline extends Module {
   io.wb.prf.writeData   := wbIn.regWData
   io.wb.prf.writeEnable := wbIn.regWEn
 
-  stage2.io.flush := !readIn.valid
-  stage3.io.flush := !stage2.io.data.valid
+  stage2.io.flush := !readIn.valid || io.flush
+  stage3.io.flush := !stage2.io.data.valid || io.flush
   stage2.io.valid := 1.B
   stage3.io.valid := 1.B
 
@@ -138,7 +139,6 @@ object AluPipelineUtil {
     // rob.valid     := ex2Wb.valid && ex2Wb.regWEn
     rob.memWAddr  := DontCare
     rob.memWData  := DontCare
-    rob.memWMode  := DontCare
 
     rob.branchTaken := wbIn.branchTaken
     rob.computeBT   := wbIn.computeBT

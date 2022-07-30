@@ -289,11 +289,9 @@ class FetchTest extends AnyFreeSpec with Matchers with ChiselScalatestTester {
 class FetchTestTop(file: String = "") extends Module {
   val io = IO(new Bundle {
     val withDecode       = new FetchIO
-    val feedbackFromExec = Flipped(new ExecuteFeedbackIO)
   })
   val iCache = Module(new ICache(s"target/clang/${file}.hexS"))
   val fetch  = Module(new Fetch)
   fetch.io.iCache <> iCache.io
   io.withDecode <> fetch.io.withDecode
-  fetch.io.feedbackFromExec <> io.feedbackFromExec
 }

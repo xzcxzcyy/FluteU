@@ -10,6 +10,9 @@ import flute.util.BitMode.fromIntToBitModeLong
 import flute.axi.AXIIO
 import flute.cache.axi.AXIReadPort
 import flute.cache.components.ReFillBuffer
+import flute.cache.top.ICacheWithCore
+import flute.cache.top.ICacheResp
+import flute.cache.top.ICacheReq
 
 class ICacheIO extends Bundle {
   val addr = Flipped(DecoupledIO(UInt(addrWidth.W)))
@@ -79,7 +82,7 @@ class ICacheWithAXI(cacheConfig: CacheConfig) extends Module {
   refillBuffer.io.beginBankIndex.valid := booting
   refillBuffer.io.beginBankIndex.bits  := bankIndex
   refillBuffer.io.dataIn <> axi.io.transferData
-  refillBuffer.io.dataLast      := axi.io.lastBeat
+  refillBuffer.io.dataLast := axi.io.lastBeat
   // refillBuffer.io.dataOut.ready := io.request.data.fire // tmp for now TODO
 
   io.request.data.bits := refillBuffer.io.dataOut.bits // tmp for now TODO
@@ -93,25 +96,31 @@ class ICacheWithAXI(cacheConfig: CacheConfig) extends Module {
   * @param memoryFile Path to memory file.
   */
 class ICache(memoryFile: String = "test_data/imem.in") extends Module {
-  val io = IO(new ICacheIO)
+  val io = IO(new ICacheWithCore)
 
-  val instInd = Cat(io.addr.bits(31, 2 + fetchGroupWidth), 0.U(fetchGroupWidth.W))
-
+  val s1  = RegInit(0.U.asTypeOf(Valid(new ICacheReq)))
   val mem = Mem(1024, UInt(dataWidth.W))
-
-  val memPorts = for (i <- 0 until fetchGroupSize) yield mem.read(instInd + i.U)
-
-  val lastInstInd = RegInit(-1.BM.U(29, 0))
-  lastInstInd := instInd
+  val s2  = RegInit(0.U.asTypeOf(Valid(new ICacheResp)))
 
   if (memoryFile.trim().nonEmpty) {
     loadMemoryFromFileInline(mem, memoryFile)
+  } else {
+    println("error ifile! ")
   }
 
-  io.addr.ready := 1.B
-  // io.data.valid := 1.B
-  io.data.valid := (lastInstInd === instInd)
-  for (i <- 0 to fetchGroupSize - 1) yield {
-    io.data.bits(i.U) := memPorts(i)
+  io.req.ready := 1.B
+  when(io.flush || !io.req.fire) {
+    s1.valid := 0.B
+  }.elsewhen(io.req.fire) {
+    s1.valid := io.req.valid
+    s1.bits  := io.req.bits
   }
+
+  val s1Index = s1.bits.addr(31, 2)
+  val s1Data  = (0 to 1).map(i => mem(s1Index + i.U))
+
+  s2.valid        := Mux(io.flush, 0.B, s1.valid)
+  s2.bits.data(0) := s1Data(0)
+  s2.bits.data(1) := Mux(s1Index(2, 0) =/= "b111".U, s1Data(1), 0.U(dataWidth.W))
+  io.resp         := s2
 }

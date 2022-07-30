@@ -6,23 +6,23 @@ import chisel3.util.isPow2
 import chisel3.util.log2Up
 import chisel3.util.PopCount
 
-class IbufferBundle[T <: Data](gen: T, numRead: Int, numWrite: Int) extends Bundle {
+class IbufferBundle[T <: Data](gen: T, numEntries: Int, numRead: Int, numWrite: Int) extends Bundle {
   val read  = Vec(numRead, Decoupled(gen))
   val write = Flipped(Vec(numWrite, Decoupled(gen)))
-  // val test  = Output(UInt(32.W))
+  val space = Output(UInt((log2Up(numEntries) + 1).W))
   val flush = Input(Bool())
 }
 
 /**
  * Ibuffer 是特化过的FIFO；
- * 写端口ready信号依赖valid, 允许 valid 位 [0 1 1 0] 模式（为了直连iCache）
+ * 写端口ready信号不依赖valid, 不允许 valid 位 [0 1 1 0] 模式。只允许 [1 1 0 0] (1置前)
  * 读端口valid信号不依赖ready, 只与寄存器状态相关。只允许 ready 位 [1 1 0] (1置前)
  * 连接时要注意外部的valid信号给出，不能组合依赖ready
  */ 
 class Ibuffer[T <: Data](gen: T, numEntries: Int, numRead: Int, numWrite: Int) extends Module {
   assert(isPow2(numEntries) && numEntries > 1)
 
-  val io = IO(new IbufferBundle(gen, numRead, numWrite))
+  val io = IO(new IbufferBundle(gen, numEntries, numRead, numWrite))
 
   val data = RegInit(VecInit(Seq.fill(numEntries)(0.U.asTypeOf(gen))))
 
@@ -35,54 +35,29 @@ class Ibuffer[T <: Data](gen: T, numEntries: Int, numRead: Int, numWrite: Int) e
   val deqEntries = difference
   val enqEntries = (numEntries - 1).U - difference
 
+  io.space := enqEntries
+
   val numTryEnq = PopCount(io.write.map(_.valid))
   val numTryDeq = PopCount(io.read.map(_.ready))
   val numDeq    = Mux(deqEntries < numTryDeq, deqEntries, numTryDeq)
   val numEnq    = Mux(enqEntries < numTryEnq, enqEntries, numTryEnq)
 
   for (i <- 0 until numWrite) {
-    val offset = Wire(UInt(log2Up(numEntries).W))
-    if (i == 0) {
-      offset := 0.U
-    } else {
-      offset := PopCount(io.write.slice(0, i).map(_.valid))
+    val offset = i.U
+    when(offset < enqEntries) {
+      data((tail_ptr + offset)(log2Up(numEntries) - 1, 0)) := io.write(i).bits
     }
-
-    when(io.write(i).valid) {
-      when(offset < numEnq) {
-        data((tail_ptr + offset)(log2Up(numEntries) - 1, 0)) := io.write(i).bits
-        io.write(i).ready                                    := 1.B
-      }.otherwise {
-        io.write(i).ready := 0.B
-      }
-    }.otherwise {
-      io.write(i).ready := 0.B
-    }
+    io.write(i).ready := offset < enqEntries
   }
 
   for (i <- 0 until numRead) {
     val offset = i.U
-
     when(offset < deqEntries) {
       io.read(i).bits  := data((head_ptr + offset)(log2Up(numEntries) - 1, 0))
     }.otherwise {
       io.read(i).bits := 0.U.asTypeOf(gen)
     }
     io.read(i).valid := offset < deqEntries
-
-    // when(io.read(i).ready) {
-    //   when(offset < numDeq) {
-    //     io.read(i).valid := 1.B
-    //     io.read(i).bits  := data((head_ptr + offset)(log2Up(numEntries) - 1, 0))
-    //   }.otherwise {
-    //     io.read(i).valid := 0.B
-    //     io.read(i).bits  := DontCare
-    //   }
-    // }.otherwise {
-    //   io.read(i).valid := 0.B
-    //   io.read(i).bits  := DontCare
-    // }
-
   }
 
   head_ptr := Mux(io.flush, 0.U, head_ptr + numDeq)
