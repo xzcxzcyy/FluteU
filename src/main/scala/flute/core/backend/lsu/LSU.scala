@@ -41,14 +41,14 @@ class MemReq extends Bundle {
 class LSU extends Module {
   val io = IO(new Bundle {
     val dcache   = new LSUWithDCacheIO
-    val instr    = Flipped(DecoupledIO(new MicroOp))
+    val instr    = Flipped(DecoupledIO(new MicroOp(rename = true)))
     val flush    = Input(Bool())
     val toRob    = ValidIO(new MemReq)
     val sbRetire = Input(Bool())
   })
 
   val sbuffer = Module(new Sbuffer)
-  val s0      = Module(new MuxStageReg(ValidBundle(new MicroOp)))
+  val s0      = Module(new MuxStageReg(ValidBundle(new MicroOp(rename = true))))
   val opQ     = Module(new Queue(new MemReq, 8, hasFlush = true))
   val respQ   = Module(new Queue(new DCacheResp, 8, hasFlush = true))
 

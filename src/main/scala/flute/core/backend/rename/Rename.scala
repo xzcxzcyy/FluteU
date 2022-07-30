@@ -102,16 +102,16 @@ class Rename(nWays: Int, nCommit: Int) extends Module {
   real(0).originReg := ideal(0).originReg
   for (i <- 1 until nWays) {
     val fire      = Wire(Vec(i, Bool()))
-    val originReg = Wire(Vec(i, UInt(phyRegAddrWidth.W)))
+    val phyWReg = Wire(Vec(i, UInt(phyRegAddrWidth.W)))
     for (j <- 0 until i) { //  0 <= j < i
       fire(j) := uops(j).regWriteEn && uops(j).writeRegAddr === uops(i).writeRegAddr
       // no need to && uop(i).regWriteEn, think why :)
-      originReg(j) := real(j).originReg
+      phyWReg(j) := real(j).writeReg
     }
 
     real(i).originReg := MuxCase(
       ideal(i).originReg,
-      for (j <- i - 1 to 0 by -1) yield { fire(j) -> originReg(j) }
+      for (j <- i - 1 to 0 by -1) yield { fire(j) -> phyWReg(j) }
     )
   }
 
