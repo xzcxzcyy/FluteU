@@ -50,7 +50,7 @@ class Commit(nCommit: Int = 2) extends Module {
   for (i <- 0 until nCommit) {
     var complete = robRaw(i).complete && (!isStore(i) || io.store.req.ready)
     for (j <- 0 until i) {
-      complete = complete && robRaw(j).complete && (!isStore(i) || io.store.req.ready)
+      complete = complete && robRaw(j).complete && (!isStore(j) || io.store.req.ready)
     }
     completeMask(i) := complete
   }
