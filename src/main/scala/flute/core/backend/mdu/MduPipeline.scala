@@ -81,12 +81,11 @@ class MduPipeline extends Module {
 	val wbIn = stage3.io.data 
 	val writeRob = WireInit(0.U.asTypeOf(new ROBCompleteBundle(robEntryNumWidth)))
 	writeRob.valid       := wbIn.valid 
-	writeRob.robAddr     := wbIn.robAddr  // ?
+	writeRob.robAddr     := wbIn.robAddr  
 	writeRob.exception   := wbIn.exception
-	writeRob.memWMode    := DontCare
 	writeRob.memWAddr    := DontCare
 	writeRob.memWData    := DontCare 
-	writeRob.computeBT   := DontCare  // ?
+	writeRob.computeBT   := DontCare  
 	writeRob.branchTaken := DontCare
 
 }
