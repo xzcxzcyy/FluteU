@@ -33,6 +33,10 @@ class FluteTop extends Module {
   val iCache   = Module(new ThroughICache)
 
   val axiReadArbiter = Module(new AXIReadArbiter(masterCount = 2))
+  axiReadArbiter.io.bus.aw := DontCare
+  axiReadArbiter.io.bus.w  := DontCare
+  axiReadArbiter.io.bus.b  := DontCare
+
   axiReadArbiter.io.masters(0) <> dCache.io.axi
   axiReadArbiter.io.masters(1) <> iCache.io.axi
   io.axi.ar <> axiReadArbiter.io.bus.ar
@@ -46,9 +50,9 @@ class FluteTop extends Module {
   frontend.io.cp0.epc      := cp0.io.core.epc
   frontend.io.cp0.eretReq  := backend.io.cp0.eret
   frontend.io.cp0.intrReq  := cp0.io.core.intrReq
-  frontend.io.icache       <> iCache.io.core
-  io.pc                    := frontend.io.pc
-  cp0.io.hwIntr            := io.hwIntr
+  frontend.io.icache <> iCache.io.core
+  io.pc         := frontend.io.pc
+  cp0.io.hwIntr := io.hwIntr
   // TEMP //
   cp0.io.core.read         := DontCare
   cp0.io.core.write        := DontCare

@@ -20,26 +20,27 @@ class AXIReadArbiter(masterCount: Int) extends Module {
   io.bus.aw := DontCare
   io.bus.w  := DontCare
   io.bus.b  := DontCare
+
+  io.bus.ar.bits  := io.masters(arSel).ar.bits
+  io.bus.ar.valid := io.masters(arSel).ar.valid && state === lock
+  io.bus.r.ready  := io.masters(arSel).r.ready && state === lock
+
   for (i <- 0 until masterCount) {
-    when(i.U === arSel && state === lock) {
-      io.masters(i).ar <> io.bus.ar
-      io.masters(i).r <> io.bus.r
-    }.otherwise {
-      io.masters(i).ar.ready := 0.B
-      io.masters(i).r.valid  := 0.B
-      io.masters(i).r.bits   := DontCare
-    }
-  }
-  when(state === idle) {
-    io.bus.ar.valid := 0.B
-    io.bus.ar.bits  := DontCare
-    io.bus.r.ready  := 0.B
+    io.masters(i).ar.ready := Mux(i.U === arSel, io.bus.ar.ready, 0.B) && state === lock
+    io.masters(i).r.valid  := Mux(i.U === arSel, io.bus.r.valid, 0.B) && state === lock
+    io.masters(i).r.bits   := io.bus.r.bits
+
+    io.masters(i).aw := DontCare
+    io.masters(i).w  := DontCare
+    io.masters(i).b  := DontCare
   }
 
   switch(state) {
     is(idle) {
-      arSel := PriorityEncoder(arValidMask)
-      state := lock
+      when(arValidMask.asUInt.orR) {
+        arSel := PriorityEncoder(arValidMask)
+        state := lock
+      }
     }
 
     is(lock) {

@@ -20,8 +20,8 @@ class ICacheResp extends Bundle {
 }
 
 class ICacheWithCore extends Bundle {
-  val req  = Flipped(DecoupledIO(new ICacheReq))
-  val resp = ValidIO(new ICacheResp)
+  val req   = Flipped(DecoupledIO(new ICacheReq))
+  val resp  = ValidIO(new ICacheResp)
   val flush = Input(Bool())
 }
 
@@ -34,22 +34,41 @@ class ThroughICache extends Module {
   })
 
   val axiRead = Module(new AXIBankRead(axiId = 0.U))
+  val index = RegInit(0.U(config.bankIndexLen.W))
+
+  val idle :: read :: Nil = Enum(2)
+  val state               = RegInit(idle)
+
+  switch(state) {
+    is(idle) {
+      when(io.core.flush) {
+        state := idle
+      }.elsewhen(io.core.req.fire) {
+        state := read
+        index := config.getBankIndex(io.core.req.bits.addr)
+      }
+    }
+
+    is(read) {
+      when(io.core.flush) {
+        state := idle
+      }.elsewhen(axiRead.io.resp.valid) {
+        state := idle
+      }
+    }
+  }
+
   io.axi <> axiRead.io.axi
 
   axiRead.io.req.bits := io.core.req.bits.addr
-  axiRead.io.req.ready <> io.core.req.ready
   axiRead.io.req.valid := io.core.req.valid
-
-  val index = RegInit(0.U(config.bankIndexLen.W))
-  when(io.core.req.fire) {
-    index := config.getBankIndex(io.core.req.bits.addr)
-  }
 
   for (i <- 0 until fetchGroupSize) {
     io.core.resp.bits.data(i) := axiRead.io.resp.bits(index + i.U)
   }
-  io.core.resp.valid := axiRead.io.resp.valid
+  io.core.resp.valid := axiRead.io.resp.valid && state === read
 
+  io.core.req.ready := axiRead.io.req.ready && state === idle
 }
 
 class InstrCache(cacheConfig: CacheConfig) extends Module {
