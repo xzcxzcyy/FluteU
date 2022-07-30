@@ -175,7 +175,7 @@ initial begin
     //         mem[j] = 0;
     //     end
     // end
-    $readmemh("target/clang/displayLight.hexS", mem);
+    $readmemh("test_data/sort_axi.in", mem);
 end
 
 always @* begin
