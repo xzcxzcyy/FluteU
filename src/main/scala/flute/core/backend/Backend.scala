@@ -25,11 +25,11 @@ import flute.cp0.CP0WithCommit
 class Backend(nWays: Int = 2) extends Module {
   require(nWays == 2)
   val io = IO(new Bundle {
-    val ibuffer      = Vec(nWays, Flipped(DecoupledIO(new IBEntry)))
+    val ibuffer = Vec(nWays, Flipped(DecoupledIO(new IBEntry)))
     // Debug out //
-    val prf          = Output(Vec(phyRegAmount, UInt(dataWidth.W)))
-    val rmt          = new RMTDebugOut
-    val busyTable    = Output(Vec(phyRegAmount, Bool()))
+    val prf       = Output(Vec(phyRegAmount, UInt(dataWidth.W)))
+    val rmt       = new RMTDebugOut
+    val busyTable = Output(Vec(phyRegAmount, Bool()))
     // ========= //
     val dcache       = Flipped(new DCachePorts)
     val branchCommit = Output(new BranchCommit)
@@ -37,9 +37,11 @@ class Backend(nWays: Int = 2) extends Module {
     val cp0IntrReq   = Input(Bool())
   })
 
-  val decoders  = for (i <- 0 until nWays) yield Module(new Decoder)
-  val dispatch  = Module(new Dispatch)
-  val rob       = Module(new ROB(numEntries = robEntryAmount, numRead = 2, numWrite = 2, numSetComplete = 3))
+  val decoders = for (i <- 0 until nWays) yield Module(new Decoder)
+  val dispatch = Module(new Dispatch)
+  val rob = Module(
+    new ROB(numEntries = robEntryAmount, numRead = 2, numWrite = 2, numSetComplete = 3)
+  )
   val regfile   = Module(new RegFile(numRead = 3, numWrite = 3))
   val rename    = Module(new Rename(nWays = nWays, nCommit = nWays))
   val busyTable = Module(new BusyTable(nRead = 10, nCheckIn = 2, nCheckOut = 3))
@@ -89,7 +91,7 @@ class Backend(nWays: Int = 2) extends Module {
   val lsuIssue      = Module(new LsuIssue)
   val lsuPipeline   = Module(new LsuPipeline)
 
-  val needFlush = io.cp0IntrReq || commit.io.branch.pcRestore.valid
+  val needFlush = io.cp0IntrReq || commit.io.branch.pcRestore.valid || commit.io.cp0.eret
 
   dispatch.io.out(0) <> aluIssueQueue.io.enq(0)
   dispatch.io.out(1) <> aluIssueQueue.io.enq(1)
@@ -126,22 +128,25 @@ class Backend(nWays: Int = 2) extends Module {
   }
 
   /// other interface
-  decodeStage.io.flush   := 0.B
-  renameStage.io.flush   := 0.B
-  aluIssueStage.io.flush := 0.B
-  aluIssueQueue.io.flush := 0.B
+  decodeStage.io.flush   := needFlush
+  renameStage.io.flush   := needFlush
+  aluIssueStage.io.flush := needFlush
+  aluIssueQueue.io.flush := needFlush
+  for (i <- 0 to 1) yield {
+    aluPipeline(i).io.flush := needFlush
+  }
 
   aluIssueStage.io.valid := 1.B
 
   // ---------------- LSU ------------------ //
   lsuIssue.io.in <> lsuIssueQueue.io.deq
+  lsuIssue.io.flush          := needFlush
   lsuIssueQueue.io.flush.get := needFlush
   for (i <- 0 to 1) {
     lsuIssue.io.bt(i) <> busyTable.io.read(2 * detectWidth + i)
   }
   lsuPipeline.io.uop <> lsuIssue.io.out
-  lsuPipeline.io.sbRetire := commit.io.sbRetire
-  // lsuPipeline.io.dcache // TODO: DCache Ports.
+  lsuPipeline.io.sbRetire         := commit.io.sbRetire
   lsuPipeline.io.dcache.hazard    := commit.io.store.hazard
   lsuPipeline.io.dcache.req.ready := io.dcache.req.ready
   when(!commit.io.store.hazard) {
@@ -164,4 +169,7 @@ class Backend(nWays: Int = 2) extends Module {
   io.busyTable := VecInit(busyTable.io.debug.table.asBools)
   io.rmt       := rename.io.rmtDebug
 
+  rob.io.flush      := needFlush
+  dispatch.io.flush := needFlush
+  io.dcache.flush   := needFlush
 }

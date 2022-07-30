@@ -27,6 +27,10 @@ class BetaTop(iFile: String, dFile: String) extends Module {
 
   backend.io.ibuffer <> frontend.io.out
   frontend.io.branchCommit := backend.io.branchCommit
+  frontend.io.cp0.epc      := cp0.io.core.epc
+  frontend.io.cp0.eretReq  := backend.io.cp0.eret
+  frontend.io.cp0.intrReq  := cp0.io.core.intrReq
+
   io.pc                    := frontend.io.pc
   cp0.io.hwIntr            := io.hwIntr
   // TEMP //

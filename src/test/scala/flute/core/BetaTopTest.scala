@@ -38,7 +38,7 @@ class BetaBranchTest
       "target/clang/branch.hexS",
       "test_data/zero.in",
       "branch",
-      400,
+      500,
     )
 
 class BetaAddTest

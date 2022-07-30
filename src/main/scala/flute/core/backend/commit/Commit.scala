@@ -116,7 +116,7 @@ class Commit(nCommit: Int = 2) extends Module {
     io.commit.freelist.alloc(i).valid := wbValid
   }
 
-  val branchRecovery = branchFail(0) && finalMask(1)
+  val branchRecovery = branchFail(0) && finalMask(1) && finalMask(0) 
 
   io.commit.chToArch := branchRecovery || io.intrReq
   // io.recover         := branchRecovery

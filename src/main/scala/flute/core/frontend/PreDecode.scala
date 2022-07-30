@@ -6,11 +6,10 @@ import chisel3.util._
 import flute.config.CPUConfig._
 import flute.config.BasicInstructions
 import flute.util.BitPatCombine
-import flute.util.ValidBundle
 
 class PreDecoderOutput extends Bundle {
-  val targetAddr = ValidBundle(UInt(addrWidth.W))
-  val isBranch = Bool()
+  val predictBT = UInt(addrWidth.W)
+  val isBranch  = Bool()
 }
 
 class PreDecode extends Module {
@@ -43,24 +42,10 @@ class PreDecode extends Module {
 
   val pcplusfour = io.pc + 4.U
 
-  when(io.instruction.valid) {
-    when(Inst.needUpdate(io.instruction.bits)) {
-      io.out.targetAddr.bits  := Cat(pcplusfour(31, 28), io.instruction.bits(25, 0), 0.U(2.W))
-      io.out.targetAddr.valid := 1.B
-      // io.stallReq         := 0.B
-    }.elsewhen(Inst.needWait(io.instruction.bits)) {
-      io.out.targetAddr.valid := 0.B
-      io.out.targetAddr.bits  := DontCare
-      // io.stallReq         := 1.B
-    }.otherwise {
-      io.out.targetAddr.valid := 0.B
-      io.out.targetAddr.bits  := DontCare
-      // io.stallReq         := 0.B
-    }
+  when(io.instruction.valid && Inst.needUpdate(io.instruction.bits)) {
+    io.out.predictBT := Cat(pcplusfour(31, 28), io.instruction.bits(25, 0), 0.U(2.W))
   }.otherwise {
-    // io.stallReq         := 0.B
-    io.out.targetAddr.bits  := DontCare
-    io.out.targetAddr.valid := 0.B
+    io.out.predictBT := io.pc + 8.U
   }
 
   io.out.isBranch := io.instruction.valid &&
