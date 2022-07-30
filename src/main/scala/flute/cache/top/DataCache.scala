@@ -32,9 +32,6 @@ class DCacheWithCore extends Bundle {
   /** valid 标志一次有效的load数据, store类型的请求不做任何回应 */
   val resp = ValidIO(new DCacheResp)
 
-  /** 标志DCache状态机进入miss handle状态 */
-  val stallReq = Output(Bool())
-
   val flush = Input(Bool())
 }
 
@@ -45,7 +42,28 @@ class ThroughDCache extends Module {
   })
 
   val axiRead  = Module(new AXIRead(axiId = 1.U))
-  val axiWrite = Module(new AXIWirte(axiId = 2.U))
+  val axiWrite = Module(new AXIWirte(axiId = 1.U))
+
+  val idle :: active :: Nil = Enum(2)
+  val state                 = RegInit(idle)
+
+  switch(state) {
+    is(idle) {
+      when(io.core.flush) {
+        state := idle
+      }.elsewhen(io.core.req.fire) {
+        state := active
+      }
+    }
+
+    is(active) {
+      when(io.core.flush) {
+        state := idle
+      }.elsewhen(axiRead.io.resp.valid || axiWrite.io.resp) {
+        state := idle
+      }
+    }
+  }
 
   axiRead.io.req.bits  := io.core.req.bits.addr
   axiRead.io.req.valid := io.core.req.valid && io.core.req.bits.storeMode === StoreMode.disable
@@ -55,12 +73,10 @@ class ThroughDCache extends Module {
   axiWrite.io.req.bits.storeMode := io.core.req.bits.storeMode
   axiWrite.io.req.valid := io.core.req.valid && io.core.req.bits.storeMode =/= StoreMode.disable
 
-  io.core.req.ready := axiRead.io.req.ready && axiWrite.io.req.ready
+  io.core.req.ready := axiRead.io.req.ready && axiWrite.io.req.ready && state === idle
 
   io.core.resp.bits.loadData := axiRead.io.resp.bits
-  io.core.resp.valid         := axiRead.io.resp.valid
-
-  io.core.stallReq := !(axiRead.io.req.ready && axiWrite.io.req.ready)
+  io.core.resp.valid         := axiRead.io.resp.valid && state === active
 
   io.axi.ar <> axiRead.io.axi.ar
   io.axi.r <> axiRead.io.axi.r
@@ -130,7 +146,6 @@ class DataCache(cacheConfig: CacheConfig, memoryFile: String) extends Module {
     s1.valid         := 0.B
     s1.bits.loadData := 0.U
   }
-  io.stallReq   := 0.B
   io.resp.valid := s1.valid
   io.resp.bits  := s1.bits
 
