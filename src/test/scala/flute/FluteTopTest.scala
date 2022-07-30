@@ -31,12 +31,13 @@ class FluteTopWrap extends Module {
 class FluteTopTest extends AnyFlatSpec with ChiselScalatestTester with Matchers {
   it should "final" in {
     test(new FluteTopWrap).withAnnotations(Seq(WriteVcdAnnotation, VerilatorBackendAnnotation)) { c =>
-      for (i <- 0 until 1000) {
+      c.clock.setTimeout(0)
+      for (i <- 0 until 2000) {
         c.io.hwIntr.poke(0.U)
         println(c.io.pc.peek())
         c.clock.step()
       }
-      s"sed -i -e 1,2d test_run_dir/should_final/FluteTop.vcd".!
+      s"sed -i -e 1,2d test_run_dir/should_final/FluteTopWrap.vcd".!
     }
   }
 }
