@@ -9,9 +9,7 @@ import flute.util.BitMode.fromIntToBitModeLong
 import flute.config.CPUConfig._
 
 class ICacheTest extends AnyFreeSpec with ChiselScalatestTester with Matchers {
-  "test" in {
-    test(new ICache("test_data/fetch_icache_test.in")) { c => }
-  }
+  
 }
 
 class ICacheAXITest extends AnyFreeSpec with ChiselScalatestTester with Matchers {

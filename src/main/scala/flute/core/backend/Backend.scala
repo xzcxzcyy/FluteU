@@ -18,7 +18,7 @@ import flute.config.CPUConfig._
 import flute.core.backend.commit.Commit
 import flute.core.backend.lsu.LsuIssue
 import flute.core.backend.lsu.LsuPipeline
-import flute.cache.top.DCachePorts
+import flute.cache.top.DCacheWithCore
 import flute.core.backend.commit.BranchCommit
 import flute.cp0.CP0WithCommit
 
@@ -31,7 +31,7 @@ class Backend(nWays: Int = 2) extends Module {
     val rmt       = new RMTDebugOut
     val busyTable = Output(Vec(phyRegAmount, Bool()))
     // ========= //
-    val dcache       = Flipped(new DCachePorts)
+    val dcache       = Flipped(new DCacheWithCore)
     val branchCommit = Output(new BranchCommit)
     val cp0          = Flipped(new CP0WithCommit)
     val cp0IntrReq   = Input(Bool())

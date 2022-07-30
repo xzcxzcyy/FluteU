@@ -50,7 +50,7 @@ class Commit(nCommit: Int = 2) extends Module {
   for (i <- 0 until nCommit) {
     var complete = robRaw(i).complete && (!isStore(i) || io.store.req.ready)
     for (j <- 0 until i) {
-      complete = complete && robRaw(j).complete && (!isStore(i) || io.store.req.ready)
+      complete = complete && robRaw(j).complete && (!isStore(j) || io.store.req.ready)
     }
     completeMask(i) := complete
   }
@@ -111,6 +111,7 @@ class Commit(nCommit: Int = 2) extends Module {
     io.commit.freelist.free(i).bits  := robRaw(i).originReg
     io.commit.freelist.alloc(i).bits := robRaw(i).physicReg
     val wbValid = finalMask(i) && robRaw(i).regWEn
+    // BUG: 潜在bug WAW冲突处理
     io.commit.rmt.write(i).en         := wbValid
     io.commit.freelist.free(i).valid  := wbValid
     io.commit.freelist.alloc(i).valid := wbValid

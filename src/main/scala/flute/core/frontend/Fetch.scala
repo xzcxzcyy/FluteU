@@ -41,7 +41,7 @@ class Fetch extends Module {
     val pc           = Output(UInt(addrWidth.W))
   })
 
-  val pc        = RegInit(0.U(addrWidth.W))
+  val pc        = RegInit(0x80.U(addrWidth.W))
   val bpc       = RegInit(0.U.asTypeOf(Valid(UInt(addrWidth.W))))
   val ib        = Module(new Ibuffer(new IBEntry, ibufferAmount, decodeWay, fetchGroupSize))
   val pcQ       = Module(new Queue(UInt(addrWidth.W), pcQueueVolume, hasFlush = true))
@@ -108,7 +108,7 @@ class Fetch extends Module {
   val restMask = WireInit(VecInit(Seq.fill(fetchGroupSize)(1.B)))
   innerFlush := 0.B
   when(slot) {
-    when(ibEntries(1).valid && ibEntries(1).bits.addr =/= bpc.valid) {
+    when(ibEntries(1).valid && ibEntries(1).bits.addr =/= bpc.bits) {
       innerFlush  := 1.B
       restMask(1) := 0.B
     }
