@@ -16,7 +16,6 @@ class ROBEntry extends Bundle {
   val exception = new ExceptionBundle
   val instrType = UInt(instrTypeWidth.W)
   val regWEn    = Bool()
-  // val regWData  = UInt(dataWidth.W)
   val memWMode = UInt(StoreMode.width.W)
   val memWAddr = UInt(addrWidth.W)
   val memWData = UInt(dataWidth.W)
@@ -39,9 +38,6 @@ class ROBCompleteBundle(robAddrWidth: Int = robEntryNumWidth) extends Bundle {
   val valid     = Bool()
   val robAddr   = UInt(robAddrWidth.W)
   val exception = new ExceptionBundle
-  // val regWEn    = Bool()
-  // val regWData  = UInt(dataWidth.W)
-  val memWMode = UInt(StoreMode.width.W)
   val memWAddr = UInt(addrWidth.W)
   val memWData = UInt(dataWidth.W)
 
@@ -61,7 +57,6 @@ class ROB(numEntries: Int, numRead: Int, numWrite: Int, numSetComplete: Int) ext
   })
 
   val entries = Mem(numEntries, new ROBEntry)
-  // val entries = RegInit(VecInit(Seq.fill(numEntries)(0.U.asTypeOf(new ROBEntry))))
 
   // tail是数据入队的位置（该位置目前没数据），head是数据出队的第一个位置（该位置放了最老的数据）
   val head_ptr = RegInit(0.U(log2Up(numEntries).W))
@@ -105,11 +100,8 @@ class ROB(numEntries: Int, numRead: Int, numWrite: Int, numSetComplete: Int) ext
     when(port.valid) {
       entries(port.robAddr).complete  := 1.B
       entries(port.robAddr).exception := port.exception
-      // entries(port.robAddr).regWEn    := port.regWEn
-      // entries(port.robAddr).regWData  := port.regWData
       entries(port.robAddr).memWAddr    := port.memWAddr
       entries(port.robAddr).memWData    := port.memWData
-      entries(port.robAddr).memWMode    := port.memWMode
       entries(port.robAddr).branchTaken := port.branchTaken
       entries(port.robAddr).computeBT   := port.computeBT
     }

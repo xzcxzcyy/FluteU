@@ -139,7 +139,6 @@ object AluPipelineUtil {
     // rob.valid     := ex2Wb.valid && ex2Wb.regWEn
     rob.memWAddr  := DontCare
     rob.memWData  := DontCare
-    rob.memWMode  := DontCare
 
     rob.branchTaken := wbIn.branchTaken
     rob.computeBT   := wbIn.computeBT
