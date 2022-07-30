@@ -32,7 +32,7 @@ class FluteTopTest extends AnyFlatSpec with ChiselScalatestTester with Matchers 
   it should "final" in {
     test(new FluteTopWrap).withAnnotations(Seq(WriteVcdAnnotation, VerilatorBackendAnnotation)) { c =>
       c.clock.setTimeout(0)
-      for (i <- 0 until 2000) {
+      for (i <- 0 until 2000 * 5) {
         c.io.hwIntr.poke(0.U)
         println(c.io.pc.peek())
         c.clock.step()

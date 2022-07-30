@@ -108,7 +108,7 @@ class Fetch extends Module {
   val restMask = WireInit(VecInit(Seq.fill(fetchGroupSize)(1.B)))
   innerFlush := 0.B
   when(slot) {
-    when(ibEntries(1).valid && ibEntries(1).bits.addr =/= bpc.valid) {
+    when(ibEntries(1).valid && ibEntries(1).bits.addr =/= bpc.bits) {
       innerFlush  := 1.B
       restMask(1) := 0.B
     }
