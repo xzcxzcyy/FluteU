@@ -16,30 +16,12 @@ import flute.core.backend.commit.ROBCompleteBundle
 
 class MduPipeline extends Module {
 	val io = IO(new Bundle {
-		val uop  = Input(Valid(new AluEntry))
-		val prf  = Flipped(new RegFileReadIO)
+		val uop  = Input(Valid(new MicroOp(true)))
 		val hilo = Flipped(new HiLoIO)
 		val wb   = Output(new AluWB)
-		val bypass = new BypassBundle
 	})
-	
-	// Stage 1: PRF Read & Bypass
-	val readIn = io.uop
-	// 操作数2个来源：Bypass, PRF
-	io.prf.r1Addr := readIn.bits.uop.rsAddr
-	io.prf.r2Addr := readIn.bits.uop.rtAddr
-	val (op1, op2) =
-    AluPipelineUtil.getOp(readIn.bits, Seq(io.prf.r1Data, io.prf.r2Data), io.bypass.in)
-  val read2Ex = WireInit(readIn.bits.uop)
-  read2Ex.op1.op := op1
-  read2Ex.op2.op := op2
 
-	// Stage 2: MDU Execute
-	val stage2 = Module(new StageReg(Valid(new MicroOp(true))))
-	stage2.io.in.bits  := read2Ex 
-	stage2.io.in.valid := readIn.valid 
-
-	val exIn = stage2.io.data
+	val exIn = io.uop
 
 	val mdu = Module(new MDU)
 	mdu.io.op1 := exIn.bits.op1.op
@@ -87,7 +69,6 @@ class MduPipeline extends Module {
 	writeRob.memWData    := DontCare 
 	writeRob.computeBT   := DontCare  
 	writeRob.branchTaken := DontCare
-
 }
 
 class MduExWbBundle extends Bundle {

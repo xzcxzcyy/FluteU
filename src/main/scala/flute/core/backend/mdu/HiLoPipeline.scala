@@ -11,7 +11,6 @@ class HiLoPipeline extends Module {
 	val io = IO(new Bundle {
 		val uop  = Flipped(DecoupledIO(new MicroOp(rename = true)))
 		val prf  = Flipped(new RegFileReadIO)
-		val hilo = Flipped(new HiLoIO)
 		val wb   = Output(new AluWB)
 	})
 
