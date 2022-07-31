@@ -11,6 +11,7 @@ import chisel3.util.experimental.loadMemoryFromFileInline
 import flute.axi.AXIIO
 import flute.cache.axi.AXIRead
 import flute.cache.axi.AXIWirte
+import flute.util.AddrMap
 
 /**
   * 
@@ -47,6 +48,8 @@ class ThroughDCache extends Module {
   val idle :: active :: Nil = Enum(2)
   val state                 = RegInit(idle)
 
+  val mappedAddr = AddrMap.map(io.core.req.bits.addr) 
+
   switch(state) {
     is(idle) {
       when(io.core.flush) {
@@ -65,10 +68,10 @@ class ThroughDCache extends Module {
     }
   }
 
-  axiRead.io.req.bits  := io.core.req.bits.addr
+  axiRead.io.req.bits  := mappedAddr
   axiRead.io.req.valid := io.core.req.valid && io.core.req.bits.storeMode === StoreMode.disable
 
-  axiWrite.io.req.bits.addr      := io.core.req.bits.addr
+  axiWrite.io.req.bits.addr      := mappedAddr
   axiWrite.io.req.bits.data      := io.core.req.bits.writeData
   axiWrite.io.req.bits.storeMode := io.core.req.bits.storeMode
   axiWrite.io.req.valid := io.core.req.valid && io.core.req.bits.storeMode =/= StoreMode.disable

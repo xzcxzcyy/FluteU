@@ -6,11 +6,25 @@ import chiseltest._
 import org.scalatest.freespec.AnyFreeSpec
 import org.scalatest.matchers.should.Matchers
 
+
+class AddrMapTestTop extends Module {
+  val io = IO(new Bundle {
+    val in = Input(UInt(32.W))
+    val out = Output(UInt(32.W))
+  })
+  io.out := AddrMap.map(io.in)
+}
 /**
   * Experiment
   * Anyone can place codes here for API verification use.
   */
 class Experiment extends AnyFreeSpec with ChiselScalatestTester with Matchers {
+  "Addr Map test" in {
+    test(new AddrMapTestTop) {c =>
+      c.io.in.poke("hbfc00000".U)
+      println(c.io.out.peek())
+    }
+  }
   "Paralized bundle test" in {
     test(new ParalizeBundleTester) { c =>
       c.io.in.poke(31.U)
@@ -57,6 +71,8 @@ class Experiment extends AnyFreeSpec with ChiselScalatestTester with Matchers {
       c.io.out.b.expect(1.B)
     }
   }
+
+  
 }
 
 class EncoderTester extends Module {

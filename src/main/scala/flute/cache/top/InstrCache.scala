@@ -10,6 +10,7 @@ import flute.cache.lru.LRU
 import flute.cache.components.RefillUnit
 import flute.axi.AXIIO
 import flute.cache.axi.AXIBankRead
+import flute.util.AddrMap
 
 class ICacheReq extends Bundle {
   val addr = UInt(addrWidth.W)
@@ -39,13 +40,15 @@ class ThroughICache extends Module {
   val idle :: read :: Nil = Enum(2)
   val state               = RegInit(idle)
 
+  val mappedAddr = AddrMap.map(io.core.req.bits.addr)
+
   switch(state) {
     is(idle) {
       when(io.core.flush) {
         state := idle
       }.elsewhen(io.core.req.fire) {
         state := read
-        index := config.getBankIndex(io.core.req.bits.addr)
+        index := config.getBankIndex(mappedAddr)
       }
     }
 
@@ -60,7 +63,7 @@ class ThroughICache extends Module {
 
   io.axi <> axiRead.io.axi
 
-  axiRead.io.req.bits := io.core.req.bits.addr
+  axiRead.io.req.bits := mappedAddr
   axiRead.io.req.valid := io.core.req.valid
 
   for (i <- 0 until fetchGroupSize) {

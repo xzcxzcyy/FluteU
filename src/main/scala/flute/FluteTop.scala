@@ -73,3 +73,8 @@ class FluteTop extends Module {
   io.arf := arfView.io.arfOut
 
 }
+
+object FluteGen extends App {
+  (new chisel3.stage.ChiselStage)
+    .emitVerilog(new FluteTop, Array("--target-dir", "target/verilog/flute", "--target:fpga"))
+}
