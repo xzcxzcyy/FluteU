@@ -16,14 +16,17 @@ import flute.cache.top.ThroughDCache
 import flute.cache.top.ThroughICache
 import flute.axi.AXIIO
 import flute.cache.axi.AXIReadArbiter
+import flute.core.backend.TraceBundle
 
 class FluteTop extends Module {
   val io = IO(new Bundle {
     val hwIntr = Input(UInt(6.W))
     val pc     = Output(UInt(addrWidth.W))
     val arf    = Output(Vec(archRegAmount, UInt(dataWidth.W)))
-    val count  = Output(UInt(dataWidth.W))
     val axi    = AXIIO.master()
+    // Debug
+    val count     = Output(UInt(dataWidth.W))
+    val arfWTrace = Output(new TraceBundle)
   })
 
   val frontend = Module(new Frontend)
@@ -67,7 +70,8 @@ class FluteTop extends Module {
   arfView.io.prf   := backend.io.prf
 
   // DEBUG //
-  io.count := cp0.io.debug.count
+  io.count     := cp0.io.debug.count
+  io.arfWTrace := backend.io.arfWTrace
   // ===== //
 
   io.arf := arfView.io.arfOut

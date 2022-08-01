@@ -132,11 +132,10 @@ object AluPipelineUtil {
   def robFromAluExWb(wbIn: AluExWbBundle) = {
     val rob = Wire(new ROBCompleteBundle(robEntryNumWidth))
     rob.exception := wbIn.exception
-    // rob.regWData  := ex2Wb.regWData
+    rob.regWData  := wbIn.regWData
     rob.robAddr   := wbIn.robAddr
     // rob.regWEn    := ex2Wb.regWEn
     rob.valid     := wbIn.valid
-    // rob.valid     := ex2Wb.valid && ex2Wb.regWEn
     rob.memWAddr  := DontCare
     rob.memWData  := DontCare
 
