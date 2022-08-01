@@ -34,8 +34,7 @@ class ThroughICache extends Module {
     val axi  = AXIIO.master()
   })
 
-  val axiRead = Module(new AXIBankRead(axiId = 0.U))
-  val index = RegInit(0.U(config.bankIndexLen.W))
+  val axiRead = Module(new AXIBankRead(axiId = 0.U, wrapped = false))
 
   val idle :: read :: Nil = Enum(2)
   val state               = RegInit(idle)
@@ -48,7 +47,6 @@ class ThroughICache extends Module {
         state := idle
       }.elsewhen(io.core.req.fire) {
         state := read
-        index := config.getBankIndex(mappedAddr)
       }
     }
 
@@ -67,8 +65,9 @@ class ThroughICache extends Module {
   axiRead.io.req.valid := io.core.req.valid
 
   for (i <- 0 until fetchGroupSize) {
-    io.core.resp.bits.data(i) := axiRead.io.resp.bits(index + i.U)
+    io.core.resp.bits.data(i) := axiRead.io.resp.bits(i)
   }
+
   io.core.resp.valid := axiRead.io.resp.valid && state === read
 
   io.core.req.ready := axiRead.io.req.ready && state === idle

@@ -12,7 +12,8 @@ import flute.config.CacheConfig
   * @param axiId : AXI ID (4.W)
   * @param len   : 传输长度，单位：32bit
   */
-class AXIBankRead(axiId: UInt)(implicit cacheConfig: CacheConfig) extends Module {
+class AXIBankRead(axiId: UInt, wrapped: Boolean = true)(implicit cacheConfig: CacheConfig)
+    extends Module {
   private val len = (cacheConfig.numOfBanks - 1)
 
   val io = IO(new Bundle {
@@ -35,11 +36,13 @@ class AXIBankRead(axiId: UInt)(implicit cacheConfig: CacheConfig) extends Module
   io.axi.w  := DontCare
   io.axi.b  := DontCare
 
+  val brust = if (wrapped) "b10".U(2.W) else "b01".U(2.W)
+
   io.axi.ar.bits.id    := axiId
   io.axi.ar.bits.addr  := Mux(state === active, addrBuffer, io.req.bits)
   io.axi.ar.bits.len   := len.U(4.W)
   io.axi.ar.bits.size  := "b010".U(3.W) // always 4 bytes
-  io.axi.ar.bits.burst := "b10".U(2.W)  // axi wrap burst
+  io.axi.ar.bits.burst := brust         // axi wrap burst
   io.axi.ar.bits.lock  := 0.U
   io.axi.ar.bits.cache := 0.U
   io.axi.ar.bits.prot  := 0.U
@@ -48,9 +51,8 @@ class AXIBankRead(axiId: UInt)(implicit cacheConfig: CacheConfig) extends Module
     is(idle) {
       when(io.req.fire) {
         addrBuffer := io.req.bits
-        index      := cacheConfig.getBankIndex(io.req.bits)
-
-        state := active
+        index      := Mux(wrapped.B, cacheConfig.getBankIndex(io.req.bits), 0.U)
+        state      := active
       }
     }
 
