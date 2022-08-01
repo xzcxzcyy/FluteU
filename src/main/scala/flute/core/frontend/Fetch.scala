@@ -120,6 +120,8 @@ class Fetch extends Module {
     }
   }
 
+  val bpcNotUsed = !ibEntries(1).valid && slot
+
   when(insertIntoIb && !needFlush) {
     slot := ((ibEntries(1).valid && preDecs(1).io.out.isBranch) ||
       (!ibEntries(1).valid && preDecs(0).io.out.isBranch))
@@ -130,7 +132,7 @@ class Fetch extends Module {
     }.elsewhen(preDecs(0).io.out.isBranch) {
       bpc.valid := 1.B
       bpc.bits  := preDecs(0).io.out.predictBT
-    }.otherwise {
+    }.elsewhen(!bpcNotUsed) {
       bpc.valid := 0.B
     }
   }
