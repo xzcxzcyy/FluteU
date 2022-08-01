@@ -191,7 +191,7 @@ object RemameUtil {
     robEntry.memWMode  := uop.storeMode
     robEntry.memWAddr  := DontCare
     robEntry.memWData  := DontCare
-    robEntry.branch    := uop.bjCond =/= BJCond.none && uop.bjCond =/= BJCond.all
+    robEntry.branch    := uop.bjCond =/= BJCond.none && uop.bjCond =/= BJCond.j && uop.bjCond =/= BJCond.jal
     robEntry.predictBT := uop.predictBT
     robEntry.computeBT := DontCare
     

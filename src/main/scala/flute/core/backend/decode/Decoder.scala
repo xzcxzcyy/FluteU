@@ -62,7 +62,7 @@ class Decoder extends Module {
     mapping = Seq(
       ImmRecipe.sExt -> Cat(Fill(16, instruction(15)), instruction(15, 0)),
       ImmRecipe.uExt -> Cat(0.U(16.W), instruction(15, 0)),
-      ImmRecipe.lui  -> Cat(instruction(15, 0), 0.U(16.W))
+      ImmRecipe.lui  -> Cat(instruction(15, 0), 0.U(16.W)),
     )
   )
   io.microOp.immediate := extendedImm

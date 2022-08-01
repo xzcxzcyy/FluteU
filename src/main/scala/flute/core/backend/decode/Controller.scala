@@ -6,7 +6,6 @@ import flute.config.CPUConfig._
 import flute.config.Instructions._
 import flute.core.components.ALUOp
 
-
 class Controller extends Module {
   val io = IO(new Bundle {
     val instruction = Input(UInt(instrWidth.W))
@@ -50,18 +49,18 @@ class Controller extends Module {
     SLTU   -> List(true.B,  LoadMode.disable,  StoreMode.disable,   ALUOp.sltu, Op1Recipe.rs,      Op2Recipe.rt,   BJCond.none, RegDst.rd,    ImmRecipe.sExt, InstrType.alu),
     SLTIU  -> List(true.B,  LoadMode.disable,  StoreMode.disable,   ALUOp.sltu, Op1Recipe.rs,      Op2Recipe.imm,  BJCond.none, RegDst.rt,    ImmRecipe.sExt, InstrType.alu),
     /** Branch and Jump Instructions **/
-    BEQ    -> List(false.B, LoadMode.disable,  StoreMode.disable,   ALUOp.none, Op1Recipe.rs,      Op2Recipe.rt,   BJCond.eq,   RegDst.rd,    ImmRecipe.sExt, InstrType.alu),
-    BGEZ   -> List(false.B, LoadMode.disable,  StoreMode.disable,   ALUOp.none, Op1Recipe.rs,      Op2Recipe.rt,   BJCond.gez,  RegDst.rd,    ImmRecipe.sExt, InstrType.alu),
-    BGEZAL -> List(true.B,  LoadMode.disable,  StoreMode.disable,   ALUOp.add,  Op1Recipe.pcPlus8, Op2Recipe.zero, BJCond.gez,  RegDst.GPR31, ImmRecipe.sExt, InstrType.alu),
-    BGTZ   -> List(false.B, LoadMode.disable,  StoreMode.disable,   ALUOp.none, Op1Recipe.rs,      Op2Recipe.rt,   BJCond.gtz,  RegDst.rd,    ImmRecipe.sExt, InstrType.alu),
-    BLEZ   -> List(false.B, LoadMode.disable,  StoreMode.disable,   ALUOp.none, Op1Recipe.rs,      Op2Recipe.rt,   BJCond.lez,  RegDst.rd,    ImmRecipe.sExt, InstrType.alu),
-    BLTZ   -> List(false.B, LoadMode.disable,  StoreMode.disable,   ALUOp.none, Op1Recipe.rs,      Op2Recipe.rt,   BJCond.ltz,  RegDst.rd,    ImmRecipe.sExt, InstrType.alu),
-    BLTZAL -> List(true.B,  LoadMode.disable,  StoreMode.disable,   ALUOp.add,  Op1Recipe.pcPlus8, Op2Recipe.zero, BJCond.ltz,  RegDst.GPR31, ImmRecipe.sExt, InstrType.alu),
-    BNE    -> List(false.B, LoadMode.disable,  StoreMode.disable,   ALUOp.none, Op1Recipe.rs,      Op2Recipe.rt,   BJCond.ne,   RegDst.rd,    ImmRecipe.sExt, InstrType.alu),
-    J      -> List(false.B, LoadMode.disable,  StoreMode.disable,   ALUOp.none, Op1Recipe.rs,      Op2Recipe.rt,   BJCond.all,  RegDst.rd,    ImmRecipe.sExt, InstrType.alu),
-    JAL    -> List(true.B,  LoadMode.disable,  StoreMode.disable,   ALUOp.add,  Op1Recipe.pcPlus8, Op2Recipe.zero, BJCond.all,  RegDst.GPR31, ImmRecipe.sExt, InstrType.alu),
-    // JALR   -> List(true.B,  LoadMode.disable,  StoreMode.disable,   ALUOp.add,  Op1Recipe.pcPlus8, Op2Recipe.zero, BJCond.jr,   RegDst.rd,    ImmRecipe.sExt),
-    JR     -> List(false.B, LoadMode.disable,  StoreMode.disable,   ALUOp.none, Op1Recipe.rs,      Op2Recipe.zero, BJCond.jr,   RegDst.rd,    ImmRecipe.sExt, InstrType.alu),
+    BEQ    -> List(false.B, LoadMode.disable,  StoreMode.disable,   ALUOp.none, Op1Recipe.rs,      Op2Recipe.rt,   BJCond.beq,   RegDst.rd,    ImmRecipe.sExt, InstrType.alu),
+    BGEZ   -> List(false.B, LoadMode.disable,  StoreMode.disable,   ALUOp.none, Op1Recipe.rs,      Op2Recipe.zero, BJCond.bgez,  RegDst.rd,    ImmRecipe.sExt, InstrType.alu),
+    BGEZAL -> List(true.B,  LoadMode.disable,  StoreMode.disable,   ALUOp.none, Op1Recipe.rs,      Op2Recipe.zero, BJCond.bgezal,RegDst.GPR31, ImmRecipe.sExt, InstrType.alu),
+    BGTZ   -> List(false.B, LoadMode.disable,  StoreMode.disable,   ALUOp.none, Op1Recipe.rs,      Op2Recipe.zero, BJCond.bgtz,  RegDst.rd,    ImmRecipe.sExt, InstrType.alu),
+    BLEZ   -> List(false.B, LoadMode.disable,  StoreMode.disable,   ALUOp.none, Op1Recipe.rs,      Op2Recipe.zero, BJCond.blez,  RegDst.rd,    ImmRecipe.sExt, InstrType.alu),
+    BLTZ   -> List(false.B, LoadMode.disable,  StoreMode.disable,   ALUOp.none, Op1Recipe.rs,      Op2Recipe.zero, BJCond.bltz,  RegDst.rd,    ImmRecipe.sExt, InstrType.alu),
+    BLTZAL -> List(true.B,  LoadMode.disable,  StoreMode.disable,   ALUOp.none, Op1Recipe.rs,      Op2Recipe.zero, BJCond.bltzal,RegDst.GPR31, ImmRecipe.sExt, InstrType.alu),
+    BNE    -> List(false.B, LoadMode.disable,  StoreMode.disable,   ALUOp.none, Op1Recipe.rs,      Op2Recipe.rt,   BJCond.bne,   RegDst.rd,    ImmRecipe.sExt, InstrType.alu),
+    J      -> List(false.B, LoadMode.disable,  StoreMode.disable,   ALUOp.none, Op1Recipe.zero,    Op2Recipe.zero, BJCond.j,     RegDst.rd,    ImmRecipe.sExt, InstrType.alu),
+    JAL    -> List(true.B,  LoadMode.disable,  StoreMode.disable,   ALUOp.none, Op1Recipe.zero,    Op2Recipe.zero, BJCond.jal,   RegDst.GPR31, ImmRecipe.sExt, InstrType.alu),
+    JALR   -> List(true.B,  LoadMode.disable,  StoreMode.disable,   ALUOp.none, Op1Recipe.rs,      Op2Recipe.zero, BJCond.jalr,  RegDst.rd,    ImmRecipe.sExt, InstrType.alu),
+    JR     -> List(false.B, LoadMode.disable,  StoreMode.disable,   ALUOp.none, Op1Recipe.rs,      Op2Recipe.zero, BJCond.jr,    RegDst.rd,    ImmRecipe.sExt, InstrType.alu),
     /** Load, Store, and Memory Control Instructions **/
     /* LB */
     /* LBU */
@@ -148,26 +147,22 @@ object Op2Recipe {
 }
 
 object BJCond {
-  val amount = 17
+  val amount = 13
   val width = log2Up(amount)
 
   val none = 0.U(width.W)
-  val eq   = 1.U(width.W)
-  val ge   = 2.U(width.W)
-  val gez  = 3.U(width.W)
-  val geu  = 4.U(width.W)
-  val gt   = 5.U(width.W)
-  val gtz  = 6.U(width.W)
-  val gtu  = 7.U(width.W)
-  val le   = 8.U(width.W)
-  val lez  = 9.U(width.W)
-  val leu  = 10.U(width.W)
-  val lt   = 11.U(width.W)
-  val ltz  = 12.U(width.W)
-  val ltu  = 13.U(width.W)
-  val ne   = 14.U(width.W)
-  val jr   = 15.U(width.W)  // 包含 jr, jalr (disabled)
-  val all  = 16.U(width.W)  // 包含 j, jal
+  val beq   = 1.U(width.W)
+  val bgez   = 2.U(width.W)
+  val bgezal  = 3.U(width.W)
+  val bgtz  = 4.U(width.W)
+  val blez   = 5.U(width.W)
+  val bltz  = 6.U(width.W)
+  val bltzal  = 7.U(width.W)
+  val bne   = 8.U(width.W)
+  val j  = 9.U(width.W)
+  val jal  = 10.U(width.W)
+  val jalr   = 11.U(width.W)
+  val jr  = 12.U(width.W)
 }
 
 object RegDst {
