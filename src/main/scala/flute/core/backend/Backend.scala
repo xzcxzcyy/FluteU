@@ -194,4 +194,6 @@ class Backend(nWays: Int = 2) extends Module {
   io.arfWTrace.arfWAddr := traceBRead.bits.logicReg
   io.arfWTrace.arfWData := traceBRead.bits.regWData
   io.arfWTrace.pc       := traceBRead.bits.pc
+
+  traceBuffer.io.flush := 0.B
 }
