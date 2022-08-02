@@ -62,29 +62,21 @@ class Controller extends Module {
     JALR   -> List(true.B,  LoadMode.disable,  StoreMode.disable,   ALUOp.none, Op1Recipe.rs,      Op2Recipe.zero, BJCond.jalr,  RegDst.rd,    ImmRecipe.sExt, InstrType.alu),
     JR     -> List(false.B, LoadMode.disable,  StoreMode.disable,   ALUOp.none, Op1Recipe.rs,      Op2Recipe.zero, BJCond.jr,    RegDst.rd,    ImmRecipe.sExt, InstrType.alu),
     /** Load, Store, and Memory Control Instructions **/
-    /* LB */
-    /* LBU */
-    /* LH */
-    /* LHU */
-    /* LL */
-    LW     -> List(true.B,  LoadMode.word,     StoreMode.disable,   ALUOp.add,  Op1Recipe.rs,      Op2Recipe.imm,  BJCond.none, RegDst.rt,    ImmRecipe.sExt, InstrType.loadStore),
-    /* LWL */
-    /* LWR */
-    /* PREF */
+    LB     -> List(true.B,  LoadMode.byteS,    StoreMode.disable,   ALUOp.none,  Op1Recipe.rs,      Op2Recipe.zero,BJCond.none, RegDst.rt,    ImmRecipe.sExt, InstrType.loadStore),
+    LBU    -> List(true.B,  LoadMode.byteU,    StoreMode.disable,   ALUOp.none,  Op1Recipe.rs,      Op2Recipe.zero,BJCond.none, RegDst.rt,    ImmRecipe.sExt, InstrType.loadStore),
+    LH     -> List(true.B,  LoadMode.halfS,    StoreMode.disable,   ALUOp.none,  Op1Recipe.rs,      Op2Recipe.zero,BJCond.none, RegDst.rt,    ImmRecipe.sExt, InstrType.loadStore),
+    LHU    -> List(true.B,  LoadMode.halfU,    StoreMode.disable,   ALUOp.none,  Op1Recipe.rs,      Op2Recipe.zero,BJCond.none, RegDst.rt,    ImmRecipe.sExt, InstrType.loadStore),
+    LW     -> List(true.B,  LoadMode.word,     StoreMode.disable,   ALUOp.none,  Op1Recipe.rs,      Op2Recipe.zero,BJCond.none, RegDst.rt,    ImmRecipe.sExt, InstrType.loadStore),
     SB     -> List(false.B, LoadMode.disable,  StoreMode.byte,      ALUOp.none,  Op1Recipe.rs,      Op2Recipe.rt,  BJCond.none, RegDst.rd,    ImmRecipe.sExt, InstrType.loadStore),
-    /* SC */
-    /* SD */
+    SH     -> List(false.B, LoadMode.disable,  StoreMode.halfword,  ALUOp.none,  Op1Recipe.rs,      Op2Recipe.rt,  BJCond.none, RegDst.rd,    ImmRecipe.sExt, InstrType.loadStore),
     SW     -> List(false.B, LoadMode.disable,  StoreMode.word,      ALUOp.none,  Op1Recipe.rs,      Op2Recipe.rt,  BJCond.none, RegDst.rd,    ImmRecipe.sExt, InstrType.loadStore),
-    /* SWL */
-    /* SWR */
-    /* SYNC */
     /** Move Instructions **/
     /* MFHI */
     /* MFLO */
-    /* MOVN */
-    /* MOVZ */
     /* MTHI */
-    /* MYLO */
+    /* MTLO */
+    /* MTC0 */
+    /* MFC0 */
     /** Shift Instructions **/
     SLL    -> List(true.B,  LoadMode.disable, StoreMode.disable,   ALUOp.sll,   Op1Recipe.shamt,   Op2Recipe.rt,   BJCond.none, RegDst.rd,    ImmRecipe.sExt, InstrType.alu),
     SLLV   -> List(true.B,  LoadMode.disable, StoreMode.disable,   ALUOp.sll,   Op1Recipe.rs,      Op2Recipe.rt,   BJCond.none, RegDst.rd,    ImmRecipe.sExt, InstrType.alu),
