@@ -22,7 +22,7 @@ class LSUWithDCacheIO extends Bundle {
 class MemReq extends Bundle {
 
   /**
-    * If store, [[data]] contains the word/halfword/byte to be stored.
+    * If store, [[data]] contains rt.
     * If load, [[data]] is retrieved from sb with mask [[valid]]
     */
   val data         = UInt(32.W)
@@ -73,7 +73,7 @@ class LSU extends Module {
       (s0.io.out.bits.storeMode =/= StoreMode.disable && sbuffer.io.write.ready))
 
   opQ.io.enq.valid := queueValid
-  // queue.io.enq.bits.data     := sbuffer.io.read.data
+
   opQ.io.enq.bits.data := Mux(
     s0.io.out.bits.loadMode =/= LoadMode.disable,
     sbuffer.io.read.data,
@@ -88,7 +88,7 @@ class LSU extends Module {
   opQ.io.flush.get             := io.flush
 
   io.dcache.req.valid          := cacheReqValid
-  io.dcache.req.bits.storeMode := s0.io.out.bits.storeMode // TODO: 这里易错
+  io.dcache.req.bits.storeMode := s0.io.out.bits.storeMode // 这里易错
   io.dcache.req.bits.addr      := memAddr
   io.dcache.req.bits.writeData := 0.U
 
@@ -109,15 +109,21 @@ class LSU extends Module {
   io.instr.ready := reqFires || !s0.io.out.valid
   s0.io.in.bits  := io.instr.bits
   s0.io.in.valid := io.instr.valid
+
   // LSU指令完成，写入rob entry
   val toRob = WireInit(0.U.asTypeOf(new MemReq))
-  val replacedData = for (i <- 0 until 4) yield {
-    Mux(
-      opQ.io.deq.bits.valid(i),
-      opQ.io.deq.bits.data(i * 8 + 7, i * 8),
-      respQ.io.deq.bits.loadData(i * 8 + 7, i * 8),
-    )
-  }
+  val replacedData = VecInit(
+    for (i <- 0 until 4) yield {
+      Mux(
+        opQ.io.deq.bits.valid(i),
+        opQ.io.deq.bits.data(i * 8 + 7, i * 8),
+        respQ.io.deq.bits.loadData(i * 8 + 7, i * 8),
+      )
+    }
+  )
+
+  val finalLoadData = LSUUtils.getLoadData(opQ.io.deq.bits.loadMode, opQ.io.deq.bits.addr(1, 0), replacedData)
+
   opQ.io.deq.ready := (opQ.io.deq.bits.storeMode =/= StoreMode.disable) ||
     (opQ.io.deq.bits.loadMode =/= LoadMode.disable && respQ.io.deq.valid)
   respQ.io.deq.ready := (opQ.io.deq.bits.loadMode =/= LoadMode.disable) && opQ.io.deq.valid
@@ -133,12 +139,32 @@ class LSU extends Module {
       toRob.writeRegAddr := opQ.io.deq.bits.writeRegAddr
       toRob.storeMode    := opQ.io.deq.bits.storeMode
       toRob.valid        := opQ.io.deq.bits.valid
-      toRob.data         := Cat(replacedData(3), replacedData(2), replacedData(1), replacedData(0))
+      toRob.data         := finalLoadData
     }
-  }.otherwise {
-    toRob := 0.U.asTypeOf(new MemReq)
   }
 
   io.toRob.valid := opQ.io.deq.fire
   io.toRob.bits  := toRob
+}
+
+object LSUUtils {
+  def getLoadData(loadMode: UInt, offset: UInt, replacedData: Vec[UInt]) = {
+    assert(loadMode.getWidth == LoadMode.width)
+    assert(offset.getWidth == 2)
+    assert(replacedData.length == 4)
+    assert(replacedData(0).getWidth == 8)
+    val loadData = MuxLookup(
+      key = loadMode,
+      default = Cat(replacedData(3), replacedData(2), replacedData(1), replacedData(0)),
+      mapping = Seq(
+        LoadMode.byteS -> Cat(Fill(24, replacedData(offset)(7)), replacedData(offset)),
+        LoadMode.byteU -> Cat(0.U(24.W), replacedData(offset)),
+        LoadMode.halfS -> Cat(Fill(16, replacedData(offset + 1.U)(7)), replacedData(offset + 1.U), replacedData(offset)),
+        LoadMode.halfU -> Cat(0.U(16.W), replacedData(offset + 1.U), replacedData(offset)),
+        LoadMode.word  -> Cat(replacedData(3), replacedData(2), replacedData(1), replacedData(0)),
+      )
+    )
+
+    loadData
+  }
 }

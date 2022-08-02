@@ -37,6 +37,7 @@ class MicroOp(rename: Boolean = false) extends Bundle {
   val robAddr = UInt(robEntryNumWidth.W)
 
   val predictBT = UInt(addrWidth.W)
+  val inSlot    = Bool()
 }
 
 class Decoder extends Module {
@@ -54,6 +55,7 @@ class Decoder extends Module {
   io.microOp.pc := io.instr.addr
 
   io.microOp.predictBT := io.instr.predictBT
+  io.microOp.inSlot    := io.instr.inSlot
 
   // Immediate ////////////////////////////////////////////////////
   val extendedImm = WireInit(0.U(dataWidth.W))
@@ -63,7 +65,7 @@ class Decoder extends Module {
     mapping = Seq(
       ImmRecipe.sExt -> Cat(Fill(16, instruction(15)), instruction(15, 0)),
       ImmRecipe.uExt -> Cat(0.U(16.W), instruction(15, 0)),
-      ImmRecipe.lui  -> Cat(instruction(15, 0), 0.U(16.W))
+      ImmRecipe.lui  -> Cat(instruction(15, 0), 0.U(16.W)),
     )
   )
   io.microOp.immediate := extendedImm

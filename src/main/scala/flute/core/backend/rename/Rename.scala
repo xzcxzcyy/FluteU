@@ -101,7 +101,7 @@ class Rename(nWays: Int, nCommit: Int) extends Module {
   // Origin Reg Check
   real(0).originReg := ideal(0).originReg
   for (i <- 1 until nWays) {
-    val fire      = Wire(Vec(i, Bool()))
+    val fire    = Wire(Vec(i, Bool()))
     val phyWReg = Wire(Vec(i, UInt(phyRegAddrWidth.W)))
     for (j <- 0 until i) { //  0 <= j < i
       fire(j) := uops(j).regWriteEn && uops(j).writeRegAddr === uops(i).writeRegAddr
@@ -187,14 +187,15 @@ object RemameUtil {
     robEntry.exception := DontCare
     robEntry.instrType := uop.instrType
     robEntry.regWEn    := uop.regWriteEn
-    // robEntry.regWData  := DontCare
+    robEntry.regWData  := DontCare
     robEntry.memWMode  := uop.storeMode
     robEntry.memWAddr  := DontCare
     robEntry.memWData  := DontCare
-    robEntry.branch    := uop.bjCond =/= BJCond.none && uop.bjCond =/= BJCond.all
-    robEntry.predictBT := uop.predictBT
-    robEntry.computeBT := DontCare
-    
+    robEntry.branch    := uop.bjCond =/= BJCond.none
+    // robEntry.branch    := uop.bjCond =/= BJCond.none && uop.bjCond =/= BJCond.j && uop.bjCond =/= BJCond.jal
+    robEntry.predictBT   := uop.predictBT
+    robEntry.computeBT   := DontCare
+    robEntry.inSlot      := uop.inSlot
     robEntry.branchTaken := DontCare
 
     robEntry

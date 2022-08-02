@@ -25,9 +25,9 @@ class BypassBundle extends Bundle {
 class AluPipeline extends Module {
   val io = IO(new Bundle {
     // 无阻塞
-    val uop = Input(Valid(new AluEntry))
-    val prf = Flipped(new RegFileReadIO)
-    val wb  = Output(new AluWB)
+    val uop   = Input(Valid(new AluEntry))
+    val prf   = Flipped(new RegFileReadIO)
+    val wb    = Output(new AluWB)
     val flush = Input(Bool())
 
     val bypass = new BypassBundle
@@ -67,11 +67,18 @@ class AluPipeline extends Module {
   // branch
   val (taken, target) = AluPipelineUtil.branchRes(exIn.bits, alu.io.flag)
 
+  val isAndLink = (
+    exIn.bits.bjCond === BJCond.bgezal ||
+      exIn.bits.bjCond === BJCond.bltzal ||
+      exIn.bits.bjCond === BJCond.jal ||
+      exIn.bits.bjCond === BJCond.jalr
+  )
+
   val ex2Wb = Wire(new AluExWbBundle)
   ex2Wb.valid       := exIn.valid
   ex2Wb.robAddr     := exIn.bits.robAddr
   ex2Wb.regWEn      := exIn.bits.regWriteEn
-  ex2Wb.regWData    := alu.io.result
+  ex2Wb.regWData    := Mux(isAndLink, exIn.bits.pc + 8.U, alu.io.result)
   ex2Wb.regWAddr    := exIn.bits.writeRegAddr
   ex2Wb.exception   := DontCare
   ex2Wb.computeBT   := target
@@ -132,13 +139,12 @@ object AluPipelineUtil {
   def robFromAluExWb(wbIn: AluExWbBundle) = {
     val rob = Wire(new ROBCompleteBundle(robEntryNumWidth))
     rob.exception := wbIn.exception
-    // rob.regWData  := ex2Wb.regWData
+    rob.regWData  := wbIn.regWData
     rob.robAddr   := wbIn.robAddr
     // rob.regWEn    := ex2Wb.regWEn
-    rob.valid     := wbIn.valid
-    // rob.valid     := ex2Wb.valid && ex2Wb.regWEn
-    rob.memWAddr  := DontCare
-    rob.memWData  := DontCare
+    rob.valid    := wbIn.valid
+    rob.memWAddr := DontCare
+    rob.memWData := DontCare
 
     rob.branchTaken := wbIn.branchTaken
     rob.computeBT   := wbIn.computeBT
@@ -151,31 +157,28 @@ object AluPipelineUtil {
       key = uop.bjCond,
       default = 0.B,
       mapping = Seq(
-        BJCond.none -> 0.B,
-        BJCond.eq   -> aluFlag.equal,
-        BJCond.ge   -> !aluFlag.lessS,
-        BJCond.gez  -> !aluFlag.lessS, // rs-0
-        BJCond.geu  -> !aluFlag.lessU,
-        BJCond.gt   -> !(aluFlag.lessS || aluFlag.equal),
-        BJCond.gtz  -> !(aluFlag.lessS || aluFlag.equal),
-        BJCond.gtu  -> !(aluFlag.lessU || aluFlag.equal),
-        BJCond.le   -> (aluFlag.lessS || aluFlag.equal),
-        BJCond.lez  -> (aluFlag.lessS || aluFlag.equal),
-        BJCond.leu  -> (aluFlag.lessU || aluFlag.equal),
-        BJCond.lt   -> aluFlag.lessS,
-        BJCond.ltz  -> aluFlag.lessS,
-        BJCond.ltu  -> aluFlag.lessU,
-        BJCond.ne   -> !aluFlag.equal,
-        BJCond.jr   -> 1.B,
-        BJCond.all  -> 0.B,            // HAS been handled by Fetch
+        BJCond.none   -> 0.B,
+        BJCond.beq    -> aluFlag.equal,
+        BJCond.bgez   -> !aluFlag.lessS,
+        BJCond.bgezal -> !aluFlag.lessS,
+        BJCond.bgtz   -> !(aluFlag.lessS || aluFlag.equal),
+        BJCond.blez   -> (aluFlag.lessS || aluFlag.equal),
+        BJCond.bltz   -> aluFlag.lessS,
+        BJCond.bltzal -> aluFlag.lessS,
+        BJCond.bne    -> !aluFlag.equal,
+        BJCond.j      -> 1.B,
+        BJCond.jal    -> 1.B,
+        BJCond.jalr   -> 1.B,
+        BJCond.jr     -> 1.B,
       )
     )
-    // all 代表 J & JAL, 已经被 Fetch 处理，不需要分支目标地址
-    val branchValid = uop.bjCond =/= BJCond.none && uop.bjCond =/= BJCond.all
-    val branchAddr  = WireInit(0.U(addrWidth.W)) // 默认情况下返回0
-    
-    when(uop.bjCond === BJCond.jr) {
+    // TODO: J & JAL, 已经被 Fetch 处理，给了 taken，且计算地址直接取了 Fetch 给的 PredictBT，如果要改预测的话需要修
+    val branchAddr = WireInit(0.U(addrWidth.W)) // 默认情况下返回0
+
+    when(uop.bjCond === BJCond.jr || uop.bjCond === BJCond.jalr) {
       branchAddr := uop.op1.op
+    }.elsewhen(uop.bjCond === BJCond.j || uop.bjCond === BJCond.jal) {
+      branchAddr := uop.predictBT
     }.otherwise {
       branchAddr := uop.pc + 4.U + Cat(uop.immediate, 0.U(2.W))
     }

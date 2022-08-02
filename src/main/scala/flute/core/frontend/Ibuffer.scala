@@ -17,7 +17,6 @@ class IbufferBundle[T <: Data](gen: T, numEntries: Int, numRead: Int, numWrite: 
  * Ibuffer 是特化过的FIFO；
  * 写端口ready信号不依赖valid, 不允许 valid 位 [0 1 1 0] 模式。只允许 [1 1 0 0] (1置前)
  * 读端口valid信号不依赖ready, 只与寄存器状态相关。只允许 ready 位 [1 1 0] (1置前)
- * 连接时要注意外部的valid信号给出，不能组合依赖ready
  */ 
 class Ibuffer[T <: Data](gen: T, numEntries: Int, numRead: Int, numWrite: Int) extends Module {
   assert(isPow2(numEntries) && numEntries > 1)

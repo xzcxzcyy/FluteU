@@ -18,9 +18,17 @@ import flute.config.CPUConfig._
 import flute.core.backend.commit.Commit
 import flute.core.backend.lsu.LsuIssue
 import flute.core.backend.lsu.LsuPipeline
-import flute.cache.top.DCachePorts
+import flute.cache.top.DCacheWithCore
 import flute.core.backend.commit.BranchCommit
 import flute.cp0.CP0WithCommit
+import flute.core.backend.commit.ROBEntry
+
+class TraceBundle extends Bundle {
+  val pc       = UInt(32.W)
+  val arfWEn   = Bool()
+  val arfWAddr = UInt(5.W)
+  val arfWData = UInt(32.W)
+}
 
 class Backend(nWays: Int = 2) extends Module {
   require(nWays == 2)
@@ -30,8 +38,9 @@ class Backend(nWays: Int = 2) extends Module {
     val prf       = Output(Vec(phyRegAmount, UInt(dataWidth.W)))
     val rmt       = new RMTDebugOut
     val busyTable = Output(Vec(phyRegAmount, Bool()))
+    val arfWTrace = Output(new TraceBundle)
     // ========= //
-    val dcache       = Flipped(new DCachePorts)
+    val dcache       = Flipped(new DCacheWithCore)
     val branchCommit = Output(new BranchCommit)
     val cp0          = Flipped(new CP0WithCommit)
     val cp0IntrReq   = Input(Bool())
@@ -172,4 +181,19 @@ class Backend(nWays: Int = 2) extends Module {
   rob.io.flush      := needFlush
   dispatch.io.flush := needFlush
   io.dcache.flush   := needFlush
+
+  // debug traceBuffer
+  val traceBuffer = Module(new Ibuffer(new ROBEntry, 128, 1, 2))
+  for (i <- 0 to 1) yield {
+    traceBuffer.io.write(i).valid := rob.io.read(i).fire
+    traceBuffer.io.write(i).bits  := rob.io.read(i).bits
+  }
+  traceBuffer.io.read(0).ready := 1.B
+  val traceBRead = traceBuffer.io.read(0)
+  io.arfWTrace.arfWEn   := traceBRead.fire && traceBRead.bits.regWEn
+  io.arfWTrace.arfWAddr := traceBRead.bits.logicReg
+  io.arfWTrace.arfWData := traceBRead.bits.regWData
+  io.arfWTrace.pc       := traceBRead.bits.pc
+
+  traceBuffer.io.flush := 0.B
 }

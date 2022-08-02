@@ -3,7 +3,7 @@ package flute.axi
 import chisel3._
 import chisel3.util._
 
-class AXIRamBlackBox(
+class AXI_RAM(
     DATA_WIDTH: Int = 32,
     ADDR_WIDTH: Int = 32,
     ID_WIDTH: Int = 4,
@@ -78,7 +78,7 @@ class AXIRam extends Module {
     val axi = AXIIO.slave()
   })
 
-  val axi_ram = Module(new AXIRamBlackBox(32, 32, 4, 0))
+  val axi_ram = Module(new AXI_RAM(32, 32, 4, 0))
   axi_ram.io.clk := clock
   axi_ram.io.rst := reset
 
