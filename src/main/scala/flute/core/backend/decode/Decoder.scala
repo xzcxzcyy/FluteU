@@ -8,6 +8,8 @@ import flute.core.components._
 import flute.core.frontend.IBEntry
 import chisel3.util.Fill
 
+import flute.config.Instructions._
+
 class OpBundle extends Bundle {
   val op    = UInt(dataWidth.W)
   val valid = Bool()
@@ -41,6 +43,9 @@ class MicroOp(rename: Boolean = false) extends Bundle {
 
   val cp0RegAddr = UInt(5.W)
   val cp0RegSel  = UInt(3.W)
+  val syscall    = Bool()
+  val break      = Bool()
+  val reservedI  = Bool()
 }
 
 class Decoder extends Module {
@@ -89,7 +94,7 @@ class Decoder extends Module {
   io.microOp.loadMode   := controller.io.loadMode
   io.microOp.storeMode  := controller.io.storeMode
   io.microOp.aluOp      := controller.io.aluOp
-  io.microOp.mduOp      := controller.io.mduOp
+  io.microOp.mduOp      := Mux(controller.io.mduOp === MDUOp.ri, MDUOp.none, controller.io.mduOp)
   io.microOp.op1.op := MuxLookup(
     key = controller.io.op1Recipe,
     default = 0.U,
@@ -129,4 +134,7 @@ class Decoder extends Module {
 
   io.microOp.cp0RegAddr := cp0RegAddr
   io.microOp.cp0RegSel  := cp0RegSel
+  io.microOp.syscall    := instruction === SYSCALL
+  io.microOp.break      := instruction === BREAK
+  io.microOp.reservedI  := controller.io.mduOp === MDUOp.ri
 }

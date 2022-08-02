@@ -27,7 +27,7 @@ class Controller extends Module {
   val signals = ListLookup(io.instruction,
            //   regWriteEn, loadMode,          storeMode,           aluOp,      op1Recipe,         op2Recipe,      bjCond,      regDst        immRecipe       instrType,     mduOp
     /*default*/
-              List(false.B, LoadMode.disable,  StoreMode.disable,   ALUOp.none, Op1Recipe.rs,      Op2Recipe.rt,   BJCond.none, RegDst.rd,    ImmRecipe.sExt, InstrType.alu, MDUOp.none),
+              List(false.B, LoadMode.disable,  StoreMode.disable,   ALUOp.none, Op1Recipe.zero,    Op2Recipe.zero, BJCond.none, RegDst.rd,    ImmRecipe.sExt, InstrType.alu, MDUOp.ri),
     Array(
     /** Logical Instructions **/
     AND    -> List(true.B,  LoadMode.disable,  StoreMode.disable,   ALUOp.and,  Op1Recipe.rs,      Op2Recipe.rt,   BJCond.none, RegDst.rd,    ImmRecipe.sExt, InstrType.alu, MDUOp.none),
@@ -98,6 +98,7 @@ class Controller extends Module {
     /** Trap Instructions **/
     /** Syscall, currently Halt **/
     SYSCALL -> List(false.B, LoadMode.disable, StoreMode.disable,   ALUOp.none, Op1Recipe.zero,    Op2Recipe.zero, BJCond.none, RegDst.rd,    ImmRecipe.sExt, InstrType.alu, MDUOp.none),
+    BREAK   -> List(false.B, LoadMode.disable, StoreMode.disable,   ALUOp.none, Op1Recipe.zero,    Op2Recipe.zero, BJCond.none, RegDst.rd,    ImmRecipe.sExt, InstrType.alu, MDUOp.none),
     )
   )
 
@@ -199,7 +200,7 @@ object InstrType {
 }
 
 object MDUOp {
-  private val amount = 11
+  private val amount = 12
   val width = log2Up(amount)
 
   val none  = 0.U(width.W)
@@ -213,4 +214,5 @@ object MDUOp {
   val mtlo  = 8.U(width.W)
   val mfc0  = 9.U(width.W)
   val mtc0  = 10.U(width.W)
+  val ri    = 11.U(width.W)
 }

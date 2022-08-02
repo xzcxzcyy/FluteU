@@ -5,6 +5,7 @@ import chisel3.util._
 import chiseltest._
 import org.scalatest.freespec.AnyFreeSpec
 import org.scalatest.matchers.should.Matchers
+import flute.cp0.ExceptionBundle
 
 
 class AddrMapTestTop extends Module {
@@ -14,11 +15,46 @@ class AddrMapTestTop extends Module {
   })
   io.out := AddrMap.map(io.in)
 }
+
+class CastTestTop extends Module {
+  val io = IO(new Bundle {
+    val in  = Input(new ExceptionBundle)
+    val valid = Input(Bool())
+    val completed = Input(Bool())
+    val out = Output(new ExceptionBundle)
+  })
+
+  val exceptions = io.in
+  io.out := VecInit(exceptions.asUInt.asBools.map(_ && io.valid && io.completed)).asTypeOf(new ExceptionBundle)
+}
 /**
   * Experiment
   * Anyone can place codes here for API verification use.
   */
 class Experiment extends AnyFreeSpec with ChiselScalatestTester with Matchers {
+  "Cast test" in {
+    test(new CastTestTop) { c=>
+      c.io.in.adELd.poke(0.B)
+      c.io.in.adELi.poke(1.B)
+      c.io.in.adES.poke(0.B)
+      c.io.in.bp.poke(1.B)
+      c.io.in.ov.poke(0.B)
+      c.io.in.ri.poke(1.B)
+      c.io.in.sys.poke(1.B)
+
+      c.io.valid.poke(1.B)
+      c.io.completed.poke(1.B)
+      
+      c.io.out.adELd.expect(0.B)
+      c.io.out.adELi.expect(1.B)
+      c.io.out.adES.expect(0.B)
+      c.io.out.bp.expect(1.B)
+      c.io.out.ov.expect(0.B)
+      c.io.out.ri.expect(1.B)
+      c.io.out.sys.expect(1.B)
+    }
+  }
+
   "Addr Map test" in {
     test(new AddrMapTestTop) {c =>
       c.io.in.poke("hbfc00000".U)

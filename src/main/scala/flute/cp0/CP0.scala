@@ -35,6 +35,7 @@ class CP0WithCommit extends Bundle {
   val completed  = Input(Bool())
   val eret       = Input(Bool())
   val valid      = Input(Bool())
+  val badvaddr   = Input(UInt(addrWidth.W))
 }
 
 class CP0WithCore extends Bundle {
@@ -98,7 +99,7 @@ class CP0 extends Module {
   val exceptionReqestsNext = 0.B // TODO: 不同类型的异常应当要求从本指令/下一条指令执行
   when(hasInt) {
     epc.reg           := Mux(commitWire.inSlot, commitWire.pc - 4.U, commitWire.pc)
-    cause.reg.bd      := commitWire.inSlot && commitWire.completed
+    cause.reg.bd      := commitWire.inSlot && commitWire.valid && commitWire.completed
     cause.reg.excCode := ExceptionCode.int
     status.reg.exl    := 1.B
   }.elsewhen(hasExc) {
@@ -135,6 +136,9 @@ class CP0 extends Module {
   }
 
   // badvaddr
+  when(!hasInt && (excVector.adELd || excVector.adELi || excVector.adES)) {
+    badvaddr.reg := commitWire.badvaddr
+  }
 
   // count
   when(wReq(count)) {

@@ -74,13 +74,19 @@ class AluPipeline extends Module {
       exIn.bits.bjCond === BJCond.jalr
   )
 
+  val exceptions = WireInit(0.U.asTypeOf(new ExceptionBundle))
+  exceptions.bp := exIn.bits.break
+  exceptions.ov := alu.io.flag.trap
+  exceptions.ri := exIn.bits.reservedI
+  exceptions.sys := exIn.bits.syscall
+
   val ex2Wb = Wire(new AluExWbBundle)
   ex2Wb.valid       := exIn.valid
   ex2Wb.robAddr     := exIn.bits.robAddr
   ex2Wb.regWEn      := exIn.bits.regWriteEn
   ex2Wb.regWData    := Mux(isAndLink, exIn.bits.pc + 8.U, alu.io.result)
   ex2Wb.regWAddr    := exIn.bits.writeRegAddr
-  ex2Wb.exception   := DontCare
+  ex2Wb.exception   := exceptions
   ex2Wb.computeBT   := target
   ex2Wb.branchTaken := taken
 
