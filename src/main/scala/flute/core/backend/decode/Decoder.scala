@@ -38,6 +38,9 @@ class MicroOp(rename: Boolean = false) extends Bundle {
 
   val predictBT = UInt(addrWidth.W)
   val inSlot    = Bool()
+
+  val cp0RegAddr = UInt(5.W)
+  val cp0RegSel  = UInt(3.W)
 }
 
 class Decoder extends Module {
@@ -82,11 +85,11 @@ class Decoder extends Module {
       RegDst.GPR31 -> 31.U(regAddrWidth.W)
     )
   )
-  io.microOp.regWriteEn     := controller.io.regWriteEn && writeArfRegAddr =/= 0.U
-  io.microOp.loadMode       := controller.io.loadMode
-  io.microOp.storeMode      := controller.io.storeMode
-  io.microOp.aluOp          := controller.io.aluOp
-  io.microOp.mduOp                  := controller.io.mduOp
+  io.microOp.regWriteEn := controller.io.regWriteEn && writeArfRegAddr =/= 0.U
+  io.microOp.loadMode   := controller.io.loadMode
+  io.microOp.storeMode  := controller.io.storeMode
+  io.microOp.aluOp      := controller.io.aluOp
+  io.microOp.mduOp      := controller.io.mduOp
   io.microOp.op1.op := MuxLookup(
     key = controller.io.op1Recipe,
     default = 0.U,
@@ -120,4 +123,10 @@ class Decoder extends Module {
   /////////////////////////////////////////////////////////////////
 
   io.microOp.robAddr := DontCare
+
+  val cp0RegAddr = instruction(15, 11)
+  val cp0RegSel  = instruction(2, 0)
+
+  io.microOp.cp0RegAddr := cp0RegAddr
+  io.microOp.cp0RegSel  := cp0RegSel
 }
