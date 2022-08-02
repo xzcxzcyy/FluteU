@@ -6,6 +6,7 @@ import flute.config.CPUConfig._
 import flute.cp0.ExceptionBundle
 import flute.util.ValidBundle
 import flute.core.backend.decode.StoreMode
+import flute.core.backend.decode.MDUOp
 
 class ROBEntry extends Bundle {
   val pc        = UInt(addrWidth.W)
@@ -26,6 +27,12 @@ class ROBEntry extends Bundle {
   val computeBT   = UInt(addrWidth.W)
   val branchTaken = Bool()
   val inSlot      = Bool()
+
+  // hi, lo, cp0
+  val mduOp       = UInt(MDUOp.width.W)
+  val hiRegWrite  = UInt(32.W)
+  val loRegWrite  = UInt(32.W)
+  val cp0RegWrite = UInt(32.W)
 
   // result debug
   val regWData = UInt(dataWidth.W)
@@ -48,6 +55,11 @@ class ROBCompleteBundle(robAddrWidth: Int = robEntryNumWidth) extends Bundle {
   // branch
   val computeBT   = UInt(addrWidth.W)
   val branchTaken = Bool()
+
+  // hi, lo, cp0
+  val hiRegWrite  = UInt(32.W)
+  val loRegWrite  = UInt(32.W)
+  val cp0RegWrite = UInt(32.W)
 
   // result debug
   val regWData = UInt(dataWidth.W)
@@ -112,6 +124,9 @@ class ROB(numEntries: Int, numRead: Int, numWrite: Int, numSetComplete: Int) ext
       entries(port.robAddr).branchTaken := port.branchTaken
       entries(port.robAddr).computeBT   := port.computeBT
       entries(port.robAddr).regWData    := port.regWData
+      entries(port.robAddr).hiRegWrite  := port.hiRegWrite
+      entries(port.robAddr).loRegWrite  := port.loRegWrite
+      entries(port.robAddr).cp0RegWrite := port.cp0RegWrite
     }
   }
 }
