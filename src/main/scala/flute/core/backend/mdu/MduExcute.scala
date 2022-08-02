@@ -20,28 +20,12 @@ class MduExcute extends Module {
     val out = Output(new AluWB)
   })
 
-  val exIn = io.in
+  val uop = io.in.bits
 
-  val mdu = Module(new MDU)
+  val mdu = Module(new FakeMDU)
 
   // Stage 3: WriteBack
-  val stage = Module(new StageReg(new MicroOp(rename = true)))
-
-}
-
-// return res = Mux(md, op1*op2, op1/op2) in 4 cycles
-class FakeMDU extends Module {
-  val io = IO(new Bundle {
-    val op1    = Input(UInt(dataWidth.W))
-    val op2    = Input(UInt(dataWidth.W))
-    val signed = Input(Bool())
-    val md     = Input(Bool()) // io.md===1.U : Mul
-		val ready = Output(Bool())
-
-    val res = Output(new HILORead)
-  })
-
-	val mulRes = io.op1.asSInt * io.op2.asSInt
+  val stage = Module(new StageReg(Valid(new MicroOp(rename = true))))
 
 
 }
