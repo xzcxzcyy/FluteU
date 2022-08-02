@@ -166,15 +166,19 @@ object AluPipelineUtil {
         BJCond.bltz   -> aluFlag.lessS,
         BJCond.bltzal -> aluFlag.lessS,
         BJCond.bne    -> !aluFlag.equal,
+        BJCond.j      -> 1.B,
+        BJCond.jal    -> 1.B,
         BJCond.jalr   -> 1.B,
         BJCond.jr     -> 1.B,
       )
     )
-    // ATT: J & JAL, 已经被 Fetch 处理，给了 not taken，如果要改的话记得修
+    // TODO: J & JAL, 已经被 Fetch 处理，给了 taken，且计算地址直接取了 Fetch 给的 PredictBT，如果要改预测的话需要修
     val branchAddr = WireInit(0.U(addrWidth.W)) // 默认情况下返回0
 
     when(uop.bjCond === BJCond.jr || uop.bjCond === BJCond.jalr) {
       branchAddr := uop.op1.op
+    }.elsewhen(uop.bjCond === BJCond.j || uop.bjCond === BJCond.jal) {
+      branchAddr := uop.predictBT
     }.otherwise {
       branchAddr := uop.pc + 4.U + Cat(uop.immediate, 0.U(2.W))
     }

@@ -25,6 +25,7 @@ class ROBEntry extends Bundle {
   val predictBT   = UInt(addrWidth.W)
   val computeBT   = UInt(addrWidth.W)
   val branchTaken = Bool()
+  val inSlot      = Bool()
 
   // result debug
   val regWData = UInt(dataWidth.W)

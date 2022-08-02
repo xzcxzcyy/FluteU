@@ -162,7 +162,7 @@ class Commit(nCommit: Int = 2) extends Module {
   io.cp0.exceptions := robRaw(0).exception
   // TODO: support ERET; notify inSlot(IMPORTANT)
   io.cp0.eret   := 0.B
-  io.cp0.inSlot := 0.B
+  io.cp0.inSlot := robRaw(0).inSlot
   io.cp0.pc     := robRaw(0).pc
 
 }
