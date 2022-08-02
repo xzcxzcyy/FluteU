@@ -9,39 +9,48 @@ import flute.core.components.MuxStageReg
 import flute.core.components.MuxStageRegMode
 import flute.core.components.StageReg
 
-
 class MduIssue extends Module {
-	val io = IO(new Bundle {
-		val in = Input(Valid(new MicroOp(rename = true)))
-		//val mdPlAvailable = Flipped(new MDPlAvailableIO)
-		val bt = Vec(2, Flipped(new BusyTableReadPort))
-		val out = Output(Valid(new MicroOp(rename = true)))
-		val mdPlReady = Input(Bool())  // issue stage reg stall sig
-	})
+  val io = IO(new Bundle {
+    // 接收窗口; ready指定是否发射
+    val in = Flipped(Decoupled(new MicroOp(rename = true)))
 
-	val uop = WireInit(io.in.bits) 
-	val available = Wire(Bool()) 
-	val bt = Wire(Vec(2, Bool()))
-	io.bt(0).addr := uop.rsAddr 
-	io.bt(1).addr := uop.rtAddr
-	bt(0)         := io.bt(0).busy 
-	bt(1)         := io.bt(1).busy 
-	// 计算 available
-	val op1Avalible = AluIssueUtil.op1Ready(uop, bt)
-	val op2Avalible = AluIssueUtil.op2Ready(uop, bt)
-	available := op1Avalible && op2Avalible
+    val bt = Vec(2, Flipped(new BusyTableReadPort))
 
-	val stage_issue = Module(new StageReg(Valid(new MicroOp(rename = true))))
+    val out = Decoupled(new MicroOp(rename = true))
 
-	// datapath
-	stage_issue.io.in.bits  := uop 
-	stage_issue.io.in.valid := available
+    val flush = Input(Bool())
+  })
 
-	io.out.bits  := stage_issue.io.data.bits 
-	io.out.valid := stage_issue.io.data.valid 
+  val uop      = WireInit(io.in.bits)
+  val avalible = Wire(Bool())
+  val bt       = Wire(Vec(2, Bool()))
+  io.bt(0).addr := uop.rsAddr
+  io.bt(1).addr := uop.rtAddr
+  bt(0)         := io.bt(0).busy
+  bt(1)         := io.bt(1).busy
+  // 计算 availible
+  val op1Avalible = AluIssueUtil.op1Ready(uop, bt)
+  val op2Avalible = AluIssueUtil.op2Ready(uop, bt)
+  avalible := op1Avalible && op2Avalible
 
-	// stage 控制信号 
-	
-	stage_issue.io.flush := false.B 
-	stage_issue.io.valid := io.mdPlReady 
+  val stage = Module(new MuxStageReg(Valid(new MicroOp(rename = true))))
+
+  // datapath
+  stage.io.in.bits  := uop
+  stage.io.in.valid := 1.B
+
+  io.out.bits  := stage.io.out.bits
+  io.out.valid := stage.io.out.valid
+
+  // 双端decoupled信号生成
+  io.in.ready := ((!stage.io.out.valid) || (io.out.fire)) && avalible
+
+  // stage控制信号
+  when(io.flush || (!io.in.fire && io.out.fire)) {
+    stage.io.mode := MuxStageRegMode.flush
+  }.elsewhen(io.in.fire && (io.out.fire || !stage.io.out.valid)) {
+    stage.io.mode := MuxStageRegMode.next
+  }.otherwise {
+    stage.io.mode := MuxStageRegMode.stall
+  }
 }
