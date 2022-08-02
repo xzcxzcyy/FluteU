@@ -197,10 +197,13 @@ object RemameUtil {
     robEntry.computeBT   := DontCare
     robEntry.inSlot      := uop.inSlot
     robEntry.branchTaken := DontCare
-    robEntry.mduOp       := uop.mduOp
+
     robEntry.hiRegWrite  := DontCare
     robEntry.loRegWrite  := DontCare
     robEntry.cp0RegWrite := DontCare
+    robEntry.cp0Addr     := DontCare
+    robEntry.cp0Sel      := DontCare
+    
 
     robEntry
   }
