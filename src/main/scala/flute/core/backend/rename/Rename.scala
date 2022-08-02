@@ -201,8 +201,8 @@ object RemameUtil {
     robEntry.hiRegWrite  := DontCare
     robEntry.loRegWrite  := DontCare
     robEntry.cp0RegWrite := DontCare
-    robEntry.cp0Addr     := DontCare
-    robEntry.cp0Sel      := DontCare
+    robEntry.cp0Addr     := uop.cp0RegAddr
+    robEntry.cp0Sel      := uop.cp0RegSel
     
 
     robEntry

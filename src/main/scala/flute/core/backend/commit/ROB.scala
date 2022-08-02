@@ -61,8 +61,6 @@ class ROBCompleteBundle(robAddrWidth: Int = robEntryNumWidth) extends Bundle {
   val hiRegWrite  = Valid(UInt(32.W))
   val loRegWrite  = Valid(UInt(32.W))
   val cp0RegWrite = Valid(UInt(32.W))
-  val cp0Sel      = UInt(3.W)
-  val cp0Addr     = UInt(5.W)
 
   // result debug
   val regWData = UInt(dataWidth.W)
@@ -130,8 +128,6 @@ class ROB(numEntries: Int, numRead: Int, numWrite: Int, numSetComplete: Int) ext
       entries(port.robAddr).hiRegWrite  := port.hiRegWrite
       entries(port.robAddr).loRegWrite  := port.loRegWrite
       entries(port.robAddr).cp0RegWrite := port.cp0RegWrite
-      entries(port.robAddr).cp0Sel      := port.cp0Sel
-      entries(port.robAddr).cp0Addr     := port.cp0Addr
     }
   }
 }
