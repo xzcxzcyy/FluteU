@@ -29,7 +29,7 @@ class MduRead extends Module {
   val cp0Res  = WireInit(io.cp0.data)
   val hiloRes = WireInit(VecInit(Seq(io.hilo.hi, io.hilo.lo))) // 0 -> hi, 1 -> lo
 
-  val (op1, op2)  = MduUtil.getOp(uop, prfRes, hiloRes, cp0Res)
+  val (op1, op2)  = MduReadUtil.getOp(uop, prfRes, hiloRes, cp0Res)
   val uopWithData = WireInit(uop)
   uopWithData.op1.op := op1
   uopWithData.op2.op := op2
@@ -53,5 +53,12 @@ class MduRead extends Module {
     stage.io.mode := MuxStageRegMode.next
   }.otherwise {
     stage.io.mode := MuxStageRegMode.stall
+  }
+}
+
+object MduReadUtil {
+  //0 -> hi, 1 -> lo
+  def getOp(uop: MicroOp, prfRes: Seq[UInt], hiloRes: Seq[UInt], cp0Res: UInt) = {
+    (0.U, 0.U)
   }
 }
