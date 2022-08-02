@@ -111,12 +111,15 @@ class Controller extends Module {
 }
 
 object LoadMode {
-  val width = 2
+  private val amount = 6
+  val width = log2Up(amount)
 
-  val disable  = 0.U(width.W)
-  val word     = 1.U(width.W)
-  val byte     = 2.U(width.W)
-  val halfword = 3.U(width.W)
+  val disable = 0.U(width.W)
+  val word    = 1.U(width.W)
+  val byteS   = 2.U(width.W)
+  val halfS   = 3.U(width.W)
+  val byteU   = 4.U(width.W)
+  val halfU   = 5.U(width.W)
 }
 
 object StoreMode {
