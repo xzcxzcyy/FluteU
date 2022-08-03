@@ -75,10 +75,11 @@ class AluPipeline extends Module {
   )
 
   val exceptions = WireInit(0.U.asTypeOf(new ExceptionBundle))
-  exceptions.bp := exIn.bits.break
-  exceptions.ov := alu.io.flag.trap
-  exceptions.ri := exIn.bits.reservedI
-  exceptions.sys := exIn.bits.syscall
+  exceptions.bp    := exIn.bits.break
+  exceptions.ov    := alu.io.flag.trap
+  exceptions.ri    := exIn.bits.reservedI
+  exceptions.sys   := exIn.bits.syscall
+  exceptions.adELi := (exIn.bits.bjCond =/= BJCond.none) && taken && (target(1, 0) =/= 0.U)
 
   val ex2Wb = Wire(new AluExWbBundle)
   ex2Wb.valid       := exIn.valid
@@ -154,6 +155,10 @@ object AluPipelineUtil {
 
     rob.branchTaken := wbIn.branchTaken
     rob.computeBT   := wbIn.computeBT
+    rob.badvaddr    := wbIn.computeBT
+    rob.cp0RegWrite := 0.U.asTypeOf(Valid(UInt(32.W)))
+    rob.hiRegWrite  := 0.U.asTypeOf(Valid(UInt(32.W)))
+    rob.loRegWrite  := 0.U.asTypeOf(Valid(UInt(32.W)))
 
     rob
   }
