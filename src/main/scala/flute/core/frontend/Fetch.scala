@@ -41,7 +41,7 @@ class Fetch extends Module {
     val pc           = Output(UInt(addrWidth.W))
   })
 
-  val pc        = RegInit(0.U(32.W))
+  val pc        = RegInit("hbfc00000".U(32.W))
   val bpc       = RegInit(0.U.asTypeOf(Valid(UInt(addrWidth.W))))
   val ib        = Module(new Ibuffer(new IBEntry, ibufferAmount, decodeWay, fetchGroupSize))
   val pcQ       = Module(new Queue(UInt(addrWidth.W), pcQueueVolume, hasFlush = true))
