@@ -84,7 +84,7 @@ class Commit(nCommit: Int = 2) extends Module {
   }
 
   for (i <- 0 until nCommit) {
-    programException(i) := existMask(i) && robRaw(i).exception.asUInt.orR
+    programException(i) := existMask(i) && (robRaw(i).exception.asUInt.orR || robRaw(i).eret)
     branchFail(i) := existMask(i) && robRaw(i).branch && robRaw(i).predictBT =/= targetBranchAddr(i)
   }
 
@@ -166,10 +166,10 @@ class Commit(nCommit: Int = 2) extends Module {
   io.sbRetire        := sbRetire
 
   io.cp0.valid      := validMask(0)
-  io.cp0.completed  := robRaw(0).complete
+  io.cp0.completed  := completeMask(0)
   io.cp0.exceptions := robRaw(0).exception
   // TODO: support ERET; notify inSlot(IMPORTANT)
-  io.cp0.eret   := 0.B
+  io.cp0.eret   := robRaw(0).eret && existMask(0)
   io.cp0.inSlot := robRaw(0).inSlot
   io.cp0.pc     := robRaw(0).pc
 
