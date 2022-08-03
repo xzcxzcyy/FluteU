@@ -96,7 +96,7 @@ class CP0 extends Module {
     cause.reg.ip(i) && status.reg.im(i)
   }
   val hasInt = intReqs.foldLeft(0.B)((z, a) => z || a) && status.reg.ie && !status.reg.exl && commitWire.valid
-  val exceptionReqestsNext = 0.B // TODO: 不同类型的异常应当要求从本指令/下一条指令执行
+
   when(hasInt) {
     epc.reg           := Mux(commitWire.inSlot, commitWire.pc - 4.U, commitWire.pc)
     cause.reg.bd      := commitWire.inSlot && commitWire.valid && commitWire.completed
@@ -108,8 +108,6 @@ class CP0 extends Module {
       cause.reg.bd := commitWire.inSlot
       when(commitWire.inSlot) {
         epc.reg := commitWire.pc - 4.U
-      }.elsewhen(exceptionReqestsNext) {
-        epc.reg := commitWire.pc + 4.U
       }.otherwise {
         epc.reg := commitWire.pc
       }
@@ -122,6 +120,7 @@ class CP0 extends Module {
         excVector.sys   -> ExceptionCode.sys,
         excVector.adELd -> ExceptionCode.adEL,
         excVector.adES  -> ExceptionCode.adEs,
+        excVector.bp    -> ExceptionCode.bp,
       )
     )
   }
