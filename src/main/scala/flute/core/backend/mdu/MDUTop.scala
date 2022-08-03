@@ -50,7 +50,7 @@ class MDUTop extends Module {
 
   switch(state) {
     is(idle) {
-      when(io.in.valid) {
+      when(io.in.fire) {
         state := busy
       }
     }

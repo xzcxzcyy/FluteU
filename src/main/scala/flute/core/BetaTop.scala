@@ -32,13 +32,12 @@ class BetaTop(iFile: String, dFile: String) extends Module {
   frontend.io.cp0.epc      := cp0.io.core.epc
   frontend.io.cp0.eretReq  := backend.io.cp0.eret
   frontend.io.cp0.intrReq  := cp0.io.core.intrReq
-  frontend.io.icache       := iCache.io
+  frontend.io.icache       <> iCache.io
   io.pc                    := frontend.io.pc
   cp0.io.hwIntr            := io.hwIntr
   // TEMP //
-  cp0.io.core.read         := DontCare
-  cp0.io.core.write        := DontCare
-  cp0.io.core.write.enable := 0.B
+  cp0.io.core.read <> backend.io.cp0Read
+  cp0.io.core.write := backend.io.cp0Write
   // ==== //
   backend.io.cp0IntrReq := cp0.io.core.intrReq
   backend.io.cp0 <> cp0.io.core.commit

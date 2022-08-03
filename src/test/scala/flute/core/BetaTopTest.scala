@@ -72,3 +72,11 @@ class BetaDisplayLightTest
       "display_light",
       1024,
     )
+
+class BetaMultTest
+    extends BetaBaseTest(
+      "target/clang/mul.hexS",
+      "test_data/zero.in",
+      "mult_div",
+      1024,
+    )
