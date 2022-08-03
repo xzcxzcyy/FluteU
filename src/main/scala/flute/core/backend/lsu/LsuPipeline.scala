@@ -53,6 +53,16 @@ class LsuPipeline extends Module {
   writeRob.regWData  := lsuMemReq.data
   writeRob.memWAddr := lsuMemReq.addr
   writeRob.memWData := lsuMemReq.data
+  writeRob.badvaddr := lsuMemReq.addr
+  writeRob.exception.adELd := (
+    (lsuMemReq.loadMode === LoadMode.word && lsuMemReq.addr(1, 0) =/= 0.U) ||
+    (lsuMemReq.loadMode === LoadMode.halfS && lsuMemReq.addr(0) =/= 0.U) || 
+    (lsuMemReq.loadMode === LoadMode.halfU && lsuMemReq.addr(0) =/= 0.U)
+  )
+  writeRob.exception.adES := (
+    (lsuMemReq.storeMode === StoreMode.word && lsuMemReq.addr(1, 0) =/= 0.U) ||
+    (lsuMemReq.storeMode === StoreMode.halfword && lsuMemReq.addr(0) =/= 0.U)
+  )
   io.wb.rob         := writeRob
 
   // wb.busyTable

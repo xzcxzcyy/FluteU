@@ -99,6 +99,7 @@ class Controller extends Module {
     /** Syscall, currently Halt **/
     SYSCALL -> List(false.B, LoadMode.disable, StoreMode.disable,   ALUOp.none, Op1Recipe.zero,    Op2Recipe.zero, BJCond.none, RegDst.rd,    ImmRecipe.sExt, InstrType.alu, MDUOp.none),
     BREAK   -> List(false.B, LoadMode.disable, StoreMode.disable,   ALUOp.none, Op1Recipe.zero,    Op2Recipe.zero, BJCond.none, RegDst.rd,    ImmRecipe.sExt, InstrType.alu, MDUOp.none),
+    ERET    -> List(false.B, LoadMode.disable, StoreMode.disable,   ALUOp.none, Op1Recipe.zero,    Op2Recipe.zero, BJCond.none, RegDst.rd,    ImmRecipe.sExt, InstrType.alu, MDUOp.none),
     )
   )
 
@@ -125,6 +126,12 @@ object LoadMode {
   val halfS   = 3.U(width.W)
   val byteU   = 4.U(width.W)
   val halfU   = 5.U(width.W)
+
+  def en(lm: UInt) = {
+    assert(lm.getWidth == width)
+    
+    lm =/= disable
+  }
 }
 
 object StoreMode {
@@ -134,6 +141,12 @@ object StoreMode {
   val word     = 1.U(width.W)
   val byte     = 2.U(width.W)
   val halfword = 3.U(width.W)
+
+  def en(sm: UInt) = {
+    assert(sm.getWidth == width)
+
+    sm =/= disable
+  }
 }
 
 // ATTENTION: Ensure Op1Recipe.width >= Op2Recipe.width (had better ==)
