@@ -60,7 +60,7 @@ class FakeMDU extends Module {
           Seq(
             (mul && signed)   -> mulHi,
             (mul && !signed)  -> muluHi,
-            (!mul && signed)  -> divMod,
+            (!mul && signed)  -> divMod.asUInt,
             (!mul && !signed) -> divuMod
           )
         )
@@ -69,7 +69,7 @@ class FakeMDU extends Module {
           Seq(
             (mul && signed)   -> mulLo,
             (mul && !signed)  -> muluLo,
-            (!mul && signed)  -> divRes,
+            (!mul && signed)  -> divRes.asUInt,
             (!mul && !signed) -> divuRes
           )
         )
