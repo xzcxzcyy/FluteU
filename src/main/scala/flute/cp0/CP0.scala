@@ -106,7 +106,9 @@ class CP0 extends Module {
     status.reg.exl := 1.B
     when(!status.reg.exl) {
       cause.reg.bd := commitWire.inSlot
-      when(commitWire.inSlot) {
+      when(excVector.adELi) {
+        epc.reg := commitWire.badvaddr
+      }.elsewhen(commitWire.inSlot) {
         epc.reg := commitWire.pc - 4.U
       }.otherwise {
         epc.reg := commitWire.pc

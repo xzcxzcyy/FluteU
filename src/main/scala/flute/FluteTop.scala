@@ -17,6 +17,7 @@ import flute.cache.top.ThroughICache
 import flute.axi.AXIIO
 import flute.cache.axi.AXIReadArbiter
 import flute.core.backend.TraceBundle
+import flute.cp0.CP0DebugIO
 
 class FluteTop extends Module {
   val io = IO(new Bundle {
@@ -27,6 +28,7 @@ class FluteTop extends Module {
     // Debug
     val count     = Output(UInt(dataWidth.W))
     val arfWTrace = Output(new TraceBundle)
+    val cp0Debug = Output(new CP0DebugIO)
   })
 
   val frontend = Module(new Frontend)
@@ -71,6 +73,8 @@ class FluteTop extends Module {
   // DEBUG //
   io.count     := cp0.io.debug.count
   io.arfWTrace := backend.io.arfWTrace
+  io.cp0Debug  := cp0.io.debug
+  dontTouch(io.cp0Debug)
   // ===== //
 
   io.arf := arfView.io.arfOut
