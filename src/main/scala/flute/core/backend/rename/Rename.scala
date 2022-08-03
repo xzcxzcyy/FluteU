@@ -204,6 +204,7 @@ object RemameUtil {
     robEntry.cp0Addr     := uop.cp0RegAddr
     robEntry.cp0Sel      := uop.cp0RegSel
     robEntry.badvaddr    := DontCare
+    robEntry.eret        := uop.eret
 
     robEntry
   }

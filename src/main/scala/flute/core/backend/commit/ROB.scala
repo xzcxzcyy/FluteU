@@ -35,6 +35,7 @@ class ROBEntry extends Bundle {
   val cp0Sel      = UInt(3.W)
   val cp0Addr     = UInt(5.W)
   val badvaddr    = UInt(addrWidth.W)
+  val eret        = Bool()
 
   // result debug
   val regWData = UInt(dataWidth.W)

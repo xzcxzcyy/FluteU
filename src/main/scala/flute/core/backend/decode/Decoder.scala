@@ -45,6 +45,7 @@ class MicroOp(rename: Boolean = false) extends Bundle {
   val cp0RegSel  = UInt(3.W)
   val syscall    = Bool()
   val break      = Bool()
+  val eret       = Bool()
   val reservedI  = Bool()
 }
 
@@ -137,4 +138,5 @@ class Decoder extends Module {
   io.microOp.syscall    := instruction === SYSCALL
   io.microOp.break      := instruction === BREAK
   io.microOp.reservedI  := controller.io.mduOp === MDUOp.ri
+  io.microOp.eret       := instruction === ERET
 }
