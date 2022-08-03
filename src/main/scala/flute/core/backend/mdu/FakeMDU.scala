@@ -1,10 +1,8 @@
 package flute.core.backend.mdu
 
-
 import chisel3._
 import chisel3.util._
 import flute.config.CPUConfig._
-
 
 class MDUIn extends Bundle {
   val op1    = UInt(dataWidth.W)
@@ -17,6 +15,8 @@ class FakeMDU extends Module {
   val io = IO(new Bundle {
     val in  = Flipped(DecoupledIO(new MDUIn))
     val res = Output(Valid(new HILORead))
+
+    val flush = Input(Bool())
   })
 
   val op1    = io.in.bits.op1
@@ -39,47 +39,55 @@ class FakeMDU extends Module {
   val divuRes = op1 / op2
   val divuMod = op1 % op2
 
-  io.res.bits.hi := MuxCase(
-    0.U,
-    Seq(
-      (mul && signed)   -> mulHi,
-      (mul && !signed)  -> muluHi,
-      (!mul && signed)  -> divMod,
-      (!mul && !signed) -> divuMod
-    )
-  )
-
-  io.res.bits.lo := MuxCase(
-    0.U,
-    Seq(
-      (mul && signed)   -> mulLo,
-      (mul && !signed)  -> muluLo,
-      (!mul && signed)  -> divRes,
-      (!mul && !signed) -> divuRes
-    )
-  )
+  val hiReg = RegInit(0.U(32.W))
+  val loReg = RegInit(0.U(32.W))
+  io.res.bits.hi := hiReg
+  io.res.bits.lo := loReg
 
   val idle :: busy :: Nil = Enum(2)
   val state               = RegInit(idle)
-
-  val cnt = RegInit(0.U(3.W))
+  val cnt                 = RegInit(0.U(3.W))
 
   switch(state) {
     is(idle) {
-      when(io.in.valid) {
+      when(io.flush) {
+        cnt := 0.U
+      }.elsewhen(io.in.valid) {
         state := busy
         cnt   := 4.U
+        hiReg := MuxCase(
+          0.U,
+          Seq(
+            (mul && signed)   -> mulHi,
+            (mul && !signed)  -> muluHi,
+            (!mul && signed)  -> divMod,
+            (!mul && !signed) -> divuMod
+          )
+        )
+        loReg := MuxCase(
+          0.U,
+          Seq(
+            (mul && signed)   -> mulLo,
+            (mul && !signed)  -> muluLo,
+            (!mul && signed)  -> divRes,
+            (!mul && !signed) -> divuRes
+          )
+        )
       }
     }
     is(busy) {
-      when(cnt === 1.U) {
+      when(io.flush) {
         state := idle
+        cnt   := 0.U
+      }.elsewhen(cnt === 1.U) {
+        state := idle
+        cnt   := 0.U
       }.otherwise {
         cnt := cnt - 1.U
       }
     }
   }
 
-  io.in.ready     := state === idle
+  io.in.ready  := state === idle
   io.res.valid := cnt === 1.U
 }

@@ -19,6 +19,8 @@ class MduExcute extends Module {
   val io = IO(new Bundle {
     val in = Flipped(Decoupled(new MicroOp(rename = true)))
     val wb = Output(new AluWB)
+
+    val flush = Input(Bool())
   })
 
   val moveExcute    = Module(new MoveExcute)
@@ -34,6 +36,8 @@ class MduExcute extends Module {
 
   // Stage 3: WriteBack
   val stage = Module(new StageReg(Valid(new MduWB)))
+  stage.io.flush := io.flush
+  stage.io.valid := 1.B // enable
 
   stage.io.in.valid := moveExcute.io.out.valid || multDivExcute.io.out.valid
   stage.io.in.bits := MuxCase(
@@ -91,6 +95,8 @@ class MoveExcute extends Module {
     )
   )
 
+  robComplete.valid := 1.B
+
   robComplete.regWData := regWData
 
   robComplete.hiRegWrite.bits  := uop.op1.op
@@ -108,15 +114,42 @@ class MoveExcute extends Module {
   wb.prf.writeData   := regWData
   wb.busyTable.valid := uop.regWriteEn
   wb.busyTable.bits  := uop.writeRegAddr
+
+  // io out
+  io.out.valid := io.in.valid
+  io.out.bits  := wb
 }
 
+// 组合逻辑
 class MultDivExcute extends Module {
   val io = IO(new Bundle {
     val in  = Flipped(Decoupled(new MicroOp(rename = true)))
     val out = ValidIO(new MduWB)
-  })
 
+    val flush = Input(Bool())
+  })
+  val uop = io.in.bits
   val mdu = Module(new FakeMDU)
+
+  mdu.io.in.valid := io.in.valid
+  io.in.ready     := mdu.io.in.ready
+
+  mdu.io.in.bits.op1    := uop.op1.op
+  mdu.io.in.bits.op2    := uop.op2.op
+  mdu.io.in.bits.mul    := uop.mduOp === MDUOp.mult || uop.mduOp === MDUOp.multu
+  mdu.io.in.bits.signed := uop.mduOp === MDUOp.mult || uop.mduOp === MDUOp.div
+
+  val wb = WireInit(0.U.asTypeOf(new MduWB))
+  wb.rob.valid            := 1.B
+  wb.rob.hiRegWrite.valid := 1.B
+  wb.rob.loRegWrite.valid := 1.B
+  wb.rob.hiRegWrite.bits  := mdu.io.res.bits.hi
+  wb.rob.loRegWrite.bits  := mdu.io.res.bits.lo
+
+  io.out.valid := mdu.io.res.valid
+  io.out.bits  := wb
+
+  mdu.io.flush := io.flush
 }
 
 object MduExcuteUtil {
