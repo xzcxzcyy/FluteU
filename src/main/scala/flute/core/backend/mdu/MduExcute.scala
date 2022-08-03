@@ -20,6 +20,9 @@ class MduExcute extends Module {
     val in = Flipped(Decoupled(new MicroOp(rename = true)))
     val wb = Output(new AluWB)
 
+    val hilo = Input(new HILORead)
+    val cp0  = Flipped(new CP0Read)
+
     val flush = Input(Bool())
   })
 
@@ -33,6 +36,9 @@ class MduExcute extends Module {
 
   moveExcute.io.in.bits    := io.in.bits
   multDivExcute.io.in.bits := io.in.bits
+
+  moveExcute.io.cp0 <> io.cp0
+  moveExcute.io.hilo := io.hilo
 
   // Stage 3: WriteBack
   val stage = Module(new StageReg(Valid(new MduWB)))
