@@ -7,6 +7,10 @@ import flute.core.backend.rename.RenameCommit
 import flute.config.CPUConfig._
 import flute.cp0.CP0WithCommit
 import flute.cache.top.DCacheReq
+import flute.core.backend.decode.MDUOp
+import flute.core.backend.decode.InstrType
+import flute.core.backend.mdu.HILOWrite
+import flute.cp0.CP0Write
 
 class StoreCommit extends Bundle {
   val req    = DecoupledIO(new DCacheReq)
@@ -37,6 +41,10 @@ class Commit(nCommit: Int = 2) extends Module {
     val cp0    = Flipped(new CP0WithCommit)
     // val recover = Output(Bool())
     val sbRetire = Output(Bool())
+
+    val cp0Write = Output(new CP0Write)
+    val hlW      = Output(new HILOWrite)
+    val mdRetire = Output(Bool())
   })
 
   val robRaw = io.rob.map(r => r.bits)
@@ -165,4 +173,24 @@ class Commit(nCommit: Int = 2) extends Module {
   io.cp0.inSlot := robRaw(0).inSlot
   io.cp0.pc     := robRaw(0).pc
 
+  // mdu: mult div move
+  val isMdu     = WireInit(VecInit(robRaw.map(_.instrType === InstrType.mulDiv)))
+  val hiloWrite = WireInit(0.U.asTypeOf(new HILOWrite))
+  val cp0Write  = WireInit(0.U.asTypeOf(new CP0Write))
+  val mdRetire  = WireInit(0.B)
+  for(i <- 0 until nCommit) {
+    when(finalMask(i) && isMdu(i)) {
+      hiloWrite.hi := robRaw(i).hiRegWrite
+      hiloWrite.lo := robRaw(i).loRegWrite
+      mdRetire     := 1.B
+
+      cp0Write.addr   := robRaw(i).cp0Addr
+      cp0Write.sel    := robRaw(i).cp0Sel
+      cp0Write.enable := robRaw(i).cp0RegWrite.valid
+      cp0Write.data   := robRaw(i).cp0RegWrite.bits
+    } 
+  }
+  io.cp0Write := cp0Write
+  io.hlW      := hiloWrite
+  io.mdRetire := mdRetire
 }

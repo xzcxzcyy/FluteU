@@ -13,10 +13,10 @@ class CP0Read extends Bundle {
 }
 
 class CP0Write extends Bundle {
-  val addr   = Input(UInt(5.W))
-  val sel    = Input(UInt(3.W))
-  val data   = Input(UInt(dataWidth.W))
-  val enable = Input(Bool())
+  val addr   = UInt(5.W)
+  val sel    = UInt(3.W)
+  val data   = UInt(dataWidth.W)
+  val enable = Bool()
 }
 
 class CP0DebugIO extends Bundle {
@@ -40,7 +40,7 @@ class CP0WithCommit extends Bundle {
 
 class CP0WithCore extends Bundle {
   val read    = new CP0Read
-  val write   = new CP0Write
+  val write   = Input(new CP0Write)
   val commit  = new CP0WithCommit
   val intrReq = Output(Bool()) // 例外输出信号
   val epc     = Output(UInt(dataWidth.W))

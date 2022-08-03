@@ -48,6 +48,7 @@ class Backend(nWays: Int = 2) extends Module {
     val cp0          = Flipped(new CP0WithCommit)
     val cp0IntrReq   = Input(Bool())
     val cp0Read      = Flipped(new CP0Read)
+    val cp0Write     = Output(new CP0Write)
   })
 
   val decoders = for (i <- 0 until nWays) yield Module(new Decoder)
@@ -216,6 +217,8 @@ class Backend(nWays: Int = 2) extends Module {
   busyTable.io.checkOut(3) := mduTop.io.wb.busyTable
 
   mduTop.io.flush  := needFlush
-  mduTop.io.retire := DontCare // from commit
-  mduTop.io.hlW    := DontCare // from commit
+  mduTop.io.retire := commit.io.mdRetire // from commit
+  mduTop.io.hlW    := commit.io.hlW // from commit
+
+  io.cp0Write := commit.io.cp0Write
 }
