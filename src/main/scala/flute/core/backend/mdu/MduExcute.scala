@@ -105,7 +105,7 @@ class MoveExcute extends Module {
     )
   )
 
-  robComplete.valid   := 1.B
+  robComplete.valid := 1.B
   robComplete.robAddr := uop.robAddr
 
   robComplete.regWData := regWData
@@ -150,15 +150,18 @@ class MultDivExcute extends Module {
   mdu.io.in.bits.mul    := uop.mduOp === MDUOp.mult || uop.mduOp === MDUOp.multu
   mdu.io.in.bits.signed := uop.mduOp === MDUOp.mult || uop.mduOp === MDUOp.div
 
-  val wb = RegInit(0.U.asTypeOf(new MduWB))
+  val buffer = Reg(new MicroOp(rename = true))
   when(io.in.fire) {
-    wb.rob.valid            := 1.B
-    wb.rob.robAddr          := uop.robAddr
-    wb.rob.hiRegWrite.valid := 1.B
-    wb.rob.loRegWrite.valid := 1.B
-    wb.rob.hiRegWrite.bits  := mdu.io.res.bits.hi
-    wb.rob.loRegWrite.bits  := mdu.io.res.bits.lo
+    buffer := uop
   }
+
+  val wb = WireInit(0.U.asTypeOf(new MduWB))
+  wb.rob.valid            := 1.B
+  wb.rob.robAddr          := buffer.robAddr
+  wb.rob.hiRegWrite.valid := 1.B
+  wb.rob.loRegWrite.valid := 1.B
+  wb.rob.hiRegWrite.bits  := mdu.io.res.bits.hi
+  wb.rob.loRegWrite.bits  := mdu.io.res.bits.lo
 
   io.out.valid := mdu.io.res.valid
   io.out.bits  := wb

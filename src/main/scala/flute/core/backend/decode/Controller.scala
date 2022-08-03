@@ -79,7 +79,7 @@ class Controller extends Module {
     /* MFHI */
     MFHI   -> List(true.B, LoadMode.disable, StoreMode.disable, ALUOp.none, Op1Recipe.zero, Op2Recipe.zero, BJCond.none, RegDst.rd, ImmRecipe.sExt, InstrType.mulDiv, MDUOp.mfhi),
     /* MFLO */
-    MFHI   -> List(true.B, LoadMode.disable, StoreMode.disable, ALUOp.none, Op1Recipe.zero, Op2Recipe.zero, BJCond.none, RegDst.rd, ImmRecipe.sExt, InstrType.mulDiv, MDUOp.mflo),
+    MFLO   -> List(true.B, LoadMode.disable, StoreMode.disable, ALUOp.none, Op1Recipe.zero, Op2Recipe.zero, BJCond.none, RegDst.rd, ImmRecipe.sExt, InstrType.mulDiv, MDUOp.mflo),
     /* MTHI */
     MTHI   -> List(false.B,LoadMode.disable, StoreMode.disable, ALUOp.none, Op1Recipe.rs,   Op2Recipe.zero, BJCond.none, RegDst.rd, ImmRecipe.sExt, InstrType.mulDiv, MDUOp.mthi),
     /* MTLO */
