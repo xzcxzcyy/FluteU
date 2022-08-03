@@ -22,6 +22,9 @@ import flute.cache.top.DCacheWithCore
 import flute.core.backend.commit.BranchCommit
 import flute.cp0.CP0WithCommit
 import flute.core.backend.commit.ROBEntry
+import flute.core.backend.mdu.MDUTop
+import flute.cp0.CP0Write
+import flute.cp0.CP0Read
 
 class TraceBundle extends Bundle {
   val pc       = UInt(32.W)
@@ -44,16 +47,17 @@ class Backend(nWays: Int = 2) extends Module {
     val branchCommit = Output(new BranchCommit)
     val cp0          = Flipped(new CP0WithCommit)
     val cp0IntrReq   = Input(Bool())
+    val cp0Read      = Flipped(new CP0Read)
   })
 
   val decoders = for (i <- 0 until nWays) yield Module(new Decoder)
   val dispatch = Module(new Dispatch)
   val rob = Module(
-    new ROB(numEntries = robEntryAmount, numRead = 2, numWrite = 2, numSetComplete = 3)
+    new ROB(numEntries = robEntryAmount, numRead = 2, numWrite = 2, numSetComplete = 4)
   )
-  val regfile   = Module(new RegFile(numRead = 3, numWrite = 3))
+  val regfile   = Module(new RegFile(numRead = 4, numWrite = 4))
   val rename    = Module(new Rename(nWays = nWays, nCommit = nWays))
-  val busyTable = Module(new BusyTable(nRead = 10, nCheckIn = 2, nCheckOut = 3))
+  val busyTable = Module(new BusyTable(nRead = 12, nCheckIn = 2, nCheckOut = 4))
   val commit    = Module(new Commit(nCommit = nWays))
 
   val decodeStage = Module(new StageReg(Vec(nWays, Valid(new MicroOp))))
@@ -100,12 +104,15 @@ class Backend(nWays: Int = 2) extends Module {
   val lsuIssue      = Module(new LsuIssue)
   val lsuPipeline   = Module(new LsuPipeline)
 
+  val mduIssueQueue = Module(new Queue(new MicroOp(rename = true), 32, hasFlush = true))
+  val mduTop        = Module(new MDUTop)
+
   val needFlush = io.cp0IntrReq || commit.io.branch.pcRestore.valid || commit.io.cp0.eret
 
   dispatch.io.out(0) <> aluIssueQueue.io.enq(0)
   dispatch.io.out(1) <> aluIssueQueue.io.enq(1)
   dispatch.io.out(2) <> lsuIssueQueue.io.enq
-  dispatch.io.out(3).ready := 0.B
+  dispatch.io.out(3) <> mduIssueQueue.io.enq
 
   //---------------- AluIssueQueue + AluPipelines ------------------ //
 
@@ -196,4 +203,19 @@ class Backend(nWays: Int = 2) extends Module {
   io.arfWTrace.pc       := traceBRead.bits.pc
 
   traceBuffer.io.flush := 0.B
+
+  // ---------------- MDU ------------------ //
+  mduTop.io.in <> mduIssueQueue.io.deq
+  for (i <- 0 to 1) {
+    mduTop.io.bt(i) <> busyTable.io.read(2 * (detectWidth + 1) + i)
+  }
+  mduTop.io.prf <> regfile.io.read(3)
+  mduTop.io.cp0 <> io.cp0Read
+  rob.io.setComplete(3)    := mduTop.io.wb.rob
+  regfile.io.write(3)      := mduTop.io.wb.prf
+  busyTable.io.checkOut(3) := mduTop.io.wb.busyTable
+
+  mduTop.io.flush  := needFlush
+  mduTop.io.retire := DontCare // from commit
+  mduTop.io.hlW    := DontCare // from commit
 }

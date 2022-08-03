@@ -15,7 +15,7 @@ class MDUTop extends Module {
 
     val bt   = Vec(2, Flipped(new BusyTableReadPort))
     val prf  = Flipped(new RegFileReadIO)
-    val hilo = Input(new HILORead)
+    val hlW  = Input(new HILOWrite)
     val cp0  = Flipped(new CP0Read)
 
     val retire = Input(Bool())
@@ -28,6 +28,7 @@ class MDUTop extends Module {
   val mduIssue  = Module(new MduIssue)
   val mduRead   = Module(new MduRead)
   val mduExcute = Module(new MduExcute)
+  val hilo      = Module(new HILO)
 
   io.in.ready          := (state === idle) && mduIssue.io.in.ready
   mduIssue.io.in.valid := (state === idle) && io.in.valid
@@ -39,7 +40,8 @@ class MDUTop extends Module {
   mduIssue.io.bt <> io.bt
   mduRead.io.prf <> io.prf
   mduExcute.io.cp0 <> io.cp0
-  mduExcute.io.hilo := io.hilo
+  mduExcute.io.hilo := hilo.io.read
+  hilo.io.write := io.hlW
 
   // flush
   mduIssue.io.flush  := io.flush
