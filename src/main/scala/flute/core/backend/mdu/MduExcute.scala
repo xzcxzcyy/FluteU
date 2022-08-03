@@ -14,6 +14,7 @@ import flute.core.backend.alu.BypassBundle
 import flute.cp0.ExceptionBundle
 import flute.core.backend.commit.ROBCompleteBundle
 import flute.cp0.CP0Read
+import flute.util.ValidBundle
 
 class MduExcute extends Module {
   val io = IO(new Bundle {
@@ -40,6 +41,9 @@ class MduExcute extends Module {
   moveExcute.io.cp0 <> io.cp0
   moveExcute.io.hilo := io.hilo
 
+  // flush
+  multDivExcute.io.flush := io.flush
+
   // Stage 3: WriteBack
   val stage = Module(new StageReg(Valid(new MduWB)))
   stage.io.flush := io.flush
@@ -47,7 +51,7 @@ class MduExcute extends Module {
 
   stage.io.in.valid := moveExcute.io.out.valid || multDivExcute.io.out.valid
   stage.io.in.bits := MuxCase(
-    0.U,
+    0.U.asTypeOf(new MduWB),
     Seq(
       moveExcute.io.out.valid    -> moveExcute.io.out.bits,
       multDivExcute.io.out.valid -> multDivExcute.io.out.bits
@@ -68,7 +72,7 @@ class MduWB extends Bundle {
     val writeData   = UInt(dataWidth.W)
     val writeEnable = Bool()
   }
-  val busyTable = Valid(UInt(phyRegAddrWidth.W))
+  val busyTable = ValidBundle(UInt(phyRegAddrWidth.W))
 }
 
 // 组合逻辑

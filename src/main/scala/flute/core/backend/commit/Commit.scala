@@ -168,10 +168,10 @@ class Commit(nCommit: Int = 2) extends Module {
   io.cp0.valid      := validMask(0)
   io.cp0.completed  := completeMask(0)
   io.cp0.exceptions := robRaw(0).exception
-  // TODO: support ERET; notify inSlot(IMPORTANT)
-  io.cp0.eret   := robRaw(0).eret && existMask(0)
-  io.cp0.inSlot := robRaw(0).inSlot
-  io.cp0.pc     := robRaw(0).pc
+  io.cp0.eret       := robRaw(0).eret && existMask(0)
+  io.cp0.inSlot     := robRaw(0).inSlot
+  io.cp0.pc         := robRaw(0).pc
+  io.cp0.badvaddr   := robRaw(0).badvaddr
 
   // mdu: mult div move
   val isMdu     = WireInit(VecInit(robRaw.map(_.instrType === InstrType.mulDiv)))

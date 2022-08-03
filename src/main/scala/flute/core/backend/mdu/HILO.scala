@@ -3,6 +3,7 @@ package flute.core.backend.mdu
 import chisel3._
 import chisel3.util._
 import flute.config.CPUConfig._
+import flute.util.ValidBundle
 
 class HILORead extends Bundle {
   val hi = UInt(dataWidth.W)
@@ -10,8 +11,8 @@ class HILORead extends Bundle {
 }
 
 class HILOWrite extends Bundle {
-  val hi = Valid(UInt(dataWidth.W))
-  val lo = Valid(UInt(dataWidth.W))
+  val hi = ValidBundle(UInt(dataWidth.W))
+  val lo = ValidBundle(UInt(dataWidth.W))
 }
 
 // 无写后读冲突

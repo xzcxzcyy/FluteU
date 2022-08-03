@@ -29,9 +29,9 @@ class ROBEntry extends Bundle {
   val inSlot      = Bool()
 
   // hi, lo, cp0; valid for enable
-  val hiRegWrite  = Valid(UInt(32.W))
-  val loRegWrite  = Valid(UInt(32.W))
-  val cp0RegWrite = Valid(UInt(32.W))
+  val hiRegWrite  = ValidBundle(UInt(32.W))
+  val loRegWrite  = ValidBundle(UInt(32.W))
+  val cp0RegWrite = ValidBundle(UInt(32.W))
   val cp0Sel      = UInt(3.W)
   val cp0Addr     = UInt(5.W)
   val badvaddr    = UInt(addrWidth.W)
@@ -60,9 +60,9 @@ class ROBCompleteBundle(robAddrWidth: Int = robEntryNumWidth) extends Bundle {
   val branchTaken = Bool()
 
   // hi, lo, cp0
-  val hiRegWrite  = Valid(UInt(32.W))
-  val loRegWrite  = Valid(UInt(32.W))
-  val cp0RegWrite = Valid(UInt(32.W))
+  val hiRegWrite  = ValidBundle(UInt(32.W))
+  val loRegWrite  = ValidBundle(UInt(32.W))
+  val cp0RegWrite = ValidBundle(UInt(32.W))
   val badvaddr    = UInt(addrWidth.W)
 
   // result debug

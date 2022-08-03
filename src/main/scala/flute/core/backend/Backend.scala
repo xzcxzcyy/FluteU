@@ -216,7 +216,9 @@ class Backend(nWays: Int = 2) extends Module {
   regfile.io.write(3)      := mduTop.io.wb.prf
   busyTable.io.checkOut(3) := mduTop.io.wb.busyTable
 
-  mduTop.io.flush  := needFlush
+  mduIssueQueue.io.flush.get := needFlush
+  mduTop.io.flush            := needFlush
+
   mduTop.io.retire := commit.io.mdRetire // from commit
   mduTop.io.hlW    := commit.io.hlW // from commit
 
