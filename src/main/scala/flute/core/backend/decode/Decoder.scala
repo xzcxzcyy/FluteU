@@ -59,8 +59,9 @@ class Decoder extends Module {
   val controller = Module(new Controller)
 
   // 解开 Fetch 传来的 IBEntry 结构
+  // pc没对齐给空指令
   val instruction = Wire(UInt(instrWidth.W))
-  instruction   := io.instr.inst
+  instruction   := Mux(io.instr.addr(1, 0) === 0.U, io.instr.inst, 0.U(dataWidth.W))
   io.microOp.pc := io.instr.addr
 
   io.microOp.predictBT := io.instr.predictBT
@@ -81,7 +82,7 @@ class Decoder extends Module {
   /////////////////////////////////////////////////////////////////
 
   // Controller //////////////////////////////////////////////////////
-  controller.io.instruction := io.instr.inst
+  controller.io.instruction := instruction
   val writeArfRegAddr = MuxLookup(
     key = controller.io.regDst,
     default = instruction(15, 11),

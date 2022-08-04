@@ -79,7 +79,7 @@ class AluPipeline extends Module {
   exceptions.ov    := alu.io.flag.trap
   exceptions.ri    := exIn.bits.reservedI
   exceptions.sys   := exIn.bits.syscall
-  exceptions.adELi := (exIn.bits.bjCond =/= BJCond.none) && taken && (target(1, 0) =/= 0.U)
+  exceptions.adELi := exIn.bits.pc(1, 0) =/= 0.U
 
   val ex2Wb = Wire(new AluExWbBundle)
   ex2Wb.valid       := exIn.valid
@@ -88,6 +88,7 @@ class AluPipeline extends Module {
   ex2Wb.regWData    := Mux(isAndLink, exIn.bits.pc + 8.U, alu.io.result)
   ex2Wb.regWAddr    := exIn.bits.writeRegAddr
   ex2Wb.exception   := exceptions
+  ex2Wb.badvaddr    := exIn.bits.pc
   ex2Wb.computeBT   := target
   ex2Wb.branchTaken := taken
 
@@ -115,6 +116,7 @@ class AluExWbBundle extends Bundle {
   val valid     = Bool() // 总体valid: 是否为气泡
   val robAddr   = UInt(robEntryNumWidth.W)
   val exception = new ExceptionBundle
+  val badvaddr  = UInt(addrWidth.W)
   val regWEn    = Bool()
   val regWData  = UInt(dataWidth.W)
   val regWAddr  = UInt(phyRegAddrWidth.W)
@@ -143,7 +145,7 @@ object AluPipelineUtil {
     (op1, op2)
   }
 
-  def robFromAluExWb(wbIn: AluExWbBundle) = {
+  def robFromAluExWb(wbIn: AluExWbBundle): ROBCompleteBundle = {
     val rob = Wire(new ROBCompleteBundle(robEntryNumWidth))
     rob.exception := wbIn.exception
     rob.regWData  := wbIn.regWData
@@ -155,7 +157,7 @@ object AluPipelineUtil {
 
     rob.branchTaken := wbIn.branchTaken
     rob.computeBT   := wbIn.computeBT
-    rob.badvaddr    := wbIn.computeBT
+    rob.badvaddr    := wbIn.badvaddr
     rob.cp0RegWrite := 0.U.asTypeOf(Valid(UInt(32.W)))
     rob.hiRegWrite  := 0.U.asTypeOf(Valid(UInt(32.W)))
     rob.loRegWrite  := 0.U.asTypeOf(Valid(UInt(32.W)))
@@ -183,7 +185,7 @@ object AluPipelineUtil {
         BJCond.jr     -> 1.B,
       )
     )
-    // TODO: J & JAL, 已经被 Fetch 处理，给了 taken，且计算地址直接取了 Fetch 给的 PredictBT，如果要改预测的话需要修
+    // J & JAL, 已经被 Fetch 处理，给了 taken，且计算地址直接取了 Fetch 给的 PredictBT，如果要改预测的话需要修
     val branchAddr = WireInit(0.U(addrWidth.W)) // 默认情况下返回0
 
     when(uop.bjCond === BJCond.jr || uop.bjCond === BJCond.jalr) {

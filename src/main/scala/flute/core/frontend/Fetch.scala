@@ -75,7 +75,6 @@ class Fetch extends Module {
   // 笑死，前面管不着后面的
   io.iCache.req.valid     := cacheReqValid
   io.iCache.req.bits.addr := pc
-  //TODO: Assign icache flush
 
   pcQ.io.enq.valid := pcQEnqValid
   pcQ.io.enq.bits  := pc

@@ -98,6 +98,10 @@ class Commit(nCommit: Int = 2) extends Module {
   when(branchFail(1)) {
     restMask(1) := 0.B
   }
+  when(programException(0)) {
+    restMask(0) := 0.B
+    restMask(1) := 0.B
+  }
 
   val finalMask = WireInit(
     VecInit(
