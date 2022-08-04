@@ -140,7 +140,7 @@ class MultDivExcute extends Module {
     val flush = Input(Bool())
   })
   val uop = io.in.bits
-  val mdu = Module(new FakeMDU)
+  val mdu = Module(new MDUIP)
 
   mdu.io.in.valid := io.in.valid
   io.in.ready     := mdu.io.in.ready
