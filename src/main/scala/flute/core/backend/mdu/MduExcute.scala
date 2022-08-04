@@ -140,7 +140,7 @@ class MultDivExcute extends Module {
     val flush = Input(Bool())
   })
   val uop = io.in.bits
-  val mdu = Module(new MDUIP)
+  val mdu = Module(new MDU)
 
   mdu.io.in.valid := io.in.valid
   io.in.ready     := mdu.io.in.ready
@@ -155,9 +155,11 @@ class MultDivExcute extends Module {
     buffer := uop
   }
 
+  val isMul = uop.mduOp === MDUOp.mult || uop.mduOp === MDUOp.multu
+
   val wb = WireInit(0.U.asTypeOf(new MduWB))
   wb.rob.valid            := 1.B
-  wb.rob.robAddr          := buffer.robAddr
+  wb.rob.robAddr          := Mux(isMul, uop.robAddr, buffer.robAddr)
   wb.rob.hiRegWrite.valid := 1.B
   wb.rob.loRegWrite.valid := 1.B
   wb.rob.hiRegWrite.bits  := mdu.io.res.bits.hi
