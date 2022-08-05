@@ -50,7 +50,7 @@ class CP0 extends Module {
   val io = IO(new Bundle {
     val hwIntr = Input(UInt(6.W))
     val core   = new CP0WithCore
-    val debug  = new CP0DebugIO
+    // val debug  = new CP0DebugIO
   })
 
   val badvaddr = new CP0BadVAddr
@@ -61,12 +61,13 @@ class CP0 extends Module {
   val compare  = new CP0Compare
   val countInc = RegInit(0.B)
 
-  io.debug.badvaddr := badvaddr.reg
-  io.debug.count    := count.reg
-  io.debug.status   := status.reg.asUInt
-  io.debug.cause    := cause.reg.asUInt
-  io.debug.epc      := epc.reg
-  io.debug.compare  := compare.reg
+  // DEBUG
+  // io.debug.badvaddr := badvaddr.reg
+  // io.debug.count    := count.reg
+  // io.debug.status   := status.reg.asUInt
+  // io.debug.cause    := cause.reg.asUInt
+  // io.debug.epc      := epc.reg
+  // io.debug.compare  := compare.reg
 
   val regs = Seq(
     badvaddr,

@@ -38,10 +38,10 @@ class Backend(nWays: Int = 2) extends Module {
   val io = IO(new Bundle {
     val ibuffer = Vec(nWays, Flipped(DecoupledIO(new IBEntry)))
     // Debug out //
-    val prf       = Output(Vec(phyRegAmount, UInt(dataWidth.W)))
-    val rmt       = new RMTDebugOut
-    val busyTable = Output(Vec(phyRegAmount, Bool()))
-    val arfWTrace = Output(new TraceBundle)
+    // val prf       = Output(Vec(phyRegAmount, UInt(dataWidth.W)))
+    // val rmt       = new RMTDebugOut
+    // val busyTable = Output(Vec(phyRegAmount, Bool()))
+    // val arfWTrace = Output(new TraceBundle)
     // ========= //
     val dcache       = Flipped(new DCacheWithCore)
     val branchCommit = Output(new BranchCommit)
@@ -182,28 +182,27 @@ class Backend(nWays: Int = 2) extends Module {
   io.dcache.req.bits  := dCacheReqWire
 
   // debug
-  io.prf       := regfile.io.debug
-  io.busyTable := VecInit(busyTable.io.debug.table.asBools)
-  io.rmt       := rename.io.rmtDebug
+  // io.prf       := regfile.io.debug
+  // io.busyTable := VecInit(busyTable.io.debug.table.asBools)
+  // io.rmt       := rename.io.rmtDebug
 
   rob.io.flush      := needFlush
   dispatch.io.flush := needFlush
   io.dcache.flush   := needFlush
 
   // debug traceBuffer
-  val traceBuffer = Module(new Ibuffer(new ROBEntry, 128, 1, 2))
-  for (i <- 0 to 1) yield {
-    traceBuffer.io.write(i).valid := rob.io.read(i).fire
-    traceBuffer.io.write(i).bits  := rob.io.read(i).bits
-  }
-  traceBuffer.io.read(0).ready := 1.B
-  val traceBRead = traceBuffer.io.read(0)
-  io.arfWTrace.arfWEn   := traceBRead.fire && traceBRead.bits.regWEn
-  io.arfWTrace.arfWAddr := traceBRead.bits.logicReg
-  io.arfWTrace.arfWData := traceBRead.bits.regWData
-  io.arfWTrace.pc       := traceBRead.bits.pc
-
-  traceBuffer.io.flush := 0.B
+  // val traceBuffer = Module(new Ibuffer(new ROBEntry, 128, 1, 2))
+  // for (i <- 0 to 1) yield {
+  //   traceBuffer.io.write(i).valid := rob.io.read(i).fire
+  //   traceBuffer.io.write(i).bits  := rob.io.read(i).bits
+  // }
+  // traceBuffer.io.read(0).ready := 1.B
+  // val traceBRead = traceBuffer.io.read(0)
+  // io.arfWTrace.arfWEn   := traceBRead.fire && traceBRead.bits.regWEn
+  // io.arfWTrace.arfWAddr := traceBRead.bits.logicReg
+  // io.arfWTrace.arfWData := traceBRead.bits.regWData
+  // io.arfWTrace.pc       := traceBRead.bits.pc
+  // traceBuffer.io.flush := 0.B
 
   // ---------------- MDU ------------------ //
   mduTop.io.in <> mduIssueQueue.io.deq

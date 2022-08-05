@@ -43,15 +43,15 @@ class BetaTop(iFile: String, dFile: String) extends Module {
   backend.io.cp0 <> cp0.io.core.commit
   backend.io.dcache <> dcache.io
 
-  val arfView = Module(new ArfView)
-  arfView.io.rmtIn := backend.io.rmt
-  arfView.io.prf   := backend.io.prf
+  // val arfView = Module(new ArfView)
+  // arfView.io.rmtIn := backend.io.rmt
+  // arfView.io.prf   := backend.io.prf
 
   // DEBUG //
-  io.count := cp0.io.debug.count
+  // io.count := cp0.io.debug.count
   // ===== //
 
-  io.arf := arfView.io.arfOut
+  // io.arf := arfView.io.arfOut
 
 }
 

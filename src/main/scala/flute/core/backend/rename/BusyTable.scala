@@ -18,9 +18,9 @@ class BusyTable(nRead: Int, nCheckIn: Int, nCheckOut: Int) extends Module {
     val checkIn  = Input(Vec(nCheckIn, Valid(UInt(phyRegAddrWidth.W))))
     val checkOut = Input(Vec(nCheckOut, Valid(UInt(phyRegAddrWidth.W))))
 
-    val debug = new Bundle {
-      val table = Output(UInt(phyRegAmount.W))
-    }
+    // val debug = new Bundle {
+    //   val table = Output(UInt(phyRegAmount.W))
+    // }
   })
 
   val busyTable = RegInit(VecInit(Seq.fill(phyRegAmount)(0.B)))
@@ -55,5 +55,5 @@ class BusyTable(nRead: Int, nCheckIn: Int, nCheckOut: Int) extends Module {
   //   }
   // }
 
-  io.debug.table := busyTable.asUInt
+  // io.debug.table := busyTable.asUInt
 }
