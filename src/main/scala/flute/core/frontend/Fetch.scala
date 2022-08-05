@@ -75,7 +75,6 @@ class Fetch extends Module {
   // 笑死，前面管不着后面的
   io.iCache.req.valid     := cacheReqValid
   io.iCache.req.bits.addr := pc
-  //TODO: Assign icache flush
 
   pcQ.io.enq.valid := pcQEnqValid
   pcQ.io.enq.bits  := pc
@@ -95,7 +94,7 @@ class Fetch extends Module {
   val resultValid = respStage.valid && pcQ.io.deq.valid
 
   // data path
-  val ibEntries = FetchUtil.getIbEntryCouple(respStage.bits, pcQ.io.deq.bits)
+  val ibEntries = FetchUtil.getIbEntryCouple(resultValid, respStage.bits, pcQ.io.deq.bits)
   for (i <- 0 until fetchGroupSize) yield {
     preDecs(i).io.instruction.valid := ibEntries(i).valid
     preDecs(i).io.instruction.bits  := ibEntries(i).bits.inst
@@ -120,6 +119,8 @@ class Fetch extends Module {
     }
   }
 
+  val bpcNotUsed = !ibEntries(1).valid && slot
+
   when(insertIntoIb && !needFlush) {
     slot := ((ibEntries(1).valid && preDecs(1).io.out.isBranch) ||
       (!ibEntries(1).valid && preDecs(0).io.out.isBranch))
@@ -130,7 +131,7 @@ class Fetch extends Module {
     }.elsewhen(preDecs(0).io.out.isBranch) {
       bpc.valid := 1.B
       bpc.bits  := preDecs(0).io.out.predictBT
-    }.otherwise {
+    }.elsewhen(!bpcNotUsed) {
       bpc.valid := 0.B
     }
   }
@@ -167,15 +168,15 @@ object FetchUtil {
     * @param pc
     * @return Incomplete wirings. 
     */
-  def getIbEntryCouple(resp: ICacheResp, pc: UInt): Vec[Valid[IBEntry]] = {
+  def getIbEntryCouple(resultValid: Bool, resp: ICacheResp, pc: UInt): Vec[Valid[IBEntry]] = {
     assert(pc.getWidth == 32)
     assert(resp.data.length == 2)
     // Wiring in-complete on purpose.
     val ibEntries = Wire(Vec(2, Valid(new IBEntry)))
-    ibEntries(0).valid     := 1.B
+    ibEntries(0).valid     := resultValid
     ibEntries(0).bits.addr := pc
     ibEntries(0).bits.inst := resp.data(0)
-    ibEntries(1).valid     := !isLastInst(pc)
+    ibEntries(1).valid     := resultValid && !isLastInst(pc)
     ibEntries(1).bits.addr := pc + 4.U
     ibEntries(1).bits.inst := resp.data(1)
 

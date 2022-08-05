@@ -8,6 +8,8 @@ import flute.core.components._
 import flute.core.frontend.IBEntry
 import chisel3.util.Fill
 
+import flute.config.Instructions._
+
 class OpBundle extends Bundle {
   val op    = UInt(dataWidth.W)
   val valid = Bool()
@@ -20,6 +22,7 @@ class MicroOp(rename: Boolean = false) extends Bundle {
   val loadMode   = UInt(LoadMode.width.W)
   val storeMode  = UInt(StoreMode.width.W)
   val aluOp      = UInt(ALUOp.width.W)
+  val mduOp      = UInt(MDUOp.width.W)
   val op1        = new OpBundle()
   val op2        = new OpBundle()
   val bjCond     = UInt(BJCond.width.W)
@@ -36,6 +39,14 @@ class MicroOp(rename: Boolean = false) extends Bundle {
   val robAddr = UInt(robEntryNumWidth.W)
 
   val predictBT = UInt(addrWidth.W)
+  val inSlot    = Bool()
+
+  val cp0RegAddr = UInt(5.W)
+  val cp0RegSel  = UInt(3.W)
+  val syscall    = Bool()
+  val break      = Bool()
+  val eret       = Bool()
+  val reservedI  = Bool()
 }
 
 class Decoder extends Module {
@@ -48,11 +59,13 @@ class Decoder extends Module {
   val controller = Module(new Controller)
 
   // 解开 Fetch 传来的 IBEntry 结构
+  // pc没对齐给空指令
   val instruction = Wire(UInt(instrWidth.W))
-  instruction   := io.instr.inst
+  instruction   := Mux(io.instr.addr(1, 0) === 0.U, io.instr.inst, 0.U(dataWidth.W))
   io.microOp.pc := io.instr.addr
 
   io.microOp.predictBT := io.instr.predictBT
+  io.microOp.inSlot    := io.instr.inSlot
 
   // Immediate ////////////////////////////////////////////////////
   val extendedImm = WireInit(0.U(dataWidth.W))
@@ -62,14 +75,14 @@ class Decoder extends Module {
     mapping = Seq(
       ImmRecipe.sExt -> Cat(Fill(16, instruction(15)), instruction(15, 0)),
       ImmRecipe.uExt -> Cat(0.U(16.W), instruction(15, 0)),
-      ImmRecipe.lui  -> Cat(instruction(15, 0), 0.U(16.W))
+      ImmRecipe.lui  -> Cat(instruction(15, 0), 0.U(16.W)),
     )
   )
   io.microOp.immediate := extendedImm
   /////////////////////////////////////////////////////////////////
 
   // Controller //////////////////////////////////////////////////////
-  controller.io.instruction := io.instr.inst
+  controller.io.instruction := instruction
   val writeArfRegAddr = MuxLookup(
     key = controller.io.regDst,
     default = instruction(15, 11),
@@ -79,10 +92,11 @@ class Decoder extends Module {
       RegDst.GPR31 -> 31.U(regAddrWidth.W)
     )
   )
-  io.microOp.regWriteEn     := controller.io.regWriteEn && writeArfRegAddr =/= 0.U
-  io.microOp.loadMode       := controller.io.loadMode
-  io.microOp.storeMode      := controller.io.storeMode
-  io.microOp.aluOp          := controller.io.aluOp
+  io.microOp.regWriteEn := controller.io.regWriteEn && writeArfRegAddr =/= 0.U
+  io.microOp.loadMode   := controller.io.loadMode
+  io.microOp.storeMode  := controller.io.storeMode
+  io.microOp.aluOp      := controller.io.aluOp
+  io.microOp.mduOp      := Mux(controller.io.mduOp === MDUOp.ri, MDUOp.none, controller.io.mduOp)
   io.microOp.op1.op := MuxLookup(
     key = controller.io.op1Recipe,
     default = 0.U,
@@ -116,4 +130,14 @@ class Decoder extends Module {
   /////////////////////////////////////////////////////////////////
 
   io.microOp.robAddr := DontCare
+
+  val cp0RegAddr = instruction(15, 11)
+  val cp0RegSel  = instruction(2, 0)
+
+  io.microOp.cp0RegAddr := cp0RegAddr
+  io.microOp.cp0RegSel  := cp0RegSel
+  io.microOp.syscall    := instruction === SYSCALL
+  io.microOp.break      := instruction === BREAK
+  io.microOp.reservedI  := controller.io.mduOp === MDUOp.ri
+  io.microOp.eret       := instruction === ERET
 }

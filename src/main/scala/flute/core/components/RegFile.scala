@@ -15,7 +15,7 @@ class RegFile(numRead: Int, numWrite: Int) extends Module {
       regfile(io.write(i).writeAddr) := io.write(i).writeData
     }
   }
-  io.debug := regfile
+  // io.debug := regfile
 }
 
 class RegFileIO(numRead: Int, numWrite: Int) extends Bundle {
@@ -23,7 +23,7 @@ class RegFileIO(numRead: Int, numWrite: Int) extends Bundle {
   ///
   val write = Vec(numWrite, new RegFileWriteIO)
   ///
-  val debug = Output(Vec(phyRegAmount, UInt(dataWidth.W)))
+  // val debug = Output(Vec(phyRegAmount, UInt(dataWidth.W)))
 }
 
 class RegFileWriteIO extends Bundle {

@@ -38,7 +38,7 @@ class RMT(numWays: Int, numCommit: Int, release: Boolean = false) extends Module
 
     val chToArch = Input(Bool())
 
-    val debug = if (!release) Some(new RMTDebugOut) else None
+    // val debug = if (!release) Some(new RMTDebugOut) else None
   })
 
   // reset init all arch reg map to phy reg $0
@@ -78,9 +78,9 @@ class RMT(numWays: Int, numCommit: Int, release: Boolean = false) extends Module
     sRAT := nextARat
   }
 
-  if (!release) {
-    io.debug.get.aRAT := aRAT
-    io.debug.get.sRAT := sRAT
-  }
+  // if (!release) {
+  //   io.debug.get.aRAT := aRAT
+  //   io.debug.get.sRAT := sRAT
+  // }
 
 }

@@ -57,11 +57,6 @@ module mycpu_top(
     output wire[31:0]   debug_wb_rf_wdata
 );
 
-    assign debug_wb_pc = 0;
-    assign debug_wb_rf_wen = 0;
-    assign debug_wb_rf_wnum = 0;
-    assign debug_wb_rf_wdata = 0;
-
     FluteTop fluteu(
       .clock                     (aclk),
       .reset                     (~aresetn),
@@ -101,8 +96,16 @@ module mycpu_top(
       .io_axi_b_bits_id          (bid),
       .io_axi_b_bits_resp        (bresp),
       .io_axi_b_valid            (bvalid),
-      .io_axi_b_ready            (bready),
+      .io_axi_b_ready            (bready)
+      // .io_arfWTrace_pc           (debug_wb_pc),
+      // .io_arfWTrace_arfWEn       (debug_wb_rf_wen),
+      // .io_arfWTrace_arfWAddr     (debug_wb_rf_wnum),
+      // .io_arfWTrace_arfWData     (debug_wb_rf_wdata)
     );
 
+assign debug_wb_pc = 0;
+assign debug_wb_rf_wen = 0;
+assign debug_wb_rf_wnum = 0;
+assign debug_wb_rf_wdata = 0;
 
 endmodule

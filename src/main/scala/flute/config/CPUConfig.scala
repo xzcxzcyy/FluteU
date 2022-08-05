@@ -9,13 +9,13 @@ object CPUConfig {
   /// amount ///
   val regAmount     = 32 // TODO: to be refractored
   val archRegAmount = 32
-  val phyRegAmount  = 128
+  val phyRegAmount  = 64
   //// IBuffer
   val ibufferAmount = 16
   // ROB /////////////////
   val exceptionAmount = 16
   val instrTypeAmount = 8
-  val robEntryAmount  = 128
+  val robEntryAmount  = 64
   ////////////////////////
   // SBuffer //////
   val sbufferAmount = 8

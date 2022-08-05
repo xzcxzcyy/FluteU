@@ -6,6 +6,7 @@ import flute.config.CPUConfig._
 import flute.cp0.ExceptionBundle
 import flute.util.ValidBundle
 import flute.core.backend.decode.StoreMode
+import flute.core.backend.decode.MDUOp
 
 class ROBEntry extends Bundle {
   val pc        = UInt(addrWidth.W)
@@ -25,6 +26,19 @@ class ROBEntry extends Bundle {
   val predictBT   = UInt(addrWidth.W)
   val computeBT   = UInt(addrWidth.W)
   val branchTaken = Bool()
+  val inSlot      = Bool()
+
+  // hi, lo, cp0; valid for enable
+  val hiRegWrite  = ValidBundle(UInt(32.W))
+  val loRegWrite  = ValidBundle(UInt(32.W))
+  val cp0RegWrite = ValidBundle(UInt(32.W))
+  val cp0Sel      = UInt(3.W)
+  val cp0Addr     = UInt(5.W)
+  val badvaddr    = UInt(addrWidth.W)
+  val eret        = Bool()
+
+  // result debug
+  val regWData = UInt(dataWidth.W)
 }
 
 class ROBWrite(numEntries: Int) extends Bundle {
@@ -44,6 +58,15 @@ class ROBCompleteBundle(robAddrWidth: Int = robEntryNumWidth) extends Bundle {
   // branch
   val computeBT   = UInt(addrWidth.W)
   val branchTaken = Bool()
+
+  // hi, lo, cp0
+  val hiRegWrite  = ValidBundle(UInt(32.W))
+  val loRegWrite  = ValidBundle(UInt(32.W))
+  val cp0RegWrite = ValidBundle(UInt(32.W))
+  val badvaddr    = UInt(addrWidth.W)
+
+  // result debug
+  val regWData = UInt(dataWidth.W)
 }
 
 class ROB(numEntries: Int, numRead: Int, numWrite: Int, numSetComplete: Int) extends Module {
@@ -104,6 +127,11 @@ class ROB(numEntries: Int, numRead: Int, numWrite: Int, numSetComplete: Int) ext
       entries(port.robAddr).memWData    := port.memWData
       entries(port.robAddr).branchTaken := port.branchTaken
       entries(port.robAddr).computeBT   := port.computeBT
+      entries(port.robAddr).regWData    := port.regWData
+      entries(port.robAddr).hiRegWrite  := port.hiRegWrite
+      entries(port.robAddr).loRegWrite  := port.loRegWrite
+      entries(port.robAddr).cp0RegWrite := port.cp0RegWrite
+      entries(port.robAddr).badvaddr    := port.badvaddr
     }
   }
 }

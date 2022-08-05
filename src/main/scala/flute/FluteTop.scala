@@ -16,14 +16,19 @@ import flute.cache.top.ThroughDCache
 import flute.cache.top.ThroughICache
 import flute.axi.AXIIO
 import flute.cache.axi.AXIReadArbiter
+import flute.core.backend.TraceBundle
+import flute.cp0.CP0DebugIO
 
 class FluteTop extends Module {
   val io = IO(new Bundle {
     val hwIntr = Input(UInt(6.W))
     val pc     = Output(UInt(addrWidth.W))
-    val arf    = Output(Vec(archRegAmount, UInt(dataWidth.W)))
-    val count  = Output(UInt(dataWidth.W))
+    // val arf    = Output(Vec(archRegAmount, UInt(dataWidth.W)))
     val axi    = AXIIO.master()
+    // Debug
+    // val count     = Output(UInt(dataWidth.W))
+    // val arfWTrace = Output(new TraceBundle)
+    // val cp0Debug = Output(new CP0DebugIO)
   })
 
   val frontend = Module(new Frontend)
@@ -53,24 +58,26 @@ class FluteTop extends Module {
   frontend.io.icache <> iCache.io.core
   io.pc         := frontend.io.pc
   cp0.io.hwIntr := io.hwIntr
-  // TEMP //
-  cp0.io.core.read         := DontCare
-  cp0.io.core.write        := DontCare
-  cp0.io.core.write.enable := 0.B
-  // ==== //
+
+  cp0.io.core.read <> backend.io.cp0Read
+  cp0.io.core.write := backend.io.cp0Write
+
   backend.io.cp0IntrReq := cp0.io.core.intrReq
   backend.io.cp0 <> cp0.io.core.commit
   backend.io.dcache <> dCache.io.core
 
-  val arfView = Module(new ArfView)
-  arfView.io.rmtIn := backend.io.rmt
-  arfView.io.prf   := backend.io.prf
+  // val arfView = Module(new ArfView)
+  // arfView.io.rmtIn := backend.io.rmt
+  // arfView.io.prf   := backend.io.prf
 
   // DEBUG //
-  io.count := cp0.io.debug.count
+  // io.count     := cp0.io.debug.count
+  // io.arfWTrace := backend.io.arfWTrace
+  // io.cp0Debug  := cp0.io.debug
+  // dontTouch(io.cp0Debug)
   // ===== //
 
-  io.arf := arfView.io.arfOut
+  // io.arf := arfView.io.arfOut
 
 }
 

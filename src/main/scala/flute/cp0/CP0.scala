@@ -13,10 +13,10 @@ class CP0Read extends Bundle {
 }
 
 class CP0Write extends Bundle {
-  val addr   = Input(UInt(5.W))
-  val sel    = Input(UInt(3.W))
-  val data   = Input(UInt(dataWidth.W))
-  val enable = Input(Bool())
+  val addr   = UInt(5.W)
+  val sel    = UInt(3.W)
+  val data   = UInt(dataWidth.W)
+  val enable = Bool()
 }
 
 class CP0DebugIO extends Bundle {
@@ -35,11 +35,12 @@ class CP0WithCommit extends Bundle {
   val completed  = Input(Bool())
   val eret       = Input(Bool())
   val valid      = Input(Bool())
+  val badvaddr   = Input(UInt(addrWidth.W))
 }
 
 class CP0WithCore extends Bundle {
   val read    = new CP0Read
-  val write   = new CP0Write
+  val write   = Input(new CP0Write)
   val commit  = new CP0WithCommit
   val intrReq = Output(Bool()) // 例外输出信号
   val epc     = Output(UInt(dataWidth.W))
@@ -49,7 +50,7 @@ class CP0 extends Module {
   val io = IO(new Bundle {
     val hwIntr = Input(UInt(6.W))
     val core   = new CP0WithCore
-    val debug  = new CP0DebugIO
+    // val debug  = new CP0DebugIO
   })
 
   val badvaddr = new CP0BadVAddr
@@ -60,12 +61,13 @@ class CP0 extends Module {
   val compare  = new CP0Compare
   val countInc = RegInit(0.B)
 
-  io.debug.badvaddr := badvaddr.reg
-  io.debug.count    := count.reg
-  io.debug.status   := status.reg.asUInt
-  io.debug.cause    := cause.reg.asUInt
-  io.debug.epc      := epc.reg
-  io.debug.compare  := compare.reg
+  // DEBUG
+  // io.debug.badvaddr := badvaddr.reg
+  // io.debug.count    := count.reg
+  // io.debug.status   := status.reg.asUInt
+  // io.debug.cause    := cause.reg.asUInt
+  // io.debug.epc      := epc.reg
+  // io.debug.compare  := compare.reg
 
   val regs = Seq(
     badvaddr,
@@ -95,20 +97,20 @@ class CP0 extends Module {
     cause.reg.ip(i) && status.reg.im(i)
   }
   val hasInt = intReqs.foldLeft(0.B)((z, a) => z || a) && status.reg.ie && !status.reg.exl && commitWire.valid
-  val exceptionReqestsNext = 0.B // TODO: 不同类型的异常应当要求从本指令/下一条指令执行
+
   when(hasInt) {
     epc.reg           := Mux(commitWire.inSlot, commitWire.pc - 4.U, commitWire.pc)
-    cause.reg.bd      := commitWire.inSlot && commitWire.completed
+    cause.reg.bd      := commitWire.inSlot && commitWire.valid && commitWire.completed
     cause.reg.excCode := ExceptionCode.int
     status.reg.exl    := 1.B
   }.elsewhen(hasExc) {
     status.reg.exl := 1.B
     when(!status.reg.exl) {
       cause.reg.bd := commitWire.inSlot
-      when(commitWire.inSlot) {
+      when(excVector.adELi) {
+        epc.reg := commitWire.badvaddr
+      }.elsewhen(commitWire.inSlot) {
         epc.reg := commitWire.pc - 4.U
-      }.elsewhen(exceptionReqestsNext) {
-        epc.reg := commitWire.pc + 4.U
       }.otherwise {
         epc.reg := commitWire.pc
       }
@@ -121,6 +123,7 @@ class CP0 extends Module {
         excVector.sys   -> ExceptionCode.sys,
         excVector.adELd -> ExceptionCode.adEL,
         excVector.adES  -> ExceptionCode.adEs,
+        excVector.bp    -> ExceptionCode.bp,
       )
     )
   }
@@ -135,6 +138,9 @@ class CP0 extends Module {
   }
 
   // badvaddr
+  when(!hasInt && (excVector.adELd || excVector.adELi || excVector.adES)) {
+    badvaddr.reg := commitWire.badvaddr
+  }
 
   // count
   when(wReq(count)) {

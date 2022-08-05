@@ -5,6 +5,7 @@ import chisel3.util._
 import chiseltest._
 import org.scalatest.freespec.AnyFreeSpec
 import org.scalatest.matchers.should.Matchers
+import flute.cp0.ExceptionBundle
 
 
 class AddrMapTestTop extends Module {
@@ -14,11 +15,74 @@ class AddrMapTestTop extends Module {
   })
   io.out := AddrMap.map(io.in)
 }
+
+class CastTestTop extends Module {
+  val io = IO(new Bundle {
+    val in  = Input(new ExceptionBundle)
+    val valid = Input(Bool())
+    val completed = Input(Bool())
+    val out = Output(new ExceptionBundle)
+  })
+
+  val exceptions = io.in
+  io.out := VecInit(exceptions.asUInt.asBools.map(_ && io.valid && io.completed)).asTypeOf(new ExceptionBundle)
+}
+
+class ChiselMultTop extends Module {
+  val io = IO(new Bundle {
+    val op1 = Input(UInt(32.W))
+    val op2 = Input(UInt(32.W))
+    val res = Output(UInt(64.W))
+    val ress = Output(SInt(64.W))
+    val hi  = Output(UInt(32.W))
+    val lo  = Output(UInt(32.W))
+  })
+  val res = io.op1.asSInt * io.op2.asSInt
+  io.res := res.asUInt
+  io.ress := res
+  io.hi  := res(61, 32)
+  io.lo  := res(31, 0)
+}
 /**
   * Experiment
   * Anyone can place codes here for API verification use.
   */
 class Experiment extends AnyFreeSpec with ChiselScalatestTester with Matchers {
+  "Mult test" in {
+    test(new ChiselMultTop) { c =>
+      c.io.op1.poke("hffffffe0".U)
+      c.io.op2.poke(2.U)
+
+      println(c.io.ress.peek())
+      println(c.io.res.peek())
+      println(c.io.hi.peek())
+      println(c.io.lo.peek())
+    }
+  }
+
+  "Cast test" in {
+    test(new CastTestTop) { c=>
+      c.io.in.adELd.poke(0.B)
+      c.io.in.adELi.poke(1.B)
+      c.io.in.adES.poke(0.B)
+      c.io.in.bp.poke(1.B)
+      c.io.in.ov.poke(0.B)
+      c.io.in.ri.poke(1.B)
+      c.io.in.sys.poke(1.B)
+
+      c.io.valid.poke(1.B)
+      c.io.completed.poke(1.B)
+      
+      c.io.out.adELd.expect(0.B)
+      c.io.out.adELi.expect(1.B)
+      c.io.out.adES.expect(0.B)
+      c.io.out.bp.expect(1.B)
+      c.io.out.ov.expect(0.B)
+      c.io.out.ri.expect(1.B)
+      c.io.out.sys.expect(1.B)
+    }
+  }
+
   "Addr Map test" in {
     test(new AddrMapTestTop) {c =>
       c.io.in.poke("hbfc00000".U)
