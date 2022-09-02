@@ -56,3 +56,9 @@ class AluIssueQueueTest extends AnyFlatSpec with ChiselScalatestTester with Matc
 }
 
 ```
+
+# 致谢
+
+- [amadeus-mips](https://github.com/amadeus-mips/amadeus-mips) 在项目结构和Chisel基本使用方面给了我们最初的引导，没有这个项目，本项目的初期将非常艰难；
+- [nontrivial-mips](https://github.com/trivialmips/nontrivial-mips) 启发我如何设计 cp0 协处理器；
+- [XiangShan](https://github.com/OpenXiangShan/XiangShan) 在项目架构上有很大帮助。
